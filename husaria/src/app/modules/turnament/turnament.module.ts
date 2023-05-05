@@ -5,6 +5,8 @@ import { TurnamentRoutingModule } from './turnament-routing.module';
 import { SabreComponent } from './components/sabre/sabre.component';
 import { BroadswordComponent } from './components/broadsword/broadsword.component';
 import { LanceComponent } from './components/lance/lance.component';
+import { SheredComponent } from 'src/app/shered/shered.component';
+import { SheredModule } from 'src/app/shered/shered.module';
 
 
 @NgModule({
@@ -15,7 +17,8 @@ import { LanceComponent } from './components/lance/lance.component';
   ],
   imports: [
     CommonModule,
-    TurnamentRoutingModule
+    TurnamentRoutingModule,
+    SheredModule
   ]
 })
 export class TurnamentModule { }

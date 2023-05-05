@@ -7,16 +7,15 @@ import { MenuItem } from 'primeng/api';
   styleUrls: ['./navbar.component.scss']
 })
 
-export class NavbarComponent implements OnInit{
+export class NavbarComponent implements OnInit {
   items!: MenuItem[];
 
   ngOnInit() {
-      this.items = [
-          { label: 'Home', icon: 'pi pi-fw pi-home' },
-          { label: 'Calendar', icon: 'pi pi-fw pi-calendar' },
-          { label: 'Edit', icon: 'pi pi-fw pi-pencil' },
-          { label: 'Documentation', icon: 'pi pi-fw pi-file' },
-          { label: 'Settings', icon: 'pi pi-fw pi-cog' }
-      ];
+    this.items = [
+      { label: 'Home', icon: 'pi pi-fw pi-home', url: '/' },
+      { label: 'Szabla', icon: 'pi pi-fw pi-calendar', url: 'tournament/sabre' },
+      { label: 'Pałasz', icon: 'pi pi-fw pi-pencil', url: 'tournament/broadsword' },
+      { label: 'Kopia', icon: 'pi pi-fw pi-file', url: 'tournament/lance' }
+    ];
   }
 }

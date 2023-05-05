@@ -1,6 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { SabreComponent } from './components/sabre/sabre.component';
+import { LanceComponent } from './components/lance/lance.component';
+import { BroadswordComponent } from './components/broadsword/broadsword.component';
 
 const routes: Routes = [
   {
@@ -11,6 +13,14 @@ const routes: Routes = [
   {
     path: 'sabre',
     component: SabreComponent
+  }, 
+  {
+    path: 'broadsword',
+    component: BroadswordComponent
+  }, 
+  {
+    path: 'lance',
+    component: LanceComponent
   }
 ];
 

@@ -16,7 +16,7 @@ const routes: Routes = [
   {
     path: 'shered',
     component: MainLayoutComponent,
-    loadChildren: () => import('./shared/shered/shered.module').then(m => m.SheredModule)
+    loadChildren: () => import('./shered/shered.module').then(m => m.SheredModule)
   }
 ];
 
