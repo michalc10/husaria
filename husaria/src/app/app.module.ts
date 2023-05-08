@@ -8,6 +8,7 @@ import { MainLayoutComponent } from './layout/main-layout/main-layout.component'
 import { TabMenuModule } from 'primeng/tabmenu';
 import { RouterModule } from '@angular/router';
 import { SharedModule } from 'primeng/api';
+import { FormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
@@ -20,7 +21,8 @@ import { SharedModule } from 'primeng/api';
     AppRoutingModule,
     SharedModule,
     RouterModule,
-    TabMenuModule
+    TabMenuModule,
+    FormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]

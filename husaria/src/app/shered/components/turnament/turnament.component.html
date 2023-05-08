@@ -1,1 +1,22 @@
-<p>turnament works!</p>
+<table>
+    <thead>
+      <tr>
+        <th>Użytkownik</th>
+        <th *ngFor="let user of users">{{ user }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let feature of features">
+        <td>{{ feature }}</td>
+        <td *ngFor="let user of users">
+          <label class="checkbox-container">
+            <input type="checkbox" [(ngModel)]="checkboxValues[user + '_' + feature]">
+            <span class="checkmark" [ngClass]="{'checked': checkboxValues[user + '_' + feature]}">
+              <span *ngIf="checkboxValues[user + '_' + feature]" class="checkmark-icon">✓</span>
+              <span *ngIf="!checkboxValues[user + '_' + feature]" class="checkmark-icon">X</span>
+            </span>
+          </label>
+        </td>
+      </tr>
+    </tbody>
+  </table>

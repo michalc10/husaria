@@ -5,6 +5,7 @@ import { SheredRoutingModule } from './shered-routing.module';
 import { SheredComponent } from './shered.component';
 import { TurnamentComponent } from './components/turnament/turnament.component';
 
+import { FormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
@@ -13,7 +14,8 @@ import { TurnamentComponent } from './components/turnament/turnament.component';
   ],
   imports: [
     CommonModule,
-    SheredRoutingModule
+    SheredRoutingModule,
+    FormsModule
   ],
   exports:[TurnamentComponent]
 })
