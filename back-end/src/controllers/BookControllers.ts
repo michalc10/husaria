@@ -18,9 +18,6 @@ const createBook = (req: Request, res: Response, next: NextFunction) => {
         rating: rating
 
     });
-    if (req.file) {
-        book.picture = req.file.path
-    }
     return book
         .save()
         .then((book) => res.status(201).json(book))
@@ -48,21 +45,10 @@ const readAll = (req: Request, res: Response, next: NextFunction) => {
 
 const updateBook = (req: Request, res: Response, next: NextFunction) => {
     const bookId = req.params.bookId;
-    const { title, author, category, ISBN, addedDate, borrowBook, rating } = req.body;
-    console.log(req.body)
     return Book.findById(bookId)
         .then((book) => {
             if (book) {
                 book.set(req.body);
-                if (req.file) {
-                    if(book.picture){
-                        unlink(`${book.picture}`, (err) => {
-                            if (err) throw err;
-                            console.log(`${book.picture} was deleted`);
-                          }); 
-                    }
-                    book.picture = req.file.path
-                }
                 return book
                     .save()
                     .then((book) => res.status(201).json(book))
@@ -79,12 +65,6 @@ const deleteBook = (req: Request, res: Response, next: NextFunction) => {
 
     return Book.findByIdAndDelete(bookId)
         .then((book) =>{
-            if(book?.picture){
-                unlink(`${book.picture}`, (err) => {
-                    if (err) throw err;
-                    console.log(`${book.picture} was deleted`);
-                  }); 
-            }
             book
                 ? res.status(200).json({ message: "deleted" })
                 : res.status(404).json({ message: "Not found" })
@@ -95,10 +75,5 @@ const deleteBook = (req: Request, res: Response, next: NextFunction) => {
         .catch((err) => res.status(500).json({ err }));
 };
 
-const getPicture = (req: Request, res: Response, next: NextFunction) => {
-    const path = req.params['file'];
 
-    return res.sendFile(path, { root: './src/public/images/' })
-};
-
-export default { createBook, readAll, readBook, updateBook, deleteBook, getPicture };
+export default { createBook, readAll, readBook, updateBook, deleteBook };

@@ -1,15 +1,11 @@
 import express, { Express, Request, Response } from "express";
-import mongoose from "mongoose";
+import mongoose  from "mongoose";
 import http from "http";
 import { config } from "./config/config";
 import Logging from "./library/Logging";
-import accountRounte from './routes/AccountRoutes'
-import bookRouter from './routes/BookRoutes'
-import BookDetailsRoute from './routes/BookDetailsRoutes'
-import BorrowBooksRoutes from './routes/BorrowBooksRoutes'
-import extract from "./middleware/extractJWT";
-import UserPermissionRoutes from "./routes/UserPermissionRoutes";
-import AdminPermissionRoutes from "./routes/AdminPermissionRoutes";
+import bookRouter from './routes/BookRoutes';
+import playerRouter from './routes/PlayerRoutes'
+import { ServerApiVersion } from "mongodb";
 
 const app: Express = express();
 
@@ -17,8 +13,15 @@ const app: Express = express();
 
 mongoose.set("strictQuery", false);
 mongoose
-  .connect(config.mongo.url, { retryWrites: true, w: "majority" })
+  .connect("mongodb+srv://michalc10:polska1101@husary.xbvzelo.mongodb.net/?retryWrites=true&w=majority", {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    }
+  })
   .then(() => {
+    console.log("Conected to MongoDB");
     Logging.info("Conected to MongoDB");
     StartServer();
   })
@@ -62,12 +65,8 @@ const StartServer = () => {
 
     next();
   });
-  app.use('/account', accountRounte);
   app.use('/books', bookRouter);
-  app.use('/bookDetails', BookDetailsRoute);
-  app.use('/borrowBooks', BorrowBooksRoutes);
-  app.use('/userPermission', UserPermissionRoutes);
-  app.use('/adminPermission', AdminPermissionRoutes);
+  app.use('/player', playerRouter);
 
 
 

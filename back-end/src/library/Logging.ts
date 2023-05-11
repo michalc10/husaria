@@ -18,3 +18,4 @@ export default class Logging {
       typeof args === "string" ? chalk.redBright(args) : args
     );
 }
+
