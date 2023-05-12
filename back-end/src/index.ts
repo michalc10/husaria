@@ -3,8 +3,9 @@ import mongoose  from "mongoose";
 import http from "http";
 import { config } from "./config/config";
 import Logging from "./library/Logging";
-import bookRouter from './routes/BookRoutes';
 import playerRouter from './routes/PlayerRoutes'
+import tournamentRouter from './routes/TournamentRoutes'
+import leagueRouter from './routes/LeagueRoutes'
 import { ServerApiVersion } from "mongodb";
 
 const app: Express = express();
@@ -65,8 +66,10 @@ const StartServer = () => {
 
     next();
   });
-  app.use('/books', bookRouter);
+  
   app.use('/player', playerRouter);
+  app.use('/league', leagueRouter);
+  app.use('/tournament', tournamentRouter);
 
 
 

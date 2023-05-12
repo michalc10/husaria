@@ -6,7 +6,6 @@ import mongoose from "mongoose";
 
 const createPlayer = (req: Request, res: Response, next: NextFunction) => {
     const { name, horse, flag } = req.body;
-    console.log("hej")
     const player = new Player({
         _id: new mongoose.Types.ObjectId(),
         name: name,

@@ -1,0 +1,36 @@
+<div class="card">
+    <p-table [value]="leagueList" [tableStyle]="{ 'min-width': '50rem' }">
+        <ng-template pTemplate="header" let-columns>
+            <tr>
+                <th>Nazwa</th>
+                <th>Rok</th>
+                <th>
+                    <p-button icon="pi pi-plus" styleClass="p-button-rounded p-button-success"
+                        (onClick)="createLeague()"></p-button>
+                </th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-league>
+            <tr (click)="chosedRow(league)">
+                <td>{{ league.name }}</td>
+                <td>{{ league.year }}</td>
+                <td>
+                    <p-button icon="pi pi-user"
+                        styleClass="p-button-rounded p-button-info p-button-text p-button-raised"
+                        (onClick)="changeLeague(league._id)"></p-button>
+                    <p-confirmPopup></p-confirmPopup>
+                    <p-button icon="pi pi-times"
+                        styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"
+                        (click)="confirm($event,league._id)"></p-button>
+                </td>
+
+            </tr>
+            <tr class="" *ngIf="idchosenRaw === league._id">
+                hej
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+<app-league-dialog [display]="display" [idLeague]="idLeague"
+    (comunicationWithoutSaving)="closedDialogWithoutSaving($event)"
+    (comunication)="returnFromChild($event)"></app-league-dialog>

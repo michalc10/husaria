@@ -5,8 +5,13 @@ import { MainLayoutComponent } from './layout/main-layout/main-layout.component'
 const routes: Routes = [
   {
     path: '',
-    redirectTo: 'tournament',
+    redirectTo: 'league',
     pathMatch: 'full'
+  },
+  {
+    path: 'league',
+    component: MainLayoutComponent,
+    loadChildren: () => import('./modules/league/league.module').then(m => m.LeagueModule)
   },
   {
     path: 'tournament',
@@ -17,6 +22,11 @@ const routes: Routes = [
     path: 'shered',
     component: MainLayoutComponent,
     loadChildren: () => import('./shered/shered.module').then(m => m.SheredModule)
+  },
+  {
+    path: 'player',
+    component: MainLayoutComponent,
+    loadChildren: () => import('./modules/player/player.module').then(m => m.PlayerModule)
   }
 ];
 

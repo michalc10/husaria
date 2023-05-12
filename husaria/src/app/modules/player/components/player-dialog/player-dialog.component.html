@@ -1,0 +1,19 @@
+<p-dialog [(visible)]="display" [modal]="true" [style]="{width: '30%'  }" (onHide)="closingWithoutSaving()" [draggable]="false"
+    [resizable]="true">
+
+    <form [formGroup]="playerForm" (ngSubmit)="onSubmit()">
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" id="name" class="form-control" formControlName="name">
+        </div>
+        <div class="form-group">
+            <label for="horse">Horse Name:</label>
+            <input type="text" id="horse" class="form-control" formControlName="horse">
+        </div>
+        <div class="form-group">
+            <label for="flag">Flag:</label>
+            <input type="text" id="flag" class="form-control" formControlName="flag">
+        </div>
+        <button type="submit" class="btn btn-primary">{{ buttonText }}</button>
+    </form>
+</p-dialog>
