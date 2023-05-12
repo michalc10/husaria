@@ -102,6 +102,5 @@ export class LeagueListComponent {
     }else{
       this.idchosenRaw = '-1';
     }
-    console.log(league._id)
   }
 }
