@@ -14,7 +14,7 @@ export interface ITournamentModel extends ITournament, Document { }
 const tournamentSchema = new Schema(
     {
         leagueId: { type: String, required: [true, "Please entere leagueId"] },
-        city: { type: String, required: [true, "Please entere a city"] },
+        city: { type: String },
         date: { type: Date, required: true, default: new Date() }
     }
 )

@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ConfirmationService } from 'primeng/api';
 import { ILeague } from 'src/app/models/league';
+import { ITournament } from 'src/app/models/tournament'
 import { CrudService } from 'src/app/shered/service/crud.service';
 
 @Component({
@@ -8,10 +9,11 @@ import { CrudService } from 'src/app/shered/service/crud.service';
   templateUrl: './league-list.component.html',
   styleUrls: ['./league-list.component.scss']
 })
-export class LeagueListComponent {
+export class LeagueListComponent implements OnInit {
 
   leagueRout = 'league';
   leagueList: ILeague[] = [];
+  tournamentList: ITournament[] = [];
   idLeague: String = '-1';
   displayDialogCompnent = false;
   idchosenRaw: string = '-1'
@@ -22,12 +24,17 @@ export class LeagueListComponent {
     private crudService: CrudService,
     private confirmationService: ConfirmationService
   ) {
+
+  }
+
+  ngOnInit(): void {
     this.crudService.list('league')
       .subscribe({
         next: (value) => {
           this.leagueList = value;
         },
       })
+    
   }
 
 
@@ -97,9 +104,15 @@ export class LeagueListComponent {
 
 
   chosedRow(league: ILeague) {
-    if (this.idchosenRaw == '-1') {
+    if (this.idchosenRaw !== league._id!) {
       this.idchosenRaw = league._id!;
-    }else{
+      this.crudService.listById('tournament/league', league._id!)
+      .subscribe({
+        next: (value) => {
+          this.tournamentList = value;
+        },
+      })
+    } else {
       this.idchosenRaw = '-1';
     }
   }

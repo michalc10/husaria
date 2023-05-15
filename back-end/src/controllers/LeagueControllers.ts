@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response, request } from "express";
 import { League } from "../models/LeagueModel";
 import mongoose from "mongoose";
+import { Tournament } from "../models/TournamentModel";
 
 
 
@@ -14,7 +15,20 @@ const createLeague = (req: Request, res: Response, next: NextFunction) => {
     });
     return league
         .save()
-        .then((league) => res.status(201).json(league))
+        .then((league) => {
+            for (let i = 0; i < 5; i++) {
+                const tournament = new Tournament({
+                    _id: new mongoose.Types.ObjectId(),
+                    leagueId: league._id,
+                    city: '',
+                    date: new Date()
+
+                });
+                tournament.save()
+            }
+
+            return res.status(201).json(league);
+        })
         .catch((err) => res.status(500).json({ err }));
 };
 

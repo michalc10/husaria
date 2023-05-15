@@ -10,10 +10,7 @@ export class CrudService {
 
   constructor(private http: HttpClient) { }
 
-  // LIST
-  list(rout: String): Observable<any[]> {
-    return this.http.get<any[]>(api + rout);
-  }
+
 
   // READ
   read(rout: String, id: String): Observable<any> {
@@ -35,5 +32,13 @@ export class CrudService {
     return this.http.delete<any>(api + rout + '/' + id);
   }
 
+  // LIST
+  list(rout: String): Observable<any[]> {
+    return this.http.get<any[]>(api + rout);
+  }
 
+  // LIST BY ID
+  listById(rout: String, id: String): Observable<any[]> {
+    return this.http.get<any[]>(api + rout + '/' + id);
+  }
 }

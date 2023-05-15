@@ -26,7 +26,14 @@
 
             </tr>
             <tr class="" *ngIf="idchosenRaw === league._id">
-                <td colspan="3"> hej</td>
+                <td colspan="3">
+                    <ul>
+                        <li *ngFor="let tournament of tournamentList">
+                            {{tournament.city}}
+                            {{tournament.date|date: 'dd.MM.yyyy' }}
+                        </li>
+                    </ul>
+                </td>
             </tr>
         </ng-template>
     </p-table>

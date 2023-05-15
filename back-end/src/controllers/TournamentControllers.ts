@@ -70,5 +70,11 @@ const deleteTournament = (req: Request, res: Response, next: NextFunction) => {
         .catch((err) => res.status(500).json({ err }));
 };
 
+const readAllForLeague = (req: Request, res: Response, next: NextFunction) => {
+    const leagueId = req.params.leagueId;
+    return Tournament.find({ leagueId: leagueId })
+        .then((tournaments) => res.status(200).json(tournaments))
+        .catch((error) => res.status(500).json({ error }));
+};
 
-export default { createTournament, readAll, readTournament, updateTournament, deleteTournament };
+export default { createTournament, readAll, readTournament, updateTournament, deleteTournament, readAllForLeague };
