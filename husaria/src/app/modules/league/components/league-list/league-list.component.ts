@@ -116,4 +116,8 @@ export class LeagueListComponent implements OnInit {
       this.idchosenRaw = '-1';
     }
   }
+
+  selectedTournament(tournament:ITournament){
+    console.log(tournament)
+  }
 }

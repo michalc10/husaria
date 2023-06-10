@@ -12,7 +12,7 @@
         </ng-template>
         <ng-template pTemplate="body" let-league>
             <tr (click)="chosedRow(league)">
-                <td>{{ league.name }}</td>
+                <td><div class="items">{{ league.name }}</div></td>
                 <td>{{ league.year }}</td>
                 <td>
                     <p-button icon="pi pi-user"
@@ -27,12 +27,15 @@
             </tr>
             <tr class="" *ngIf="idchosenRaw === league._id">
                 <td colspan="3">
-                    <ul>
-                        <li *ngFor="let tournament of tournamentList">
-                            {{tournament.city}}
-                            {{tournament.date|date: 'dd.MM.yyyy' }}
-                        </li>
-                    </ul>
+                    <div *ngFor="let tournament of tournamentList">
+                        <div class="tournament">
+                            <div class="items" (click)="selectedTournament(tournament)">
+                                {{tournament.city}}
+                                {{tournament.date|date: 'dd.MM.yyyy' }}
+
+                            </div>
+                        </div>
+                    </div>
                 </td>
             </tr>
         </ng-template>

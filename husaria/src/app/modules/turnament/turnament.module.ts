@@ -7,13 +7,17 @@ import { BroadswordComponent } from './components/broadsword/broadsword.componen
 import { LanceComponent } from './components/lance/lance.component';
 import { SheredComponent } from 'src/app/shered/shered.component';
 import { SheredModule } from 'src/app/shered/shered.module';
+import { TournamentPlayersComponent } from './components/tournament-players/tournament-players.component';
+import { TournamentLayoutComponent } from './tournament-layout/tournament-layout.component';
 
 
 @NgModule({
   declarations: [
     SabreComponent,
     BroadswordComponent,
-    LanceComponent
+    LanceComponent,
+    TournamentPlayersComponent,
+    TournamentLayoutComponent
   ],
   imports: [
     CommonModule,

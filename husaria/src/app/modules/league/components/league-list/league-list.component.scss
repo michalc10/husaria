@@ -15,10 +15,21 @@ td {
   padding: 8px;
 }
 
-tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-
 .p-paginator {
   margin-top: 20px;
 }
+
+.tournament {
+  margin: 5px;
+  padding: 5px;
+  border: solid 1px;
+  border-radius: 20px;
+
+ 
+}
+ items {
+    display: flex;
+
+  }:hover {
+    cursor: pointer
+  }
