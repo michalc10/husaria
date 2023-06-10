@@ -9,7 +9,9 @@ import { SheredComponent } from 'src/app/shered/shered.component';
 import { SheredModule } from 'src/app/shered/shered.module';
 import { TournamentPlayersComponent } from './components/tournament-players/tournament-players.component';
 import { TournamentLayoutComponent } from './tournament-layout/tournament-layout.component';
-
+import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 @NgModule({
   declarations: [
@@ -17,12 +19,15 @@ import { TournamentLayoutComponent } from './tournament-layout/tournament-layout
     BroadswordComponent,
     LanceComponent,
     TournamentPlayersComponent,
-    TournamentLayoutComponent
+    TournamentLayoutComponent,
   ],
   imports: [
     CommonModule,
     TurnamentRoutingModule,
-    SheredModule
+    SheredModule,
+    FormsModule,
+    ButtonModule,
+    SelectButtonModule
   ]
 })
 export class TurnamentModule { }

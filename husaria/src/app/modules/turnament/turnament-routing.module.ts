@@ -4,10 +4,12 @@ import { SabreComponent } from './components/sabre/sabre.component';
 import { LanceComponent } from './components/lance/lance.component';
 import { BroadswordComponent } from './components/broadsword/broadsword.component';
 import { TournamentLayoutComponent } from './tournament-layout/tournament-layout.component';
+import { TournamentPlayersComponent } from './components/tournament-players/tournament-players.component';
 
 const routes: Routes = [
+  {path:':id',redirectTo:':id/participant',pathMatch:'full'},
   {
-    path: '/:id',
+    path: ':id',
     component: TournamentLayoutComponent,
     children: [
 
@@ -22,6 +24,10 @@ const routes: Routes = [
       {
         path: 'lance',
         component: LanceComponent
+      },
+      {
+        path: 'participant',
+        component: TournamentPlayersComponent
       }
 
     ]

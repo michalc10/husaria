@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ILeague } from 'src/app/models/league';
 import { ITournament } from 'src/app/models/tournament'
@@ -21,6 +22,7 @@ export class LeagueListComponent implements OnInit {
   display = false;
 
   constructor(
+    private router: Router,
     private crudService: CrudService,
     private confirmationService: ConfirmationService
   ) {
@@ -34,7 +36,7 @@ export class LeagueListComponent implements OnInit {
           this.leagueList = value;
         },
       })
-    
+
   }
 
 
@@ -107,17 +109,17 @@ export class LeagueListComponent implements OnInit {
     if (this.idchosenRaw !== league._id!) {
       this.idchosenRaw = league._id!;
       this.crudService.listById('tournament/league', league._id!)
-      .subscribe({
-        next: (value) => {
-          this.tournamentList = value;
-        },
-      })
+        .subscribe({
+          next: (value) => {
+            this.tournamentList = value;
+          },
+        })
     } else {
       this.idchosenRaw = '-1';
     }
   }
 
-  selectedTournament(tournament:ITournament){
-    console.log(tournament)
+  selectedTournament(tournament: ITournament) {
+    this.router.navigate(['tournament/' + tournament._id?.toString()])
   }
 }
