@@ -7,9 +7,9 @@ import { TournamentLayoutComponent } from './tournament-layout/tournament-layout
 import { TournamentPlayersComponent } from './components/tournament-players/tournament-players.component';
 
 const routes: Routes = [
-  {path:':id',redirectTo:':id/participant',pathMatch:'full'},
+  {path:':idTournament',redirectTo:':idTournament/participant',pathMatch:'full'},
   {
-    path: ':id',
+    path: ':idTournament',
     component: TournamentLayoutComponent,
     children: [
 
