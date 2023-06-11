@@ -6,6 +6,7 @@ import { SheredComponent } from './shered.component';
 import { TurnamentComponent } from './components/turnament/turnament.component';
 
 import { FormsModule } from '@angular/forms';
+import { CrudService } from './service/crud.service';
 
 @NgModule({
   declarations: [

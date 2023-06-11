@@ -20,7 +20,7 @@ const createLeague = (req: Request, res: Response, next: NextFunction) => {
                 const tournament = new Tournament({
                     _id: new mongoose.Types.ObjectId(),
                     leagueId: league._id,
-                    city: '',
+                    city: 'miasto ' + (i + 1).toString(),
                     date: new Date()
 
                 });

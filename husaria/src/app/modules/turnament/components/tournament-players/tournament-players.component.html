@@ -1,1 +1,15 @@
-<p>tournament-players works!</p>
+<p-pickList [source]="sourceProducts" [target]="targetProducts" sourceHeader="Available" targetHeader="Selected"
+    [dragdrop]="true" [responsive]="true" [sourceStyle]="{ height: '30rem' }" [targetStyle]="{ height: '30rem' }"
+    filterBy="name" sourceFilterPlaceholder="Search by name" targetFilterPlaceholder="Search by name"
+    breakpoint="1400px"
+    (onMoveToTarget)="onMoveToTarget($event)"
+    (onMoveToSource)="onMoveToSource($event)"
+    (onMoveAllToTarget)="onMoveAllToTarget($event)"
+    (onMoveAllToSource)="onMoveAllToSource($event)">
+    <ng-template let-player pTemplate="item">
+        <div class="flex flex-wrap p-2 align-items-center gap-3">
+            <p>{{player.name}}  {{player.horse}}</p>
+            {{player.flag}}
+        </div>
+    </ng-template>
+</p-pickList>

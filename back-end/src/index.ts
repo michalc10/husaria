@@ -1,12 +1,13 @@
 import express, { Express, Request, Response } from "express";
-import mongoose  from "mongoose";
+import mongoose from "mongoose";
 import http from "http";
+import { ServerApiVersion } from "mongodb";
 import { config } from "./config/config";
 import Logging from "./library/Logging";
 import playerRouter from './routes/PlayerRoutes'
 import tournamentRouter from './routes/TournamentRoutes'
 import leagueRouter from './routes/LeagueRoutes'
-import { ServerApiVersion } from "mongodb";
+import playerPointsRouter from "./routes/PlayerPointsRoutes";
 
 const app: Express = express();
 
@@ -66,10 +67,11 @@ const StartServer = () => {
 
     next();
   });
-  
+
   app.use('/player', playerRouter);
   app.use('/league', leagueRouter);
   app.use('/tournament', tournamentRouter);
+  app.use('/playerPoints', playerPointsRouter);
 
 
 

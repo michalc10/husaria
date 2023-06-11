@@ -27,8 +27,8 @@ export class TournamentLayoutComponent {
     const lastFragment = urlFragments[urlFragments.length - 1];
     if (val === 1 && lastFragment !== 'participant')
       urlFragments[urlFragments.length - 1] = 'participant';
-    else if (val === 2 && lastFragment !== 'saber')
-      urlFragments[urlFragments.length - 1] = 'saber';
+    else if (val === 2 && lastFragment !== 'sabre')
+      urlFragments[urlFragments.length - 1] = 'sabre';
     else if (val === 3 && lastFragment !== 'broadsword')
       urlFragments[urlFragments.length - 1] = 'broadsword';
     else if (val === 4 && lastFragment !== 'lance')
