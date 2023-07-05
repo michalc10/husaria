@@ -12,7 +12,7 @@ export class PlayerListComponent {
 
   playerRout = 'player';
   playerList: IPlayer[] = [];
-  idPlayer: String = '-1';
+  chosenPlayer: IPlayer = { name: '', flag: '', horse: '', _id: '-1' };
   displayDialogCompnent = false;
 
   display = false;
@@ -30,45 +30,39 @@ export class PlayerListComponent {
   }
 
 
-  savePlayer(player: IPlayer) {
-
-  }
-
   createPlayer() {
-    this.idPlayer = '-1';
+    this.chosenPlayer = { name: '', flag: '', horse: '', _id: '-1' }
     this.displayDialogCompnent = true;
     this.display = true;
 
   }
 
-  changePlayer(id: String) {
-    this.idPlayer = id;
+  changePlayer(player: IPlayer) {
+    this.chosenPlayer = player
     this.displayDialogCompnent = true;
     this.display = true;
   }
-  claseWithoutSaving(val: boolean) {
-    this.displayDialogCompnent = false;
-  }
+
   closedDialogWithoutSaving(bool: Boolean) {
     this.display = false;
   }
-  returnFromChild(event: any) {
+
+  returnFromChild(player: IPlayer) {
 
     this.display = false;
-    const player = event as IPlayer
-    if (this.idPlayer != '-1') {
-      this.crudService.update(this.playerRout, player._id!, player).subscribe({
+    // const player = event as IPlayer
+    console.log(player._id)
+    if (player._id === '-1') {
+      this.crudService.create(this.playerRout, player).subscribe({
         next: (value: IPlayer) => {
           this.playerList.push(value)
-
         },
       }
       );
     } else {
-      this.crudService.create(this.playerRout, player).subscribe({
+      this.crudService.update(this.playerRout, player._id!, player).subscribe({
         next: (value: IPlayer) => {
-          this.playerList.push(value)
-
+          this.playerList[this.playerList.findIndex(player => player._id === value._id)] = value;
         },
       }
       );

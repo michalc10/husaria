@@ -3,15 +3,15 @@
 
     <form [formGroup]="playerForm" (ngSubmit)="onSubmit()">
         <div class="form-group">
-            <label for="name">Name:</label>
+            <label for="name">Imię i Nazwisko:</label>
             <input type="text" id="name" class="form-control" formControlName="name">
         </div>
         <div class="form-group">
-            <label for="horse">Horse Name:</label>
+            <label for="horse">Koń:</label>
             <input type="text" id="horse" class="form-control" formControlName="horse">
         </div>
         <div class="form-group">
-            <label for="flag">Flag:</label>
+            <label for="flag">Chorągiew:</label>
             <input type="text" id="flag" class="form-control" formControlName="flag">
         </div>
         <button type="submit" class="btn btn-primary">{{ buttonText }}</button>

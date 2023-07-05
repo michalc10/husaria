@@ -19,7 +19,7 @@
                 <td>
                     <p-button icon="pi pi-user"
                         styleClass="p-button-rounded p-button-info p-button-text p-button-raised"
-                        (onClick)="changePlayer(player._id)"></p-button>
+                        (onClick)="changePlayer(player)"></p-button>
                     <p-confirmPopup></p-confirmPopup>
                     <p-button icon="pi pi-times" styleClass="p-button-rounded p-button-danger p-button-text p-button-raised" (click)="confirm($event,player._id)"></p-button>
                 </td>
@@ -28,4 +28,4 @@
     </p-table>
 </div>
 
-<app-player-dialog [display]="display" [idPlayer]="idPlayer" (comunicationWithoutSaving)="closedDialogWithoutSaving($event)" (comunication)="returnFromChild($event)"></app-player-dialog>
+<app-player-dialog [display]="display" [player]="chosenPlayer!" (comunicationWithoutSaving)="closedDialogWithoutSaving($event)" (comunication)="returnFromChild($event)"></app-player-dialog>
