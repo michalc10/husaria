@@ -35,7 +35,7 @@ export interface IPlayerPointsModel extends IPlayerPoints, Document { }
 
 const playerPointsSchema = new Schema(
     {
-        leagueId: { type: String, required: [true, "Please entere leagueId"] },
+        tournamentId: { type: String, required: [true, "Please entere tournamentId"] },
         playerName: { type: String, require: true },
         horse: { type: String, require: true },
         flag: { type: String, require: true },

@@ -7,8 +7,8 @@
     (onMoveAllToTarget)="onMoveAllToTarget($event)"
     (onMoveAllToSource)="onMoveAllToSource($event)">
     <ng-template let-player pTemplate="item">
-        <div class="flex flex-wrap p-2 align-items-center gap-3">
-            <p>{{player.name}}  {{player.horse}}</p>
+        <div class="flex flex-wrap p-2 align-items-center gap-3 player">
+            <p>{{player.name}} -> {{player.horse}}</p>
             {{player.flag}}
         </div>
     </ng-template>

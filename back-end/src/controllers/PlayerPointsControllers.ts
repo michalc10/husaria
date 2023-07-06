@@ -5,12 +5,14 @@ import mongoose from "mongoose";
 
 
 const createPlayerPoints = (req: Request, res: Response, next: NextFunction) => {
-    const { leagueId, city, date } = req.body;
+    const { tournamentId, playerName, horse, flag, playerId } = req.body;
     const playerPoints = new PlayerPoints({
         _id: new mongoose.Types.ObjectId(),
-        leagueId: leagueId,
-        city: city,
-        date: date
+        tournamentId: tournamentId,
+        playerName: playerName,
+        horse: horse,
+        flag: flag,
+        playerId: playerId,
 
     });
     return playerPoints
@@ -33,7 +35,8 @@ const readPlayerPoints = (req: Request, res: Response, next: NextFunction) => {
 };
 
 const readAll = (req: Request, res: Response, next: NextFunction) => {
-    return PlayerPoints.find()
+    const tournamentId = req.params.tournamentId;
+    return PlayerPoints.find({tournamentId:tournamentId})
         .then((playerPointss) => res.status(200).json(playerPointss))
         .catch((error) => res.status(500).json({ error }));
 };

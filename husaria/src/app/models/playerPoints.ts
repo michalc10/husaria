@@ -1,5 +1,5 @@
 export interface IPlayerPoints {
-    leagueId: string;
+    tournamentId: string;
     playerName: string,
     horse: string,
     flag: string,

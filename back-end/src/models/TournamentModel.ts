@@ -2,10 +2,10 @@ import { Schema, model, Document } from 'mongoose'
 
 
 export interface ITournament {
-    leagueId:string;
-    city:string;
-    date:Date;
-    
+    leagueId: string;
+    city: string;
+    date: Date;
+
 }
 
 export interface ITournamentModel extends ITournament, Document { }

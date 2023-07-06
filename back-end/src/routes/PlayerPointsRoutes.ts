@@ -1,15 +1,15 @@
 import express from 'express';
-import controller from '../controllers/TournamentControllers'
+import controller from '../controllers/PlayerPointsControllers'
 
 const router = express.Router();
 
 
 
-router.get('/',  controller.readAll);
-router.get('/:tournamentId', controller.readTournament);
-router.post('/', controller.createTournament);
-router.put('/:tournamentId', controller.updateTournament);
-router.delete('/:tournamentId', controller.deleteTournament);
+router.get('/tournament/:tournamentId',  controller.readAll);
+router.get('/:playerPointsId', controller.readPlayerPoints);
+router.post('/', controller.createPlayerPoints);
+router.put('/:playerPointsId', controller.updatePlayerPoints);
+router.delete('/:playerPointsId', controller.deletePlayerPoints);
 router.get('/league/:leagueId',controller.readAllForLeague)
 
 export = router;

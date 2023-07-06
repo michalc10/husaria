@@ -1,4 +1,10 @@
-::ng-deep .p-picklist-source-controls > button,
-::ng-deep .p-picklist-target-controls > button {
+::ng-deep .p-picklist-source-controls>button,
+::ng-deep .p-picklist-target-controls>button {
     display: none;
+}
+
+.player {
+    border-radius: 25px;
+    border: 2px solid #73AD21;
+    padding: 20px;
 }
