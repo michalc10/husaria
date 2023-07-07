@@ -10,6 +10,6 @@ router.get('/:playerPointsId', controller.readPlayerPoints);
 router.post('/', controller.createPlayerPoints);
 router.put('/:playerPointsId', controller.updatePlayerPoints);
 router.delete('/:playerPointsId', controller.deletePlayerPoints);
-router.get('/league/:leagueId',controller.readAllForLeague)
+
 
 export = router;

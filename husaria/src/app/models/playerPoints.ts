@@ -1,27 +1,24 @@
 export interface IPlayerPoints {
+    _id?: string,
     tournamentId: string;
     playerName: string,
     horse: string,
     flag: string,
     playerId: string,
-    sabreP1: string,
-    sabreP2: string,
-    sabreP3: string,
-    sabreP4: string,
-    sabreP5: string,
+
+    sabrePoints: string,
     sabreTime: number,
-    broadswordP1: string,
-    broadswordP2: string,
-    broadswordP3: string,
-    broadswordP4: string,
-    broadswordP5: string,
+    sabreScore: number,
+
+    broadswordPoints: string,
     broadswordTime: number,
-    lanceP1: string,
-    lanceP2: string,
-    lanceP3: string,
-    lanceP4: string,
-    lanceP5: string,
+    broadswordScore: number,
+
+    lancePoints: string,
     lanceTime: number,
+    lanceScore: number,
+
+    penalty: number,
     score: number
 
 }

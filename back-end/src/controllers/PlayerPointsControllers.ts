@@ -73,11 +73,5 @@ const deletePlayerPoints = (req: Request, res: Response, next: NextFunction) => 
         .catch((err) => res.status(500).json({ err }));
 };
 
-const readAllForLeague = (req: Request, res: Response, next: NextFunction) => {
-    const leagueId = req.params.leagueId;
-    return PlayerPoints.find({ leagueId: leagueId })
-        .then((playerPointss) => res.status(200).json(playerPointss))
-        .catch((error) => res.status(500).json({ error }));
-};
 
-export default { createPlayerPoints, readAll, readPlayerPoints, updatePlayerPoints, deletePlayerPoints, readAllForLeague };
+export default { createPlayerPoints, readAll, readPlayerPoints, updatePlayerPoints, deletePlayerPoints };

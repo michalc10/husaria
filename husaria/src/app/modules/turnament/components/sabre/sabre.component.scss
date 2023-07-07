@@ -1,0 +1,26 @@
+.rotate {
+    transform: rotate(315deg);
+}
+
+.p-datatable-gridlines th:nth-child(2),
+.p-datatable-gridlines th:nth-child(3),
+.p-datatable-gridlines th:nth-child(4),
+.p-datatable-gridlines th:nth-child(5),
+.p-datatable-gridlines th:nth-child(6),
+.p-datatable-gridlines th:nth-child(7),
+.p-datatable-gridlines th:nth-child(8),
+.p-datatable-gridlines th:nth-child(9),
+.p-datatable-gridlines th:nth-child(10),
+
+.p-datatable-gridlines th:nth-child(11),
+.p-datatable-gridlines th:nth-child(12),
+.p-datatable-gridlines th:nth-child(13),
+.p-datatable-gridlines th:nth-child(14),
+.p-datatable-gridlines th:nth-child(15),
+.p-datatable-gridlines th:nth-child(16) {
+    border-right: 6px solid black;
+}
+
+::ng-deep .p-inputnumber .p-inputtext {
+    width: 85px;
+  }

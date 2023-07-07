@@ -7,18 +7,18 @@ import { Observable } from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
-export class TournamentService {
+export class PlayerPointsService {
 
-  url = api + '/playerPoints'
+  url = api + 'playerPoints'
   constructor(
     private http: HttpClient
   ) { }
 
-  getPlayerPoints(idTournament: string): Observable<IPlayerPoints[]> {
+  getPlayerPointsForTournament(idTournament: string): Observable<IPlayerPoints[]> {
     return this.http.get<IPlayerPoints[]>(this.url + '/tournament/' + idTournament)
   }
 
-  create(playerPoints: IPlayerPoints): Observable<IPlayerPoints> {
+  create(playerPoints: any): Observable<IPlayerPoints> {
     return this.http.post<IPlayerPoints>(this.url, playerPoints)
   }
 

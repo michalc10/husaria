@@ -12,6 +12,8 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { PickListModule } from 'primeng/picklist';
+import { TableModule } from 'primeng/table';
+import { InputNumberModule } from 'primeng/inputnumber';
 
 @NgModule({
   declarations: [
@@ -29,6 +31,8 @@ import { PickListModule } from 'primeng/picklist';
     ButtonModule,
     SelectButtonModule,
     PickListModule,
+    TableModule,
+    InputNumberModule
   ]
 })
 export class TurnamentModule { }

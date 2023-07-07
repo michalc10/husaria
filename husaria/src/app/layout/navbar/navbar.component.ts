@@ -13,9 +13,6 @@ export class NavbarComponent implements OnInit {
   ngOnInit() {
     this.items = [
       { label: 'Home', icon: 'pi pi-fw pi-home', url: 'league/league-list' },
-      { label: 'Szabla', icon: 'pi pi-fw pi-calendar', url: 'tournament/sabre' },
-      { label: 'Pałasz', icon: 'pi pi-fw pi-pencil', url: 'tournament/broadsword' },
-      { label: 'Kopia', icon: 'pi pi-fw pi-file', url: 'tournament/lance' },
       { label: 'Husarz', icon: 'pi pi-user', url: 'player/player-list' }
     ];
   }
