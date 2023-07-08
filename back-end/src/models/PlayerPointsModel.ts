@@ -37,7 +37,7 @@ const playerPointsSchema = new Schema(
         flag: { type: String, require: true },
         playerId: { type: String, require: true },
 
-        saberPoints: { type: String, default: '000000000000' },
+        sabrePoints: { type: String, default: '000000000000' },
         sabreTime: { type: Number, default: 0 },
         sabreScore: { type: Number, default: 0 },
 
