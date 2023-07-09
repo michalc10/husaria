@@ -29,7 +29,7 @@ export class BroadswordComponent implements OnInit {
     this.tournamentId = this.location.path().split('/')[2];
     this.playerPointsService.getPlayerPointsForTournament(this.tournamentId).subscribe({
       next: (value: IPlayerPoints[]) => {
-        this.participantList = value;
+        this.participantList = value.sort((a, b) => b.sabreScore - a.sabreScore);
       },
     })
   }
@@ -63,7 +63,7 @@ export class BroadswordComponent implements OnInit {
       if (typeof this.points[i] === typeof 0)
         score += this.participantList[participantIndex].broadswordPoints.charAt(i) === '1' ? this.points[i] as number : 0;
       else
-        score += this.brickOptions.find(op=>op.value === this.participantList[participantIndex].broadswordPoints.charAt(i)).score
+        score += this.brickOptions.find(op => op.value === this.participantList[participantIndex].broadswordPoints.charAt(i)).score
     }
 
     participant.broadswordScore = score + ev;
@@ -83,10 +83,10 @@ export class BroadswordComponent implements OnInit {
   setBrick(player: IPlayerPoints, event: any) {
     const participantIndex = this.participantList.findIndex(participant => participant._id === player._id);
     const participant = this.participantList[participantIndex];
-    participant.broadswordScore -= this.brickOptions.find(op=>op.value === participant.broadswordPoints.charAt(1)).score
+    participant.broadswordScore -= this.brickOptions.find(op => op.value === participant.broadswordPoints.charAt(1)).score
     const points = participant.broadswordPoints;
     participant.broadswordPoints = points.substring(0, 1) + event.value + points.substring(2);
-    participant.broadswordScore += this.brickOptions.find(op=>op.value === participant.broadswordPoints.charAt(1)).score
+    participant.broadswordScore += this.brickOptions.find(op => op.value === participant.broadswordPoints.charAt(1)).score
 
     this.playerPointsService.update(participant._id!, participant).subscribe({
       next: (value) => {

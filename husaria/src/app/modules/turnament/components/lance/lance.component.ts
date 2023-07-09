@@ -23,7 +23,7 @@ export class LanceComponent implements OnInit {
     this.tournamentId = this.location.path().split('/')[2];
     this.playerPointsService.getPlayerPointsForTournament(this.tournamentId).subscribe({
       next: (value: IPlayerPoints[]) => {
-        this.participantList = value;
+        this.participantList = value.sort((a, b) => b.sabreScore + b.broadswordScore - a.sabreScore - a.broadswordScore);
       },
     })
   }
