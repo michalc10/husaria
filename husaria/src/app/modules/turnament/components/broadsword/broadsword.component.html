@@ -1,1 +1,78 @@
-<p>broadsword works!</p>
+<div class="line-bold">
+    <p-table styleClass="p-datatable-gridlines " [scrollable]="true" scrollHeight="75vh" [value]="participantList" [autoLayout]="true"
+        [tableStyle]="{ 'min-width': '50rem' }">
+        <ng-template pTemplate="header" let-columns>
+            <tr>
+                <th rowspan="3" class="line-left line-right center-text" style="min-width:30px">Start</th>
+                <th rowspan="3" class="line-left line-right center-text">Imię </th>
+                <th colspan="1" class="line-left line-right center-text" style="text-align: center;">P1</th>
+                <th colspan="1" class="line-left line-right center-text" style="min-width:250px">P2</th>
+                <th colspan="3" class="line-left line-right center-text">P3 beczka</th>
+                <th colspan="3" class="line-left line-right center-text">P4 skok</th>
+                <th colspan="1" class="line-left line-right center-text">P5</th>
+                <th colspan="3" class="line-left line-right center-text">Punkty karne</th>
+                <th rowspan="3" class="line-left line-right center-text">Czas [s]</th>
+                <th rowspan="3" class="line-left line-right center-text">Wynik</th>
+            </tr>
+            <tr>
+                <th class="line-left line-right center-text">Cięcie kapusty</th>
+                <th class="line-left line-right center-text">Pchnięcie klocka<p>0 | 1 | 2 | 3</p>
+                </th>
+                <th class="line-left center-text">Niższy chód</th>
+                <th class="center-text">Ominięcie przeszkody</th>
+                <th class="line-right center-text">Demontaż przeszkody</th>
+                <th class="line-left center-text">Zrzutka</th>
+                <th class="center-text">Ominięcie przeszkody</th>
+                <th class=" line-right center-text">Demontaż przeszkody</th>
+                <th class="line-left line-right center-text">Cięcie kapusty</th>
+                <th class="line-left center-text">Utrata broni</th>
+                <th class="center-text">Upadek jeźdźca</th>
+                <th class="line-right center-text">Upadek konia i jeźdźca</th>
+            </tr>
+            <tr>
+                <th *ngFor="let point of points; let pointIndex = index" [ngClass]="{'line-left': [0, 1, 2, 5, 8,9].indexOf(pointIndex) != -1,
+                     'line-right': [0, 1, 4, 7, 8, 11].indexOf(pointIndex) != -1, 'center-text': true}">{{point}}</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-rowData let-columns="columns" let-rowIndex="rowIndex"
+            class="line-bottom-bold">
+
+            <tr (click)="chosenRow(rowData)" [ngClass]="{'chosenRow': rowData._id === selectedPlayerId }">
+                <td class="line-left line-right center-text">{{rowIndex+1}}</td>
+                <td class="line-left line-right center-text">{{rowData.playerName}}</td>
+
+                <td class="line-left line-right center-text">
+                    <div *ngIf="rowData.broadswordPoints.charAt(0)==='0'">
+                        <p-button (onClick)="changedButton(rowData,0,1)" icon="pi pi-check"
+                            styleClass="p-button-rounded p-button-text p-button-raised"></p-button>
+                    </div>
+                    <div *ngIf="rowData.broadswordPoints.charAt(0)==='1'">
+                        <p-button (onClick)="changedButton(rowData,0,0)" icon="pi pi-times"
+                            styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"></p-button>
+                    </div>
+                </td>
+                <td class="line-left line-right center-text">
+                    <p-selectButton [options]="brickOptions" optionLabel="name" [ngModel]="rowData.broadswordPoints.charAt(1)"
+                        optionValue="value" (onChange)="setBrick(rowData,$event)"></p-selectButton>
+                </td>
+                <td *ngFor="let item of [].constructor(points.length-2); let pointIndex = index" [ngClass]="{'line-left': [ 2, 5, 8,9].indexOf(pointIndex+2) != -1,
+                    'line-right': [  4, 7, 8, 11].indexOf(pointIndex+2) != -1, 'center-text': true}">
+                    <div *ngIf="rowData.broadswordPoints.charAt(pointIndex+2)==='0'">
+                        <p-button (onClick)="changedButton(rowData,pointIndex+2,1)" icon="pi pi-check"
+                            styleClass="p-button-rounded p-button-text p-button-raised"></p-button>
+                    </div>
+                    <div *ngIf="rowData.broadswordPoints.charAt(pointIndex+2)==='1'">
+                        <p-button (onClick)="changedButton(rowData,pointIndex,0)" icon="pi pi-times"
+                            styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"></p-button>
+                    </div>
+                </td>
+                <td class="line-left line-right center-text">
+                    <p-inputNumber #inputRef (onBlur)="setTime(rowData,inputRef.value)"
+                        [ngModel]="rowData.broadswordTime" styleClass="custom-input" inputId="locale-user"
+                        [minFractionDigits]="2"></p-inputNumber>
+                </td>
+                <td class="line-left line-right center-text">{{rowData.broadswordScore}}</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

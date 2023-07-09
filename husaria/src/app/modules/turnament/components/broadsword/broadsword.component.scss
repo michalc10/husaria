@@ -1,0 +1,28 @@
+.line-left {
+    border-left: 1px solid black !important;
+}
+
+.line-right {
+    border-right: 1px solid black !important;
+}
+
+.line-bold {
+    border: 2px solid black !important;
+}
+::ng-deep .p-inputnumber .p-inputtext {
+    width: 85px;
+}
+
+.chosenRow {
+    background-color: lightcyan !important;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.center-text {
+    text-align: center !important;
+    vertical-align: middle !important;
+}

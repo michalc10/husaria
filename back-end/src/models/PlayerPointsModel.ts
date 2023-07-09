@@ -41,7 +41,7 @@ const playerPointsSchema = new Schema(
         sabreTime: { type: Number, default: 0 },
         sabreScore: { type: Number, default: 0 },
 
-        broadswordPoints: { type: String, default: '010000000000000' },
+        broadswordPoints: { type: String, default: '010000000000' },
         broadswordTime: { type: Number, default: 0 },
         broadswordScore: { type: Number, default: 0 },
 
