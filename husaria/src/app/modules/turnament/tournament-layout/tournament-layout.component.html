@@ -1,4 +1,5 @@
 <div class="position" style="margin:5px">
-    <p-selectButton [options]="tournamentOptions" [(ngModel)]="value" optionLabel="name" optionValue="value" (onChange)="selectedTournamentOptions(value)"></p-selectButton>
+    <p-selectButton [ngModel]="tournamentOption" [options]="tournamentOptions" optionLabel="name" optionValue="value"
+        (onChange)="selectedTournamentOptions($event)"></p-selectButton>
 </div>
 <router-outlet></router-outlet>

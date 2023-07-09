@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
@@ -6,10 +6,9 @@ import { Router } from '@angular/router';
   templateUrl: './tournament-layout.component.html',
   styleUrls: ['./tournament-layout.component.scss']
 })
-export class TournamentLayoutComponent {
+export class TournamentLayoutComponent implements OnInit {
 
-
-  value: number = 1;
+  tournamentOption!:Number;
 
   tournamentOptions: any[] = [
     { name: 'Zawodnicy', value: 1 },
@@ -19,23 +18,33 @@ export class TournamentLayoutComponent {
     { name: 'Wyniki', value: 5 },
   ];
 
-  constructor(private router: Router) { }
 
-  selectedTournamentOptions(val: number) {
-    const currentUrl = this.router.url; // Get the current URL
-    const urlFragments = currentUrl.split('/'); // Split the URL into fragments
-    const lastFragment = urlFragments[urlFragments.length - 1];
-    if (val === 1 && lastFragment !== 'participant')
+  constructor(private router: Router) {
+
+  }
+
+  ngOnInit(): void {
+    const val = localStorage.getItem("tournamentOption")
+    if (val)
+      this.tournamentOption = Number(val);
+    else
+      this.tournamentOption = 1;
+  }
+
+  selectedTournamentOptions(ev: any) {
+    const val = ev.value
+    const currentUrl = this.router.url;
+    const urlFragments = currentUrl.split('/');
+    if (val === 1)
       urlFragments[urlFragments.length - 1] = 'participant';
-    else if (val === 2 && lastFragment !== 'sabre')
+    else if (val === 2)
       urlFragments[urlFragments.length - 1] = 'sabre';
-    else if (val === 3 && lastFragment !== 'broadsword')
+    else if (val === 3)
       urlFragments[urlFragments.length - 1] = 'broadsword';
-    else if (val === 4 && lastFragment !== 'lance')
+    else if (val === 4)
       urlFragments[urlFragments.length - 1] = 'lance';
-    // else if (val === 5 && lastFragment !== 'saber')
-    //   urlFragments[urlFragments.length - 1] = 'saber';
 
+    localStorage.setItem("tournamentOption", val.toString())
     const newUrl = urlFragments.join('/');
     this.router.navigate([newUrl])
   }
