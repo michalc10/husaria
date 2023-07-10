@@ -60,6 +60,8 @@ export class TournamentLayoutComponent implements OnInit {
       urlFragments[urlFragments.length - 1] = 'broadsword';
     else if (val === 4)
       urlFragments[urlFragments.length - 1] = 'lance';
+    else
+      urlFragments[urlFragments.length - 1] = 'result';
 
     localStorage.setItem("tournamentOption", val.toString())
     const newUrl = urlFragments.join('/');

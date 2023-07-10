@@ -14,6 +14,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { PickListModule } from 'primeng/picklist';
 import { TableModule } from 'primeng/table';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { ResultsComponent } from './components/results/results.component';
 
 @NgModule({
   declarations: [
@@ -22,6 +23,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
     LanceComponent,
     TournamentPlayersComponent,
     TournamentLayoutComponent,
+    ResultsComponent,
   ],
   imports: [
     CommonModule,

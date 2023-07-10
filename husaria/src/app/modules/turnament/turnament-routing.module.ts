@@ -5,6 +5,7 @@ import { LanceComponent } from './components/lance/lance.component';
 import { BroadswordComponent } from './components/broadsword/broadsword.component';
 import { TournamentLayoutComponent } from './tournament-layout/tournament-layout.component';
 import { TournamentPlayersComponent } from './components/tournament-players/tournament-players.component';
+import { ResultsComponent } from './components/results/results.component';
 
 const routes: Routes = [
   {path:':idTournament',redirectTo:':idTournament/participant',pathMatch:'full'},
@@ -28,6 +29,10 @@ const routes: Routes = [
       {
         path: 'participant',
         component: TournamentPlayersComponent
+      },
+      {
+        path: 'result',
+        component: ResultsComponent
       }
 
     ]
