@@ -1,10 +1,24 @@
 <div class="card">
-    <p-table [value]="playerList" [tableStyle]="{ 'min-width': '50rem' }">
+    <!-- <p-table #dt1 [value]="playerList" [tableStyle]="{ 'min-width': '50rem' }" [globalFilterFields]="['name', 'country.name', 'representative.name', 'status']"> -->
+        <p-table
+        #dt
+        [value]="playerList"
+        [globalFilterFields]="['name', 'horse','flag']"
+        >
+        <ng-template pTemplate="caption">
+            <div class="flex">
+                <span class="p-input-icon-left ml-auto">
+                    <i class="pi pi-search"></i>
+                    <input pInputText type="text" (input)="dt.filterGlobal($any($event.target).value, 'contains')" placeholder="Search keyword" />
+                </span>
+            </div>
+        </ng-template>
         <ng-template pTemplate="header" let-columns>
+            
             <tr>
-                <th>Husarz</th>
-                <th>Koń</th>
-                <th>Horągiew</th>
+                <th pSortableColumn="name" >Husarz <p-sortIcon field="name"></p-sortIcon></th>
+                <th pSortableColumn="horse" >Koń <p-sortIcon field="horse"></p-sortIcon></th>
+                <th pSortableColumn="flag"  >Horągiew <p-sortIcon field="flag"></p-sortIcon></th>
                 <th>
                     <p-button icon="pi pi-plus" styleClass="p-button-rounded p-button-success"
                         (onClick)="createPlayer()"></p-button>
@@ -12,20 +26,25 @@
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-player>
-            <tr >
+            <tr>
                 <td>{{ player.name }}</td>
                 <td>{{ player.horse}}</td>
                 <td>{{ player.flag }}</td>
-                <td>
+                <td style="display: flex; gap: 5px;">
                     <p-button icon="pi pi-user"
                         styleClass="p-button-rounded p-button-info p-button-text p-button-raised"
                         (onClick)="changePlayer(player)"></p-button>
                     <p-confirmPopup></p-confirmPopup>
-                    <p-button icon="pi pi-times" styleClass="p-button-rounded p-button-danger p-button-text p-button-raised" (click)="confirm($event,player._id)"></p-button>
+                    <p-button icon="pi pi-times"
+                        styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"
+                        
+                        (click)="confirm($event,player._id)"></p-button>
                 </td>
             </tr>
         </ng-template>
     </p-table>
 </div>
 
-<app-player-dialog [display]="display" [player]="chosenPlayer!" (comunicationWithoutSaving)="closedDialogWithoutSaving($event)" (comunication)="returnFromChild($event)"></app-player-dialog>
+<app-player-dialog [display]="display" [player]="chosenPlayer!"
+    (comunicationWithoutSaving)="closedDialogWithoutSaving($event)"
+    (comunication)="returnFromChild($event)"></app-player-dialog>

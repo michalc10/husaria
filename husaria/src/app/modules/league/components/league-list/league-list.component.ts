@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { ConfirmationService } from 'primeng/api';
 import { ILeague } from 'src/app/models/league';
 import { ITournament } from 'src/app/models/tournament'
 import { CrudService } from 'src/app/shered/service/crud.service';
@@ -15,18 +14,24 @@ export class LeagueListComponent implements OnInit {
   leagueRout = 'league';
   leagueList: ILeague[] = [];
   tournamentList: ITournament[] = [];
-  idLeague: String = '-1';
+  chosenLeague!: ILeague;
   displayDialogCompnent = false;
   idchosenRaw: string = '-1'
 
   display = false;
 
+
+
   constructor(
     private router: Router,
-    private crudService: CrudService,
-    private confirmationService: ConfirmationService
+    private crudService: CrudService
   ) {
+    this.chosenLeague = {
+      _id: '-1',
+      name: '',
+      year: ''
 
+    }
   }
 
   ngOnInit(): void {
@@ -45,31 +50,35 @@ export class LeagueListComponent implements OnInit {
   }
 
   createLeague() {
-    this.idLeague = '-1';
+    const league: ILeague = {
+      _id: '-1',
+      name: '',
+      year: ''
+    }
+    this.chosenLeague = league
     this.displayDialogCompnent = true;
     this.display = true;
 
   }
 
-  changeLeague(id: String) {
-    this.idLeague = id;
+  changeLeague(league: ILeague) {
+    this.chosenLeague = league;
     this.displayDialogCompnent = true;
     this.display = true;
   }
-  claseWithoutSaving(val: boolean) {
-    this.displayDialogCompnent = false;
-  }
+
   closedDialogWithoutSaving(bool: Boolean) {
     this.display = false;
   }
-  returnFromChild(event: any) {
 
+  returnFromChild(league: ILeague) {
+
+    this.idchosenRaw = '-1';
     this.display = false;
-    const league = event as ILeague
-    if (this.idLeague != '-1') {
+    if (league._id !== '-1') {
       this.crudService.update(this.leagueRout, league._id!, league).subscribe({
         next: (value: ILeague) => {
-          this.leagueList.push(value)
+          this.leagueList[this.leagueList.findIndex(le => le._id === value._id)] = value;
 
         },
       }
@@ -84,34 +93,21 @@ export class LeagueListComponent implements OnInit {
       );
     }
   }
-  confirm(event: Event, id: String) {
-    this.confirmationService.confirm({
-      target: event.target!,
-      message: 'Chcesz usunąć husarza?',
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.crudService.delete(this.leagueRout, id).subscribe(
-          {
-            next: (value) => {
-              this.leagueList = [...this.leagueList.filter((league: ILeague) => { return league._id != id })]
-
-            },
-          }
-        )
-      },
-      reject: () => {
-      }
-    });
-  }
 
 
   chosedRow(league: ILeague) {
     if (this.idchosenRaw !== league._id!) {
       this.idchosenRaw = league._id!;
+      this.chosenLeague = league;
       this.crudService.listById('tournament/league', league._id!)
         .subscribe({
           next: (value) => {
-            this.tournamentList = value;
+            this.tournamentList = value.sort((a: ITournament, b: ITournament) => {
+              const dateA = new Date(a.date);
+              const dateB = new Date(b.date);
+
+              return dateA.getTime() - dateB.getTime();
+            });
           },
         })
     } else {
@@ -120,6 +116,8 @@ export class LeagueListComponent implements OnInit {
   }
 
   selectedTournament(tournament: ITournament) {
-    this.router.navigate(['tournament/' + tournament._id?.toString()])
+    localStorage.setItem("tournamentId", tournament._id!.toString())
+    this.router.navigate(['tournament/' + tournament._id!.toString()])
   }
-}
+
+  }

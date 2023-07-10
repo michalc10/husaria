@@ -10,6 +10,8 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { LeagueListComponent } from './components/league-list/league-list.component';
 import { LeagueDialogComponent } from './components/league-dialog/league-dialog.component';
 import { ConfirmationService } from 'primeng/api';
+import { InputTextModule } from 'primeng/inputtext';
+import { CalendarModule } from 'primeng/calendar';
 
 
 @NgModule({
@@ -25,7 +27,9 @@ import { ConfirmationService } from 'primeng/api';
     DialogModule,
     FormsModule,
     ReactiveFormsModule,
-    ConfirmPopupModule
+    ConfirmPopupModule,
+    InputTextModule,
+    CalendarModule
   ],
   providers: [ConfirmationService],
 })

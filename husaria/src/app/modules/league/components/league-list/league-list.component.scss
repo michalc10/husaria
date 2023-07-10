@@ -22,14 +22,24 @@ td {
 .tournament {
   margin: 5px;
   padding: 5px;
-  border: solid 1px;
-  border-radius: 20px;
 
- 
+
 }
- items {
-    display: flex;
 
-  }:hover {
-    cursor: pointer
-  }
+.tournament:hover {
+
+  border: solid 1px;
+  margin: 4px;
+  border-radius: 20px;
+}
+
+
+
+.items {
+  display: flex;
+
+}
+
+.items:hover {
+  cursor: pointer
+}

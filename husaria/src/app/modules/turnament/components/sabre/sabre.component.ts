@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { PlayerPointsService } from '../../serices/playerPoints.service';
+import { PlayerPointsService } from '../../services/playerPoints/playerPoints.service';
 import { Location } from '@angular/common';
 import { IPlayerPoints } from 'src/app/models/playerPoints';
 

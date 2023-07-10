@@ -12,8 +12,16 @@ export class NavbarComponent implements OnInit {
 
   ngOnInit() {
     this.items = [
-      { label: 'Home', icon: 'pi pi-fw pi-home', url: 'league/league-list' },
-      { label: 'Husarz', icon: 'pi pi-user', url: 'player/player-list' }
+      {
+        label: 'Home', icon: 'pi pi-fw pi-home', url: 'league/league-list', command(event) {
+          localStorage.clear();
+        },
+      },
+      {
+        label: 'Husarz', icon: 'pi pi-user', url: 'player/player-list', command(event) {
+          localStorage.clear();
+        },
+      }
     ];
   }
 }

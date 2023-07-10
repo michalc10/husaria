@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { IPlayer } from 'src/app/models/player';
 import { CrudService } from 'src/app/shered/service/crud.service';
 import { Location } from '@angular/common';
-import { PlayerPointsService } from '../../serices/playerPoints.service';
+import { PlayerPointsService } from '../../services/playerPoints/playerPoints.service';
 import { IPlayerPoints } from 'src/app/models/playerPoints';
 @Component({
   selector: 'app-tournament-players',

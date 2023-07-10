@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { TournamentService } from '../services/tournament/tournament.service';
+import { ITournament } from 'src/app/models/tournament';
 
 @Component({
   selector: 'app-tournament-layout',
@@ -8,7 +10,9 @@ import { Router } from '@angular/router';
 })
 export class TournamentLayoutComponent implements OnInit {
 
-  tournamentOption!:Number;
+  tournamentOption!: Number;
+
+  tournament?: ITournament;
 
   tournamentOptions: any[] = [
     { name: 'Zawodnicy', value: 1 },
@@ -19,16 +23,29 @@ export class TournamentLayoutComponent implements OnInit {
   ];
 
 
-  constructor(private router: Router) {
+  constructor(
+    private router: Router,
+    private tournamentService: TournamentService) {
 
   }
 
   ngOnInit(): void {
-    const val = localStorage.getItem("tournamentOption")
+    const val = localStorage.getItem("tournamentOption");
+    const tournamentId = localStorage.getItem("tournamentId");
+    if (tournamentId) {
+      this.tournamentService.get(tournamentId).subscribe({
+        next: (value) => {
+          this.tournament = value;
+          console.log(this.tournament)
+        },
+      })
+
+    }
     if (val)
       this.tournamentOption = Number(val);
     else
       this.tournamentOption = 1;
+
   }
 
   selectedTournamentOptions(ev: any) {

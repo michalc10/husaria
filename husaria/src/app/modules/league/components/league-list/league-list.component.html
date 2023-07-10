@@ -2,8 +2,8 @@
     <p-table [value]="leagueList" [tableStyle]="{ 'min-width': '50rem' }">
         <ng-template pTemplate="header" let-columns>
             <tr>
-                <th>Nazwa</th>
-                <th>Rok</th>
+                <th style="width: 40%;">Nazwa</th>
+                <th style="width: 40%;">Rok</th>
                 <th>
                     <p-button icon="pi pi-plus" styleClass="p-button-rounded p-button-success"
                         (onClick)="createLeague()"></p-button>
@@ -12,16 +12,14 @@
         </ng-template>
         <ng-template pTemplate="body" let-league>
             <tr (click)="chosedRow(league)">
-                <td><div class="items">{{ league.name }}</div></td>
-                <td>{{ league.year }}</td>
                 <td>
-                    <p-button icon="pi pi-user"
+                    <div class="items">{{ league.name }}</div>
+                </td>
+                <td>{{ league.year }}</td>
+                <td style="display: flex;gap: 5px;">
+                    <p-button icon="pi pi-pencil"
                         styleClass="p-button-rounded p-button-info p-button-text p-button-raised"
-                        (onClick)="changeLeague(league._id)"></p-button>
-                    <p-confirmPopup></p-confirmPopup>
-                    <p-button icon="pi pi-times"
-                        styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"
-                        (click)="confirm($event,league._id)"></p-button>
+                        (onClick)="changeLeague(league)"></p-button>
                 </td>
 
             </tr>
@@ -29,10 +27,14 @@
                 <td colspan="3">
                     <div *ngFor="let tournament of tournamentList">
                         <div class="tournament">
-                            <div class="items" (click)="selectedTournament(tournament)">
-                                {{tournament.city}}
-                                {{tournament.date|date: 'dd.MM.yyyy' }}
-
+                            <div class="items" (click)="selectedTournament(tournament)"
+                                style="display: flex; justify-content: center;">
+                                <div class=""
+                                    style="width: 50%;display: flex; justify-content: space-between; align-items: center;">
+                                    <div class="">{{tournament.city}}</div>
+                                    <div class="">{{tournament.date|date: 'dd.MM.yyyy'}}</div>
+                                    
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -41,6 +43,6 @@
         </ng-template>
     </p-table>
 </div>
-<app-league-dialog [display]="display" [idLeague]="idLeague"
+<app-league-dialog [display]="display" [league]="chosenLeague"
     (comunicationWithoutSaving)="closedDialogWithoutSaving($event)"
     (comunication)="returnFromChild($event)"></app-league-dialog>

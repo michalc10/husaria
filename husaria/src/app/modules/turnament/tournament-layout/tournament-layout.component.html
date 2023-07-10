@@ -1,5 +1,12 @@
 <div class="position" style="margin:5px">
-    <p-selectButton [ngModel]="tournamentOption" [options]="tournamentOptions" optionLabel="name" optionValue="value"
-        (onChange)="selectedTournamentOptions($event)"></p-selectButton>
+    <div class="" style="display: flex;flex-direction: column;">
+
+        <div class="" style="display: flex; justify-content: space-around; align-items: center;">
+            <h1 >{{tournament?.city}}</h1>
+            <h2 >{{tournament?.date|date: 'dd.MM.yyyy'}}</h2>
+        </div>
+        <p-selectButton [ngModel]="tournamentOption" [options]="tournamentOptions" optionLabel="name"
+            optionValue="value" (onChange)="selectedTournamentOptions($event)"></p-selectButton>
+    </div>
 </div>
 <router-outlet></router-outlet>
