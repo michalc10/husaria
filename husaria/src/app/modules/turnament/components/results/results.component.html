@@ -1,1 +1,27 @@
-<p>results works!</p>
+<p-table #dt [value]="participantList" [exportHeader]="'customExportHeader'" [tableStyle]="{ 'min-width': '50rem' }">
+    <ng-template pTemplate="caption">
+        <div class="flex">
+            <button type="button" pButton pRipple icon="pi pi-file" (click)="dt.exportCSV()" class="mr-2" pTooltip="CSV" tooltipPosition="bottom"></button>
+            <button type="button" pButton pRipple icon="pi pi-file-excel" (click)="exportExcel()" class="p-button-success mr-2" pTooltip="XLS" tooltipPosition="bottom"></button>
+            <button type="button" pButton pRipple icon="pi pi-file-pdf" (click)="exportPdf()" class="p-button-warning mr-2" pTooltip="PDF" tooltipPosition="bottom"></button>
+            <button type="button" pButton pRipple icon="pi pi-filter" (click)="dt.exportCSV({ selectionOnly: true })" class="p-button-info ml-auto" pTooltip="Selection Only" tooltipPosition="bottom"></button>
+        </div>
+    <ng-template pTemplate="header">
+        <tr>
+            <th></th>
+            <th>Imię</th>
+            <th>Koń</th>
+            <th>Chorągiew</th>
+            <th>Punkty</th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-participant let-rowIndex="rowIndex">
+        <tr>
+            <td>{{rowIndex+1}}</td>
+            <td>{{ participant.playerName }}</td>
+            <td>{{ participant.horse }}</td>
+            <td>{{ participant.flag }}</td>
+            <td>{{ participant.score }}</td>
+        </tr>
+    </ng-template>
+</p-table>

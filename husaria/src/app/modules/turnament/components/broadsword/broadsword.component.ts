@@ -20,13 +20,12 @@ export class BroadswordComponent implements OnInit {
   ];
 
   constructor(
-    private playerPointsService: PlayerPointsService,
-    private location: Location
+    private playerPointsService: PlayerPointsService
   ) { }
   tournamentId = "-1"
 
   ngOnInit() {
-    this.tournamentId = this.location.path().split('/')[2];
+    this.tournamentId = localStorage.getItem('tournamentId')!;
     this.playerPointsService.getPlayerPointsForTournament(this.tournamentId).subscribe({
       next: (value: IPlayerPoints[]) => {
         this.participantList = value.sort((a, b) => b.sabreScore - a.sabreScore);

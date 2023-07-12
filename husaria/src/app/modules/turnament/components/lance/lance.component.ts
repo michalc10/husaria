@@ -14,13 +14,12 @@ export class LanceComponent implements OnInit {
   points = [6, 6, 10, 25, 25, 5, 25, 25, 6, 5, 20, 40];
   participantList: IPlayerPoints[] = [];
   constructor(
-    private playerPointsService: PlayerPointsService,
-    private location: Location
+    private playerPointsService: PlayerPointsService
   ) { }
   tournamentId = "-1"
 
   ngOnInit() {
-    this.tournamentId = this.location.path().split('/')[2];
+    this.tournamentId = localStorage.getItem('tournamentId')!;
     this.playerPointsService.getPlayerPointsForTournament(this.tournamentId).subscribe({
       next: (value: IPlayerPoints[]) => {
         this.participantList = value.sort((a, b) => b.sabreScore + b.broadswordScore - a.sabreScore - a.broadswordScore);
