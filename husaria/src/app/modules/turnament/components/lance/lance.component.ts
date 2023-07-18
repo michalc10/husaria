@@ -24,6 +24,9 @@ export class LanceComponent implements OnInit {
       next: (value: IPlayerPoints[]) => {
         this.participantList = value.sort((a, b) => b.sabreScore + b.broadswordScore - a.sabreScore - a.broadswordScore);
       },
+      error(err) {
+        console.log("err",err)
+      },
     })
   }
 

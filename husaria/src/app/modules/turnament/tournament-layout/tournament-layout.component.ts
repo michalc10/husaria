@@ -36,7 +36,9 @@ export class TournamentLayoutComponent implements OnInit {
       this.tournamentService.get(tournamentId).subscribe({
         next: (value) => {
           this.tournament = value;
-          console.log(this.tournament)
+        },
+        error(err) {
+          console.log(err)
         },
       })
 
@@ -52,8 +54,8 @@ export class TournamentLayoutComponent implements OnInit {
     const val = ev.value
     const currentUrl = this.router.url;
     const urlFragments = currentUrl.split('/');
-    if (val === 1)
-      urlFragments[urlFragments.length - 1] = 'participant';
+    if (val === 5)
+      urlFragments[urlFragments.length - 1] = 'result';
     else if (val === 2)
       urlFragments[urlFragments.length - 1] = 'sabre';
     else if (val === 3)
@@ -61,7 +63,7 @@ export class TournamentLayoutComponent implements OnInit {
     else if (val === 4)
       urlFragments[urlFragments.length - 1] = 'lance';
     else
-      urlFragments[urlFragments.length - 1] = 'result';
+      urlFragments[urlFragments.length - 1] = 'participant';
 
     localStorage.setItem("tournamentOption", val.toString())
     const newUrl = urlFragments.join('/');
