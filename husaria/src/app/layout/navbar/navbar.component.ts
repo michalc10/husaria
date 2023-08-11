@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 
 @Component({
@@ -10,16 +11,24 @@ import { MenuItem } from 'primeng/api';
 export class NavbarComponent implements OnInit {
   items!: MenuItem[];
 
+  constructor(private router: Router){}
+  
   ngOnInit() {
     this.items = [
       {
-        label: 'Home', icon: 'pi pi-fw pi-home', url: 'league/league-list', command(event) {
+        label: 'Home', 
+        icon: 'pi pi-fw pi-home',
+        command: (event) => {
           localStorage.clear();
+          this.router.navigate(['/league/league-list']);
         },
       },
       {
-        label: 'Husarz', icon: 'pi pi-user', url: 'player/player-list', command(event) {
+        label: 'Husarz', 
+        icon: 'pi pi-user',
+        command: (event) => {
           localStorage.clear();
+          this.router.navigate(['/player/player-list']);
         },
       }
     ];
