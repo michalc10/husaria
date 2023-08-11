@@ -4,6 +4,7 @@ import { PlayerPointsService } from '../../services/playerPoints/playerPoints.se
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import { style } from '@angular/animations';
+import { PageOrientation } from 'pdfmake/interfaces';
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 @Component({
@@ -14,15 +15,19 @@ pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 export class ResultsComponent implements OnInit {
 
-
+  pdfTextSize = 15;
   selectedPlayerId = '-1';
   participantList: IPlayerPoints[] = [];
-  tournamentId = "-1"
+  tournamentId = "-1";
+  orientationList: string[] = ['poziomo', 'pionowo']
+  chosenOrientation: string = this.orientationList[0]
   constructor(
     private playerPointsService: PlayerPointsService
   ) { }
 
   ngOnInit() {
+    this.orientationList = ['poziomo', 'pionowo']
+    this.chosenOrientation = this.orientationList[0]
     this.tournamentId = localStorage.getItem('tournamentId')!;
     this.playerPointsService.getPlayerPointsForTournament(this.tournamentId).subscribe({
       next: (value: IPlayerPoints[]) => {
@@ -46,9 +51,9 @@ export class ResultsComponent implements OnInit {
     //   });
     // });
     const tableBody = this.buildTableBody(this.participantList);
-
+    const orientation = this.chosenOrientation === this.orientationList[0] ? 'landscape' : 'portrait'
     const documentDefinition = {
-      pageOrientation: 'landscape' as const,
+      pageOrientation: orientation as PageOrientation,
       content: [
         {
           table: {
@@ -69,7 +74,8 @@ export class ResultsComponent implements OnInit {
         }
       ],
       defaultStyle: {
-        fontSize: 15,
+        fontSize: this.pdfTextSize,
+        // fontSize:15,
         // bold: true
       }
     };
@@ -101,12 +107,18 @@ export class ResultsComponent implements OnInit {
   buildTableBody(data: IPlayerPoints[]) {
     const body: any[] = [];
 
-    let i =1
+    let i = 1
     data.forEach(row => {
-      body.push([i,row.playerName, row.horse, row.flag, row.score]);
+      body.push([i, row.playerName, row.horse, row.flag, row.score]);
       i++;
     });
 
     return body;
+  }
+
+
+
+  chechedSizeText(ev: any) {
+    console.log("dsg", ev, ev.value)
   }
 }

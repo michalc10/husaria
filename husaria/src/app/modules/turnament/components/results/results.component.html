@@ -1,10 +1,14 @@
 <p-table #dt [value]="participantList" [exportHeader]="'customExportHeader'" [tableStyle]="{ 'min-width': '50rem' }">
     <ng-template pTemplate="caption">
-        <div class="flex">
+        <div class="print">
             <!-- <button type="button" pButton pRipple icon="pi pi-file" (click)="dt.exportCSV()" class="mr-2" pTooltip="CSV" tooltipPosition="bottom"></button> -->
             <!-- <button type="button" pButton pRipple icon="pi pi-file-excel" (click)="exportExcel()" class="p-button-success mr-2" pTooltip="XLS" tooltipPosition="bottom"></button> -->
+            <p-dropdown [options]="orientationList" [(ngModel)]="chosenOrientation" placeholder="orientacja kartki"></p-dropdown>
+            <p-inputNumber [(ngModel)]="pdfTextSize" mode="decimal" [showButtons]="true" inputId="minmax-buttons"
+                [min]="10" [max]="25"> </p-inputNumber>
             <button type="button" pButton pRipple icon="pi pi-file-pdf" (click)="exportPdf()"
                 class="p-button-warning mr-2" pTooltip="PDF" tooltipPosition="bottom"></button>
+ 
             <!-- <button type="button" pButton pRipple icon="pi pi-filter" (click)="dt.exportCSV({ selectionOnly: true })" class="p-button-info ml-auto" pTooltip="Selection Only" tooltipPosition="bottom"></button> -->
         </div>
     </ng-template>
@@ -19,7 +23,7 @@
     </ng-template>
     <ng-template pTemplate="body" let-participant let-rowIndex="rowIndex">
         <tr>
-            <td>{{rowIndex+1}}</td>
+            <td>{{ rowIndex + 1 }}</td>
             <td>{{ participant.playerName }}</td>
             <td>{{ participant.horse }}</td>
             <td>{{ participant.flag }}</td>

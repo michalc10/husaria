@@ -15,6 +15,7 @@ import { PickListModule } from 'primeng/picklist';
 import { TableModule } from 'primeng/table';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ResultsComponent } from './components/results/results.component';
+import { DropdownModule } from 'primeng/dropdown';
 
 @NgModule({
   declarations: [
@@ -34,7 +35,8 @@ import { ResultsComponent } from './components/results/results.component';
     SelectButtonModule,
     PickListModule,
     TableModule,
-    InputNumberModule
+    InputNumberModule,
+    DropdownModule
   ]
 })
 export class TurnamentModule { }
