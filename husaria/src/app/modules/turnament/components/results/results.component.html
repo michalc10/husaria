@@ -1,33 +1,79 @@
-<p-table #dt [value]="participantList" [exportHeader]="'customExportHeader'" [tableStyle]="{ 'min-width': '50rem' }">
-    <ng-template pTemplate="caption">
-        <div class="print">
-            <!-- <button type="button" pButton pRipple icon="pi pi-file" (click)="dt.exportCSV()" class="mr-2" pTooltip="CSV" tooltipPosition="bottom"></button> -->
-            <!-- <button type="button" pButton pRipple icon="pi pi-file-excel" (click)="exportExcel()" class="p-button-success mr-2" pTooltip="XLS" tooltipPosition="bottom"></button> -->
-            <p-dropdown [options]="orientationList" [(ngModel)]="chosenOrientation" placeholder="orientacja kartki"></p-dropdown>
-            <p-inputNumber [(ngModel)]="pdfTextSize" mode="decimal" [showButtons]="true" inputId="minmax-buttons"
-                [min]="10" [max]="25"> </p-inputNumber>
-            <button type="button" pButton pRipple icon="pi pi-file-pdf" (click)="exportPdf()"
-                class="p-button-warning mr-2" pTooltip="PDF" tooltipPosition="bottom"></button>
- 
-            <!-- <button type="button" pButton pRipple icon="pi pi-filter" (click)="dt.exportCSV({ selectionOnly: true })" class="p-button-info ml-auto" pTooltip="Selection Only" tooltipPosition="bottom"></button> -->
-        </div>
-    </ng-template>
-    <ng-template pTemplate="header">
-        <tr>
-            <th></th>
-            <th>Imię</th>
-            <th>Koń</th>
-            <th>Chorągiew</th>
-            <th>Punkty</th>
-        </tr>
-    </ng-template>
-    <ng-template pTemplate="body" let-participant let-rowIndex="rowIndex">
-        <tr>
-            <td>{{ rowIndex + 1 }}</td>
-            <td>{{ participant.playerName }}</td>
-            <td>{{ participant.horse }}</td>
-            <td>{{ participant.flag }}</td>
-            <td>{{ participant.score }}</td>
-        </tr>
-    </ng-template>
-</p-table>
+<div class="table-navigation">
+    <div class="">
+        <p-selectButton [options]="resultOptions" [(ngModel)]="valueResultOption" optionLabel="label"
+            optionValue="valueResultOption" (onChange)="changeOrientation($event.value)"></p-selectButton>
+    </div>
+    <div class="print">
+        <!-- <button type="button" pButton pRipple icon="pi pi-file" (click)="dt.exportCSV()" class="mr-2" pTooltip="CSV" tooltipPosition="bottom"></button> -->
+        <!-- <button type="button" pButton pRipple icon="pi pi-file-excel" (click)="exportExcel()" class="p-button-success mr-2" pTooltip="XLS" tooltipPosition="bottom"></button> -->
+        <p-dropdown [options]="orientationList" [(ngModel)]="chosenOrientation"
+            placeholder="orientacja kartki"></p-dropdown>
+        <p-inputNumber [(ngModel)]="pdfTextSize" mode="decimal" [showButtons]="true" inputId="minmax-buttons" [min]="10"
+            [max]="25"> </p-inputNumber>
+        <button type="button" pButton pRipple icon="pi pi-file-pdf" (click)="exportPdf()" class="p-button-warning mr-2"
+            pTooltip="PDF" tooltipPosition="bottom"></button>
+
+        <!-- <button type="button" pButton pRipple icon="pi pi-filter" (click)="dt.exportCSV({ selectionOnly: true })" class="p-button-info ml-auto" pTooltip="Selection Only" tooltipPosition="bottom"></button> -->
+    </div>
+</div>
+
+<div *ngIf="valueResultOption === resultOptions[0].valueResultOption">
+
+    <p-table #dt [value]="participantList" [scrollable]="true" scrollHeight="70vh"
+        [tableStyle]="{ 'min-width': '50rem', 'margin-bottom': '25px' }">
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th></th>
+                <th>Imię</th>
+                <th>Koń</th>
+                <th>Chorągiew</th>
+                <th>Punkty</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-participant let-rowIndex="rowIndex">
+            <tr>
+                <td>{{ rowIndex + 1 }}</td>
+                <td>{{ participant.playerName }}</td>
+                <td>{{ participant.horse }}</td>
+                <td>{{ participant.flag }}</td>
+                <td>{{ participant.score }}</td>
+            </tr>
+        </ng-template>
+
+    </p-table>
+
+</div>
+
+
+<div *ngIf="valueResultOption === resultOptions[1].valueResultOption">
+
+    <p-table #dt2 [value]="getTop3Players()" [scrollable]="true" scrollHeight="70vh"
+        [tableStyle]="{ 'min-width': '50rem', 'margin-bottom': '25px' }">
+        <ng-template pTemplate="header">
+            <tr>
+                <th></th>
+                <th>Imię</th>
+                <th>Koń</th>
+                <th>Chorągiew</th>
+                <th>Suma</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-data let-rowIndex="rowIndex">
+            <tr *ngFor="let participant of data.players">
+                <td>{{ rowIndex + 1 }}</td>
+                <td>{{ participant.playerName }}</td>
+                <td>{{ participant.horse }}</td>
+                <td>
+                    <span *ngFor="let _ of [1, 2, 3]; let i = index">
+                        {{ participant.flag.length }}
+                        <br *ngIf="i < 2" />
+                    </span>
+                </td>
+                <td>{{ data.totalScore }}</td>
+            </tr>
+        </ng-template>
+    </p-table>
+
+</div>

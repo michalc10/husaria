@@ -1,6 +1,6 @@
 <div class="line-bold">
-    <p-table styleClass="p-datatable-gridlines " [scrollable]="true" scrollHeight="75vh" [value]="participantList" [autoLayout]="true"
-        [tableStyle]="{ 'min-width': '50rem' }">
+    <p-table styleClass="p-datatable-gridlines " [scrollable]="true" scrollHeight="75vh" [value]="participantList"
+        [autoLayout]="true" [tableStyle]="{ 'min-width': '50rem' }">
         <ng-template pTemplate="header" let-columns>
             <tr>
                 <th rowspan="3" class="line-left line-right center-text" style="min-width:30px">Start</th>
@@ -52,8 +52,9 @@
                     </div>
                 </td>
                 <td class="line-left line-right center-text">
-                    <p-selectButton [options]="brickOptions" optionLabel="name" [ngModel]="rowData.broadswordPoints.charAt(1)"
-                        optionValue="value" (onChange)="setBrick(rowData,$event)"></p-selectButton>
+                    <p-selectButton [options]="brickOptions" optionLabel="name"
+                        [ngModel]="rowData.broadswordPoints.charAt(1)" optionValue="value"
+                        (onChange)="setBrick(rowData,$event)"></p-selectButton>
                 </td>
                 <td *ngFor="let item of [].constructor(points.length-2); let pointIndex = index" [ngClass]="{'line-left': [ 2, 5, 8,9].indexOf(pointIndex+2) != -1,
                     'line-right': [  4, 7, 8, 11].indexOf(pointIndex+2) != -1, 'center-text': true}">
@@ -62,7 +63,7 @@
                             styleClass="p-button-rounded p-button-text p-button-raised"></p-button>
                     </div>
                     <div *ngIf="rowData.broadswordPoints.charAt(pointIndex+2)==='1'">
-                        <p-button (onClick)="changedButton(rowData,pointIndex,0)" icon="pi pi-times"
+                        <p-button (onClick)="changedButton(rowData,pointIndex+2,0)" icon="pi pi-times"
                             styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"></p-button>
                     </div>
                 </td>

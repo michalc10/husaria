@@ -3,9 +3,13 @@ import { IPlayerPoints } from 'src/app/models/playerPoints';
 import { PlayerPointsService } from '../../services/playerPoints/playerPoints.service';
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
-import { style } from '@angular/animations';
 import { PageOrientation } from 'pdfmake/interfaces';
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
+
+interface PlayersWithTotalScore {
+  players: IPlayerPoints[];
+  totalScore: number;
+}
 
 @Component({
   selector: 'app-results',
@@ -21,6 +25,16 @@ export class ResultsComponent implements OnInit {
   tournamentId = "-1";
   orientationList: string[] = ['poziomo', 'pionowo']
   chosenOrientation: string = this.orientationList[0]
+
+
+  resultOptions: any[] = [{ label: 'Indywidualne', valueResultOption: 'individualResults' }, { label: 'Drużynowe', valueResultOption: 'teamResults' }];
+  valueResultOption: string = 'individualResults';
+
+
+  top3ByFlag: Record<string, IPlayerPoints[]> = {};
+
+
+
   constructor(
     private playerPointsService: PlayerPointsService
   ) { }
@@ -37,6 +51,18 @@ export class ResultsComponent implements OnInit {
             score: tournament.lanceScore + tournament.broadswordScore + tournament.sabreScore
           }
         }).sort((a, b) => { return a.score - b.score });
+        this.participantList.sort((a, b) => a.flag.localeCompare(b.flag) || a.score - b.score);
+
+        this.participantList.forEach(player => {
+          if (!this.top3ByFlag[player.flag]) {
+            this.top3ByFlag[player.flag] = [];
+          }
+    
+          if (this.top3ByFlag[player.flag].length < 3) {
+            this.top3ByFlag[player.flag].push(player);
+          }
+        });
+       
       },
     })
     // this.exportColumns = this.cols.map((col) => ({ title: col.header, dataKey: col.field }));
@@ -121,4 +147,24 @@ export class ResultsComponent implements OnInit {
   chechedSizeText(ev: any) {
     console.log("dsg", ev, ev.value)
   }
+
+  changeOrientation(orientation: any) {
+
+   
+    console.log(orientation === this.resultOptions[0].valueResultOption)
+  }
+
+  getTop3Players(): PlayersWithTotalScore[] {
+    const top3Players: PlayersWithTotalScore[] = [];
+
+    for (const flag in this.top3ByFlag) {
+        if (this.top3ByFlag.hasOwnProperty(flag)) {
+            const playersForFlag = this.top3ByFlag[flag];
+            const totalScore = playersForFlag.reduce((sum, player) => sum + player.score, 0);
+            top3Players.push({ players: playersForFlag, totalScore: totalScore });
+        }
+    }
+
+    return top3Players;
+}
 }

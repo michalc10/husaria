@@ -4,7 +4,13 @@
 
 .print{
     display: flex;
-    flex-direction: row;
+    // flex-direction: row;
     gap: 10px;
-    justify-content: flex-end;
+    // justify-content: flex-end;
+}
+
+.table-navigation{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
 }
