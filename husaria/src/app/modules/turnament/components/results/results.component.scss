@@ -2,15 +2,19 @@
     width: 45px;
 }
 
-.print{
+.print {
     display: flex;
     // flex-direction: row;
     gap: 10px;
     // justify-content: flex-end;
 }
 
-.table-navigation{
+.table-navigation {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+}
+
+p {
+    margin: 6px
 }

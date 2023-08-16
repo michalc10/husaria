@@ -1,7 +1,7 @@
 <div class="table-navigation">
     <div class="">
         <p-selectButton [options]="resultOptions" [(ngModel)]="valueResultOption" optionLabel="label"
-            optionValue="valueResultOption" (onChange)="changeOrientation($event.value)"></p-selectButton>
+            optionValue="valueResultOption"></p-selectButton>
     </div>
     <div class="print">
         <!-- <button type="button" pButton pRipple icon="pi pi-file" (click)="dt.exportCSV()" class="mr-2" pTooltip="CSV" tooltipPosition="bottom"></button> -->
@@ -50,30 +50,28 @@
 <div *ngIf="valueResultOption === resultOptions[1].valueResultOption">
 
     <p-table #dt2 [value]="getTop3Players()" [scrollable]="true" scrollHeight="70vh"
-        [tableStyle]="{ 'min-width': '50rem', 'margin-bottom': '25px' }">
-        <ng-template pTemplate="header">
-            <tr>
-                <th></th>
-                <th>Imię</th>
-                <th>Koń</th>
-                <th>Chorągiew</th>
-                <th>Suma</th>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-data let-rowIndex="rowIndex">
-            <tr *ngFor="let participant of data.players">
-                <td>{{ rowIndex + 1 }}</td>
-                <td>{{ participant.playerName }}</td>
-                <td>{{ participant.horse }}</td>
-                <td>
-                    <span *ngFor="let _ of [1, 2, 3]; let i = index">
-                        {{ participant.flag.length }}
-                        <br *ngIf="i < 2" />
-                    </span>
-                </td>
-                <td>{{ data.totalScore }}</td>
-            </tr>
-        </ng-template>
-    </p-table>
+    [tableStyle]="{ 'min-width': '50rem', 'margin-bottom': '25px' }">
+    <ng-template pTemplate="header">
+        <tr>
+            <th></th>
+            <th>Chorągiew</th>
+            <th>Husarz</th>
+            <th>Koń</th>
+            <th>Punkty</th>
+            <th>Suma</th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-top3Players let-rowIndex="rowIndex">
+        <tr>
+            <td>{{ rowIndex + 1 }}</td>
+            <td>{{ top3Players.flag }}</td>
+            <td><span *ngFor="let player of top3Players.players"><p>{{ player.playerName }}</p></span></td>
+            <td><span *ngFor="let player of top3Players.players"><p>{{ player.hoprse }}</p></span></td>
+            <td><span *ngFor="let player of top3Players.players"><p>{{ player.score }}</p></span></td>
+            <td>{{ top3Players.totalScore }}</td>
+        </tr>
+    </ng-template>
+</p-table>
+
 
 </div>

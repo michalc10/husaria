@@ -7,8 +7,9 @@ import { PageOrientation } from 'pdfmake/interfaces';
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 interface PlayersWithTotalScore {
-  players: IPlayerPoints[];
+  flag: string;
   totalScore: number;
+  players: IPlayerPoints[];
 }
 
 @Component({
@@ -31,8 +32,7 @@ export class ResultsComponent implements OnInit {
   valueResultOption: string = 'individualResults';
 
 
-  top3ByFlag: Record<string, IPlayerPoints[]> = {};
-
+  teamResults: any[] = [];
 
 
   constructor(
@@ -51,18 +51,8 @@ export class ResultsComponent implements OnInit {
             score: tournament.lanceScore + tournament.broadswordScore + tournament.sabreScore
           }
         }).sort((a, b) => { return a.score - b.score });
-        this.participantList.sort((a, b) => a.flag.localeCompare(b.flag) || a.score - b.score);
+        // this.participantList.sort((a, b) => a.flag.localeCompare(b.flag) || a.score - b.score);
 
-        this.participantList.forEach(player => {
-          if (!this.top3ByFlag[player.flag]) {
-            this.top3ByFlag[player.flag] = [];
-          }
-    
-          if (this.top3ByFlag[player.flag].length < 3) {
-            this.top3ByFlag[player.flag].push(player);
-          }
-        });
-       
       },
     })
     // this.exportColumns = this.cols.map((col) => ({ title: col.header, dataKey: col.field }));
@@ -144,27 +134,36 @@ export class ResultsComponent implements OnInit {
 
 
 
-  chechedSizeText(ev: any) {
-    console.log("dsg", ev, ev.value)
-  }
-
-  changeOrientation(orientation: any) {
-
-   
-    console.log(orientation === this.resultOptions[0].valueResultOption)
-  }
 
   getTop3Players(): PlayersWithTotalScore[] {
+
+    let top3ByFlag: Record<string, IPlayerPoints[]> = {};
+
+    this.participantList.sort((a, b) => { return a.score - b.score }).forEach(player => {
+      if (!top3ByFlag[player.flag]) {
+        top3ByFlag[player.flag] = [];
+      }
+
+      if (top3ByFlag[player.flag].length < 3) {
+        top3ByFlag[player.flag].push(player);
+      }
+    });
+
+
     const top3Players: PlayersWithTotalScore[] = [];
 
-    for (const flag in this.top3ByFlag) {
-        if (this.top3ByFlag.hasOwnProperty(flag)) {
-            const playersForFlag = this.top3ByFlag[flag];
-            const totalScore = playersForFlag.reduce((sum, player) => sum + player.score, 0);
-            top3Players.push({ players: playersForFlag, totalScore: totalScore });
+    for (const flag in top3ByFlag) {
+      let totalScore = 0;
+      let players: IPlayerPoints[] = [];
+      if (top3ByFlag.hasOwnProperty(flag)) {
+        for (const playerKey in top3ByFlag[flag]) {
+          const player = top3ByFlag[flag][playerKey];
+          players.push(player)
+          totalScore += player.score;
         }
+        top3Players.push({ players: players, totalScore: totalScore, flag: top3ByFlag[flag][0].flag });
+      }
     }
-
-    return top3Players;
-}
+    return top3Players.sort((a, b) => a.totalScore - b.totalScore);
+  }
 }
