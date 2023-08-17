@@ -33,7 +33,7 @@ export class ResultsComponent implements OnInit {
 
 
   teamResults: any[] = [];
-
+  top3Players: PlayersWithTotalScore[] = [];
 
   constructor(
     private playerPointsService: PlayerPointsService
@@ -68,7 +68,9 @@ export class ResultsComponent implements OnInit {
     // });
     const tableBody = this.buildTableBody(this.participantList);
     const orientation = this.chosenOrientation === this.orientationList[0] ? 'landscape' : 'portrait'
-    const documentDefinition = {
+
+    // console.log(this.valueResultOption, this.resultOptions[0].value)
+    const documentDefinition = this.valueResultOption === this.resultOptions[0].valueResultOption ? {
       pageOrientation: orientation as PageOrientation,
       content: [
         {
@@ -94,7 +96,39 @@ export class ResultsComponent implements OnInit {
         // fontSize:15,
         // bold: true
       }
-    };
+    } :
+      {
+        pageOrientation: orientation as PageOrientation,
+        content: [
+          {
+            table: {
+              headerRows: 1,
+              // widths: ['auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+              body: [
+                [
+                  '',
+                  'Chorągiew',
+                  'Husarz',
+                  'Koń',
+                  'Punkty',
+                  'Suma'
+                ],
+                ...this.top3Players.map((top3Players, rowIndex) => [
+                  rowIndex + 1,
+                  top3Players.flag,//"sd","sdf","sdf",
+                  top3Players.players.map(player => player.playerName).join('\n'),
+                  top3Players.players.map(player => player.horse).join('\n'),
+                  top3Players.players.map(player => player.score).join('\n'),
+                  top3Players.totalScore
+                ])
+              ]
+            }
+          }
+        ],
+        defaultStyle: {
+          fontSize: this.pdfTextSize,
+        }
+      };
 
     pdfMake.createPdf(documentDefinition).open();
 
@@ -150,8 +184,8 @@ export class ResultsComponent implements OnInit {
     });
 
 
-    const top3Players: PlayersWithTotalScore[] = [];
 
+    this.top3Players = [];
     for (const flag in top3ByFlag) {
       let totalScore = 0;
       let players: IPlayerPoints[] = [];
@@ -161,9 +195,9 @@ export class ResultsComponent implements OnInit {
           players.push(player)
           totalScore += player.score;
         }
-        top3Players.push({ players: players, totalScore: totalScore, flag: top3ByFlag[flag][0].flag });
+        this.top3Players.push({ players: players, totalScore: totalScore, flag: top3ByFlag[flag][0].flag });
       }
     }
-    return top3Players.sort((a, b) => a.totalScore - b.totalScore);
+    return this.top3Players.sort((a, b) => a.totalScore - b.totalScore);
   }
 }
