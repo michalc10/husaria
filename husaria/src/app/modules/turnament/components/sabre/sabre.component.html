@@ -1,6 +1,6 @@
 <div class="line-bold">
-    <p-table styleClass="p-datatable-gridlines center-text" [scrollable]="true" scrollHeight="75vh" [value]="participantList"
-        [tableStyle]="{ 'min-width': '50rem' }">
+    <p-table styleClass="p-datatable-gridlines center-text" [scrollable]="true" scrollHeight="75vh"
+        [value]="participantList" [tableStyle]="{ 'min-width': '50rem' }">
         <ng-template pTemplate="header" let-columns>
             <tr>
                 <th rowspan="3" class="line-left line-right center-text" style="width:50px">Start</th>
@@ -12,7 +12,14 @@
                 <th colspan="1" class="line-left line-right center-text">P5</th>
                 <th colspan="3" class="line-left line-right center-text">Punkty karne</th>
                 <th rowspan="3" class="line-left line-right center-text">Czas [s]</th>
-                <th rowspan="3" class="line-left line-right center-text">Wynik</th>
+                <th rowspan="3" class="line-left line-right center-text">
+                    <button style="position: absolute; top: 25px;" type="button" pButton pRipple icon="pi pi-file-pdf"
+                        class="p-button-warning mr-2" pTooltip="PDF" tooltipPosition="bottom" 
+                        (click)="generatePDF()"
+                        generatePDF
+                        ></button>
+                    Wynik
+                </th>
             </tr>
             <tr>
                 <th class="line-left line-right center-text">Cięcie łozy</th>
@@ -33,7 +40,8 @@
                     'line-right': [0, 1, 4, 7, 8, 11].indexOf(pointIndex) != -1, 'center-text': true}">{{point}}</th>
             </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-rowData let-columns="columns" let-rowIndex="rowIndex" class="line-bottom-bold center-text">
+        <ng-template pTemplate="body" let-rowData let-columns="columns" let-rowIndex="rowIndex"
+            class="line-bottom-bold center-text">
             <tr (click)="chosenRow(rowData)" [ngClass]="{'chosenRow': rowData._id === selectedPlayerId }">
                 <td class="line-left line-right center-text">{{rowIndex+1}}</td>
                 <td class="line-left line-right center-text">{{rowData.playerName}}</td>
@@ -57,3 +65,7 @@
         </ng-template>
     </p-table>
 </div>
+
+
+
+<app-pdf-make-dialog [show]="isOpenedPdfMakeDialog" (close)="isOpenedPdfMakeDialog=false"></app-pdf-make-dialog>

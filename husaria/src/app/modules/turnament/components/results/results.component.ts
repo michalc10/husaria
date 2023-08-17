@@ -115,7 +115,7 @@ export class ResultsComponent implements OnInit {
                 ],
                 ...this.top3Players.map((top3Players, rowIndex) => [
                   rowIndex + 1,
-                  top3Players.flag,//"sd","sdf","sdf",
+                  top3Players.flag,
                   top3Players.players.map(player => player.playerName).join('\n'),
                   top3Players.players.map(player => player.horse).join('\n'),
                   top3Players.players.map(player => player.score).join('\n'),
