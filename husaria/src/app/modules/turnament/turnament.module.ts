@@ -16,6 +16,8 @@ import { TableModule } from 'primeng/table';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ResultsComponent } from './components/results/results.component';
 import { DropdownModule } from 'primeng/dropdown';
+import { PdfMakeDialogComponent } from './components/pdf-make-dialog/pdf-make-dialog.component';
+import { DialogModule } from 'primeng/dialog';
 
 @NgModule({
   declarations: [
@@ -25,6 +27,7 @@ import { DropdownModule } from 'primeng/dropdown';
     TournamentPlayersComponent,
     TournamentLayoutComponent,
     ResultsComponent,
+    PdfMakeDialogComponent,
   ],
   imports: [
     CommonModule,
@@ -36,7 +39,8 @@ import { DropdownModule } from 'primeng/dropdown';
     PickListModule,
     TableModule,
     InputNumberModule,
-    DropdownModule
+    DropdownModule,
+    DialogModule
   ]
 })
 export class TurnamentModule { }
