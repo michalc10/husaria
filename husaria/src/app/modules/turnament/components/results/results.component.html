@@ -38,7 +38,7 @@
                 <td>{{ participant.playerName }}</td>
                 <td>{{ participant.horse }}</td>
                 <td>{{ participant.flag }}</td>
-                <td>{{ participant.score }}</td>
+                <td>{{ participant.score.toFixed(3) }}</td>
             </tr>
         </ng-template>
 
@@ -67,8 +67,8 @@
             <td>{{ top3Players.flag }}</td>
             <td><span *ngFor="let player of top3Players.players"><p>{{ player.playerName }}</p></span></td>
             <td><span *ngFor="let player of top3Players.players"><p>{{ player.hoprse }}</p></span></td>
-            <td><span *ngFor="let player of top3Players.players"><p>{{ player.score }}</p></span></td>
-            <td>{{ top3Players.totalScore }}</td>
+            <td><span *ngFor="let player of top3Players.players"><p>{{ player.score.toFixed(3) }}</p></span></td>
+            <td>{{ top3Players.totalScore.toFixed(3) }}</td>
         </tr>
     </ng-template>
 </p-table>

@@ -10,7 +10,7 @@ import { IPlayerPoints } from 'src/app/models/playerPoints';
 })
 export class LanceComponent implements OnInit {
 
-  selectedPlayerId='-1';
+  selectedPlayerId = '-1';
   points = [6, 6, 10, 25, 25, 5, 25, 25, 6, 5, 20, 40];
   participantList: IPlayerPoints[] = [];
   constructor(
@@ -25,7 +25,7 @@ export class LanceComponent implements OnInit {
         this.participantList = value.sort((a, b) => b.sabreScore + b.broadswordScore - a.sabreScore - a.broadswordScore);
       },
       error(err) {
-        console.log("err",err)
+        console.log("err", err)
       },
     })
   }
@@ -41,11 +41,7 @@ export class LanceComponent implements OnInit {
 
     participant.lanceScore += value === 1 ? this.points[index] : -this.points[index];
 
-    this.playerPointsService.update(participant._id!, participant).subscribe({
-      next: (value) => {
-        this.participantList[participantIndex] = value;
-      },
-    })
+    this.updatePlayerPoints(participant, participantIndex)
   }
 
 
@@ -60,13 +56,19 @@ export class LanceComponent implements OnInit {
     }
 
     participant.lanceScore = score + ev;
+    this.updatePlayerPoints(participant, participantIndex);
 
+  }
+
+
+  updatePlayerPoints(participant: IPlayerPoints, participantIndex: number) {
     this.playerPointsService.update(participant._id!, participant).subscribe({
       next: (value) => {
         this.participantList[participantIndex] = value;
       },
     })
   }
+
 
   chosenRow(player: IPlayerPoints) {
     this.selectedPlayerId = player._id!;

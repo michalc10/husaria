@@ -39,11 +39,8 @@ export class SabreComponent implements OnInit {
 
     participant.sabreScore += value === 1 ? this.points[index] : -this.points[index];
 
-    this.playerPointsService.update(participant._id!, participant).subscribe({
-      next: (value) => {
-        this.participantList[participantIndex] = value;
-      },
-    })
+   
+    this.updatePlayerPoints(participant, participantIndex)
   }
 
 
@@ -58,16 +55,20 @@ export class SabreComponent implements OnInit {
     }
 
     participant.sabreScore = score + ev;
-
-    this.playerPointsService.update(participant._id!, participant).subscribe({
-      next: (value) => {
-        this.participantList[participantIndex] = value;
-      },
-    })
+   
+    this.updatePlayerPoints(participant, participantIndex)
   }
 
   chosenRow(player: IPlayerPoints) {
     this.selectedPlayerId = player._id!;
     console.log(this.selectedPlayerId)
+  }
+
+  updatePlayerPoints(participant:IPlayerPoints,participantIndex:number){
+    this.playerPointsService.update(participant._id!, participant).subscribe({
+      next: (value) => {
+        this.participantList[participantIndex] = value;
+      },
+    })
   }
 }

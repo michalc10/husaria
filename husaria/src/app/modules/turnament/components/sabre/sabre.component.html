@@ -52,7 +52,7 @@
                     <p-inputNumber #inputRef (onBlur)="setTime(rowData,inputRef.value)" [ngModel]="rowData.sabreTime"
                         styleClass="custom-input" inputId="locale-user" [minFractionDigits]="2"></p-inputNumber>
                 </td>
-                <td class="line-left line-right center-text">{{rowData.sabreScore}}</td>
+                <td class="line-left line-right center-text">{{rowData.sabreScore.toFixed(3)}}</td>
             </tr>
         </ng-template>
     </p-table>

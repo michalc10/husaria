@@ -44,11 +44,7 @@ export class BroadswordComponent implements OnInit {
 
     participant.broadswordScore += (value === 1 ? this.points[index] : -this.points[index]) as number;
 
-    this.playerPointsService.update(participant._id!, participant).subscribe({
-      next: (value) => {
-        this.participantList[participantIndex] = value;
-      },
-    })
+    this.updatePlayerPoints(participant, participantIndex)
   }
 
 
@@ -64,19 +60,14 @@ export class BroadswordComponent implements OnInit {
       else
         score += this.brickOptions.find(op => op.value === this.participantList[participantIndex].broadswordPoints.charAt(i)).score
     }
-
+    console.log(score, ev)
     participant.broadswordScore = score + ev;
 
-    this.playerPointsService.update(participant._id!, participant).subscribe({
-      next: (value) => {
-        this.participantList[participantIndex] = value;
-      },
-    })
+    this.updatePlayerPoints(participant, participantIndex)
   }
 
   chosenRow(player: IPlayerPoints) {
     this.selectedPlayerId = player._id!;
-    console.log(this.selectedPlayerId)
   }
 
   setBrick(player: IPlayerPoints, event: any) {
@@ -87,6 +78,11 @@ export class BroadswordComponent implements OnInit {
     participant.broadswordPoints = points.substring(0, 1) + event.value + points.substring(2);
     participant.broadswordScore += this.brickOptions.find(op => op.value === participant.broadswordPoints.charAt(1)).score
 
+    this.updatePlayerPoints(participant, participantIndex)
+  }
+
+
+  updatePlayerPoints(participant: IPlayerPoints, participantIndex: number) {
     this.playerPointsService.update(participant._id!, participant).subscribe({
       next: (value) => {
         this.participantList[participantIndex] = value;
