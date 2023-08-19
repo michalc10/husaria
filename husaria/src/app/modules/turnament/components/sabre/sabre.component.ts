@@ -86,30 +86,7 @@ export class SabreComponent implements OnInit {
 
 
   generatePDF() {
-    const tableBody = this.participantList.map(player => {
-      const row = [
-        { text: player.playerName, style: ['line-left', 'line-right', 'center-text'] },
-        // ... Map other cell values here
-      ];
-
-      for (const point of this.points) {
-        row.push({
-          text: player.sabrePoints.charAt(point) === '0' ? '✔' : '✘',
-          style: ['line-left', 'line-right', 'center-text']
-        });
-      }
-
-      row.push(
-        { text: player.sabreTime.toFixed(2), style: ['line-left', 'line-right', 'center-text'] },
-        { text: player.sabreScore.toFixed(3), style: ['line-left', 'line-right', 'center-text'] }
-      );
-
-      return row;
-    });
-
-
-
-    const docDefinition = {
+       const docDefinition = {
       pageOrientation: 'landscape' as PageOrientation,
       content: [
         { width: '*', text: '' },
@@ -129,7 +106,7 @@ export class SabreComponent implements OnInit {
                   player.playerName,
                   ...saberPoints,
                   player.sabreTime,
-                  player.sabreScore
+                  player.sabreScore.toFixed(3)
                 ]
               })
             ]

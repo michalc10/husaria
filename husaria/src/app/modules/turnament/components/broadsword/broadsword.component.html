@@ -12,7 +12,14 @@
                 <th colspan="1" class="line-left line-right center-text">P5</th>
                 <th colspan="3" class="line-left line-right center-text">Punkty karne</th>
                 <th rowspan="3" class="line-left line-right center-text">Czas [s]</th>
-                <th rowspan="3" class="line-left line-right center-text">Wynik</th>
+                <th rowspan="3" class="line-left line-right center-text">
+                    <button style="position: absolute; top: 25px;" type="button" pButton pRipple icon="pi pi-file-pdf"
+                        class="p-button-warning mr-2" pTooltip="PDF" tooltipPosition="bottom" 
+                        (click)="generatePDF()"
+                        generatePDF
+                        ></button>
+                    Wynik
+                </th>
             </tr>
             <tr>
                 <th class="line-left line-right center-text">Cięcie kapusty</th>

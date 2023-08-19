@@ -2,6 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { PlayerPointsService } from '../../services/playerPoints/playerPoints.service';
 import { Location } from '@angular/common';
 import { IPlayerPoints } from 'src/app/models/playerPoints';
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+import { PageOrientation } from 'pdfmake/interfaces';
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
+
 
 @Component({
   selector: 'app-lance',
@@ -74,4 +79,56 @@ export class LanceComponent implements OnInit {
     this.selectedPlayerId = player._id!;
     console.log(this.selectedPlayerId)
   }
+
+  generatePDF() {
+    const docDefinition = {
+  pageOrientation: 'landscape' as PageOrientation,
+  content: [
+    { width: '*', text: '' },
+    {
+      style: 'table',
+      width: 'auto',
+      table: {
+        headerRows: 3,
+        body: [
+          ['', '', 'P1', 'P2', '', 'P3 beczka', '', '', "P4 skok", '', 'P5', '', 'Punkty karne', '', '', ''],
+          ['Start', 'Imię', 'Pierścień 1', 'Pierścień 2', 'Niższy chód', 'Ominięcie przeszkody', 'Demontaż przeszkody', 'Zrzutka', 'Ominięcie przeszkody', 'Demontaż przeszkody', 'Pierścień 3', 'Utrata broni', 'Upadek jeźdźca', 'Upadek konia i jeźdźca', 'Czas [s]', 'Wynik'],
+          ['', '', ...this.points, '', ''],
+          ...this.participantList.map((player, rowIndex) => {
+            const saberPoints = [...player.lancePoints].map(point => { return point === '0' ? '' : 'X' })//'✔' : '✘'
+            return [
+              rowIndex + 1,
+              player.playerName,
+              ...saberPoints,
+              player.lanceTime,
+              player.lanceScore.toFixed(3)
+            ]
+          })
+        ]
+      },
+    },
+  ],
+  styles: {
+    // Define your styles here
+    // table: { alignment:'center' },
+    lineLeft: { fillColor: 'lightcyan', border: [true, true, false, true] },
+    lineRight: { fillColor: 'lightcyan', border: [false, true, true, true] },
+    lineBold: { fillColor: 'lightcyan', border: [true, true, true, true], lineWidth: 2 },
+    // cell: { fillColor: 'lightcyan', alignment: 'center', fontSize: 10 },
+    // anotherStyle: {   alignment: 'right', fontSize: 12 },
+    // subHeader: { bold: true, alignment: 'center', fontSize: 10 },
+    // centerText: { alignment: 'center', verticalAlignment: 'middle' },
+    // Define other styles here,
+    // anotherStyle: {
+    //   italics: true,
+    //   alignment: 'right'
+    // }
+  },
+  defaultStyle: { fontSize: 10 },
+};
+
+
+pdfMake.createPdf(docDefinition).open();
+}
+
 }
