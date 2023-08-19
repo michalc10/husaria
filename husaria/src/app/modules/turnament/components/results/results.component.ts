@@ -24,8 +24,10 @@ export class ResultsComponent implements OnInit {
   selectedPlayerId = '-1';
   participantList: IPlayerPoints[] = [];
   tournamentId = "-1";
-  orientationList: string[] = ['poziomo', 'pionowo']
-  chosenOrientation: string = this.orientationList[0]
+  orientationList: string[] = ['rosnąco', 'malejąco']
+  orientationPaper: string[] = ['poziomo', 'pionowo']
+  chosenOrientationList: string = this.orientationList[0];
+  chosenOrientationPaper: string = this.orientationPaper[0];
 
 
   resultOptions: any[] = [{ label: 'Indywidualne', valueResultOption: 'individualResults' }, { label: 'Drużynowe', valueResultOption: 'teamResults' }];
@@ -40,15 +42,13 @@ export class ResultsComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.orientationList = ['poziomo', 'pionowo']
-    this.chosenOrientation = this.orientationList[0]
     this.tournamentId = localStorage.getItem('tournamentId')!;
     this.playerPointsService.getPlayerPointsForTournament(this.tournamentId).subscribe({
       next: (value: IPlayerPoints[]) => {
         this.participantList = value.map(tournament => {
           return {
             ...tournament,
-            score: tournament.lanceScore + tournament.broadswordScore + tournament.sabreScore
+            score: +(tournament.lanceScore + tournament.broadswordScore + tournament.sabreScore).toFixed(3)
           }
         }).sort((a, b) => { return a.score - b.score });
         // this.participantList.sort((a, b) => a.flag.localeCompare(b.flag) || a.score - b.score);
@@ -66,8 +66,9 @@ export class ResultsComponent implements OnInit {
     //     doc.save('products.pdf');
     //   });
     // });
-    const tableBody = this.buildTableBody(this.participantList);
-    const orientation = this.chosenOrientation === this.orientationList[0] ? 'landscape' : 'portrait'
+    const tableBody = this.buildTableBody(this.participantList.sort((a, b) => this.chosenOrientationList === this.orientationList[0] ? a.score - b.score : b.score - a.score));
+    const orientation = this.chosenOrientationPaper === this.orientationPaper[0] ? 'landscape' : 'portrait'
+
 
     // console.log(this.valueResultOption, this.resultOptions[0].value)
     const documentDefinition = this.valueResultOption === this.resultOptions[0].valueResultOption ? {
@@ -113,14 +114,16 @@ export class ResultsComponent implements OnInit {
                   'Punkty',
                   'Suma'
                 ],
-                ...this.top3Players.map((top3Players, rowIndex) => [
-                  rowIndex + 1,
-                  top3Players.flag,
-                  top3Players.players.map(player => player.playerName).join('\n'),
-                  top3Players.players.map(player => player.horse).join('\n'),
-                  top3Players.players.map(player => player.score).join('\n'),
-                  top3Players.totalScore
-                ])
+                ...this.top3Players
+                  .sort((a, b) => this.chosenOrientationList === this.orientationList[0] ? a.totalScore - b.totalScore : b.totalScore - a.totalScore)
+                  .map((top3Players, rowIndex) => [
+                    rowIndex + 1,
+                    top3Players.flag,
+                    top3Players.players.map(player => player.playerName).join('\n'),
+                    top3Players.players.map(player => player.horse).join('\n'),
+                    top3Players.players.map(player => player.score).join('\n'),
+                    top3Players.totalScore
+                  ])
               ]
             }
           }
@@ -198,6 +201,6 @@ export class ResultsComponent implements OnInit {
         this.top3Players.push({ players: players, totalScore: totalScore, flag: top3ByFlag[flag][0].flag });
       }
     }
-    return this.top3Players.sort((a, b) => a.totalScore - b.totalScore);
+    return this.top3Players.sort((a: any, b: any) => a.totalScore - b.totalScore);
   }
 }

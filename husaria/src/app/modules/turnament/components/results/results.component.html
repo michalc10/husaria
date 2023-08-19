@@ -6,7 +6,9 @@
     <div class="print">
         <!-- <button type="button" pButton pRipple icon="pi pi-file" (click)="dt.exportCSV()" class="mr-2" pTooltip="CSV" tooltipPosition="bottom"></button> -->
         <!-- <button type="button" pButton pRipple icon="pi pi-file-excel" (click)="exportExcel()" class="p-button-success mr-2" pTooltip="XLS" tooltipPosition="bottom"></button> -->
-        <p-dropdown [options]="orientationList" [(ngModel)]="chosenOrientation"
+        <p-dropdown [options]="orientationList" [(ngModel)]="chosenOrientationList"
+            placeholder="wyniki"></p-dropdown>
+        <p-dropdown [options]="orientationPaper" [(ngModel)]="chosenOrientationPaper"
             placeholder="orientacja kartki"></p-dropdown>
         <p-inputNumber [(ngModel)]="pdfTextSize" mode="decimal" [showButtons]="true" inputId="minmax-buttons" [min]="10"
             [max]="25"> </p-inputNumber>
