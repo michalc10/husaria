@@ -17,7 +17,8 @@ const createPlayerPoints = (req: Request, res: Response, next: NextFunction) => 
     });
     return playerPoints
         .save()
-        .then((playerPoints) => res.status(201).json(playerPoints))
+        .then((playerPoints) =>{console.log(playerPoints)
+            res.status(201).json(playerPoints)} )
         .catch((err) => res.status(500).json({ err }));
 };
 

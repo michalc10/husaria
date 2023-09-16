@@ -7,14 +7,17 @@ export interface IPlayerPoints {
     playerId: string,
 
     sabrePoints: string,
+    sabreExtraPoints: number,
     sabreTime: number,
     sabreScore: number,
 
     broadswordPoints: string,
+    broadswordExtraPoints: number,
     broadswordTime: number,
     broadswordScore: number,
 
     lancePoints: string,
+    lanceExtraPoints: number,
     lanceTime: number,
     lanceScore: number,
 

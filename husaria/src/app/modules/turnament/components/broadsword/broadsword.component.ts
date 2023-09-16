@@ -14,7 +14,7 @@ pdfMake.vfs = pdfFonts.pdfMake.vfs;
 })
 export class BroadswordComponent implements OnInit {
   selectedPlayerId = '-1';
-  points = [6, "10 | 0 | 6 | 8", 10, 25, 25, 5, 25, 25, 6, 5, 20, 40];
+  points = [6, "10 | 0 | 6 | 8", 10, 25, 25, 5, 25, 25, 6, 5, 20, 40, ''];
   participantList: IPlayerPoints[] = [];
   brickOptions: any[] = [
     { value: '0', name: 0, score: 10 },
@@ -52,10 +52,10 @@ export class BroadswordComponent implements OnInit {
   }
 
 
-  setTime(player: IPlayerPoints, ev: number) {
+  setTime(player: IPlayerPoints, broadswordTime: number) {
     const participantIndex = this.participantList.findIndex(participant => participant._id === player._id);
     const participant = this.participantList[participantIndex];
-    participant.broadswordTime = ev;
+    participant.broadswordTime = broadswordTime;
 
     let score = 0;
     for (let i = 0; i < this.points.length; i++) {
@@ -64,11 +64,25 @@ export class BroadswordComponent implements OnInit {
       else
         score += this.brickOptions.find(op => op.value === this.participantList[participantIndex].broadswordPoints.charAt(i)).score
     }
-    console.log(score, ev)
-    participant.broadswordScore = score + ev;
+    participant.broadswordScore = score + broadswordTime;
 
     this.updatePlayerPoints(participant, participantIndex)
   }
+
+  setExtraPoints(id: number, extraPoints: number) {
+    const participantIndex = this.participantList.findIndex(participant => participant._id === id.toString());
+    const participant = this.participantList[participantIndex];
+    participant.broadswordExtraPoints = extraPoints;
+
+    let score = 0;
+    for (let i = 0; i < this.points.length; i++) {
+      score += this.participantList[participantIndex].broadswordPoints.charAt(i) === '1' ? this.points[i] as number : 0;
+    }
+
+    participant.broadswordScore = score + extraPoints + this.participantList[participantIndex].broadswordTime;
+    this.updatePlayerPoints(participant, participantIndex);
+  }
+
 
   chosenRow(player: IPlayerPoints) {
     this.selectedPlayerId = player._id!;
@@ -95,7 +109,7 @@ export class BroadswordComponent implements OnInit {
   }
 
   generatePDF() {
-        const docDefinition = {
+    const docDefinition = {
       pageOrientation: 'landscape' as PageOrientation,
       content: [
         { width: '*', text: '' },
@@ -109,7 +123,7 @@ export class BroadswordComponent implements OnInit {
               ['Start', 'Imię', 'Cięcie kapusty', 'Pchnięcie klocka\n0 | 1 | 2 | 3', 'Niższy chód', 'Ominięcie przeszkody', 'Demontaż przeszkody', 'Zrzutka', 'Ominięcie przeszkody', 'Demontaż przeszkody', 'Cięcie kapusty', 'Utrata broni', 'Upadek jeźdźca', 'Upadek konia i jeźdźca', 'Czas [s]', 'Wynik'],
               ['', '', ...this.points, '', ''],
               ...this.participantList.map((player, rowIndex) => {
-                const saberPoints:string[] = [...player.broadswordPoints].map(point => { return point === '0' ? '' : 'X' })//'✔' : '✘'
+                const saberPoints: string[] = [...player.broadswordPoints].map(point => { return point === '0' ? '' : 'X' })//'✔' : '✘'
                 saberPoints[1] = player.broadswordPoints.charAt(1)
                 return [
                   rowIndex + 1,

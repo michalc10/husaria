@@ -10,7 +10,7 @@
                 <th colspan="3" class="line-left line-right center-text">P3 beczka</th>
                 <th colspan="3" class="line-left line-right center-text">P4 skok</th>
                 <th colspan="1" class="line-left line-right center-text">P5</th>
-                <th colspan="3" class="line-left line-right center-text">Punkty karne</th>
+                <th colspan="4" class="line-left line-right center-text">Punkty karne</th>
                 <th rowspan="3" class="line-left line-right center-text">Czas [s]</th>
                 <th rowspan="3" class="line-left line-right center-text">
                     <button style="position: absolute; top: 25px;" type="button" pButton pRipple icon="pi pi-file-pdf"
@@ -34,11 +34,12 @@
                 <th class="line-left line-right center-text">Cięcie kapusty</th>
                 <th class="line-left center-text">Utrata broni</th>
                 <th class="center-text">Upadek jeźdźca</th>
-                <th class="line-right center-text">Upadek konia i jeźdźca</th>
+                <th class="center-text">Upadek konia i jeźdźca</th>
+                <th class="line-right center-text">Brak uzbrojenia / inne</th>
             </tr>
             <tr>
                 <th *ngFor="let point of points; let pointIndex = index" [ngClass]="{'line-left': [0, 1, 2, 5, 8,9].indexOf(pointIndex) != -1,
-                     'line-right': [0, 1, 4, 7, 8, 11].indexOf(pointIndex) != -1, 'center-text': true}">{{point}}</th>
+                     'line-right': [0, 1, 4, 7, 8, 12].indexOf(pointIndex) != -1, 'center-text': true}">{{point}}</th>
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-rowData let-columns="columns" let-rowIndex="rowIndex"
@@ -63,8 +64,8 @@
                         [ngModel]="rowData.broadswordPoints.charAt(1)" optionValue="value"
                         (onChange)="setBrick(rowData,$event)"></p-selectButton>
                 </td>
-                <td *ngFor="let item of [].constructor(points.length-2); let pointIndex = index" [ngClass]="{'line-left': [ 2, 5, 8,9].indexOf(pointIndex+2) != -1,
-                    'line-right': [  4, 7, 8, 11].indexOf(pointIndex+2) != -1, 'center-text': true}">
+                <td *ngFor="let item of [].constructor(points.length-3); let pointIndex = index" [ngClass]="{'line-left': [ 2, 5, 8,9].indexOf(pointIndex+2) != -1,
+                    'line-right': [  4, 7, 8, 12].indexOf(pointIndex+2) != -1, 'center-text': true}">
                     <div *ngIf="rowData.broadswordPoints.charAt(pointIndex+2)==='0'">
                         <p-button (onClick)="changedButton(rowData,pointIndex+2,1)" icon="pi pi-check"
                             styleClass="p-button-rounded p-button-text p-button-raised"></p-button>
@@ -74,8 +75,13 @@
                             styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"></p-button>
                     </div>
                 </td>
+                <td class="line-right center-text">
+                    <p-inputNumber #inputExtraPopints (onBlur)="setExtraPoints(rowData._id,inputExtraPopints.value)">
+
+                    </p-inputNumber>
+                </td>
                 <td class="line-left line-right center-text">
-                    <p-inputNumber #inputRef (onBlur)="setTime(rowData,inputRef.value)"
+                    <p-inputNumber #inputTime (onBlur)="setTime(rowData,inputTime.value)"
                         [ngModel]="rowData.broadswordTime" styleClass="custom-input" inputId="locale-user"
                         [minFractionDigits]="2"></p-inputNumber>
                 </td>

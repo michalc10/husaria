@@ -16,7 +16,7 @@ pdfMake.vfs = pdfFonts.pdfMake.vfs;
 export class LanceComponent implements OnInit {
 
   selectedPlayerId = '-1';
-  points = [6, 6, 10, 25, 25, 5, 25, 25, 6, 5, 20, 40];
+  points = [6, 6, 10, 25, 25, 5, 25, 25, 6, 5, 20, 40,''];
   participantList: IPlayerPoints[] = [];
   constructor(
     private playerPointsService: PlayerPointsService
@@ -41,26 +41,42 @@ export class LanceComponent implements OnInit {
     const participantIndex = this.participantList.findIndex(participant => participant._id === player._id);
 
     const participant = this.participantList[participantIndex]
-    const points = participant.lancePoints;
-    participant.lancePoints = points.substring(0, index) + value + points.substring(index + 1);
+    const lancePoints = participant.lancePoints;
+    participant.lancePoints = lancePoints.substring(0, index) + value + lancePoints.substring(index + 1);
 
-    participant.lanceScore += value === 1 ? this.points[index] : -this.points[index];
+    const points = this.points[index] as number
+    participant.lanceScore += value === 1 ? points : -points;
 
     this.updatePlayerPoints(participant, participantIndex)
   }
 
 
-  setTime(player: IPlayerPoints, ev: number) {
+  setTime(player: IPlayerPoints, lanceTime: number) {
     const participantIndex = this.participantList.findIndex(participant => participant._id === player._id);
     const participant = this.participantList[participantIndex];
-    participant.lanceTime = ev;
+    participant.lanceTime = lanceTime;
 
     let score = 0;
     for (let i = 0; i < this.points.length; i++) {
-      score += this.participantList[participantIndex].lancePoints.charAt(i) === '1' ? this.points[i] : 0;
+      score += this.participantList[participantIndex].lancePoints.charAt(i) === '1' ? this.points[i] as number : 0;
     }
 
-    participant.lanceScore = score + ev;
+    participant.lanceScore = score + lanceTime + participant.lanceExtraPoints;
+    this.updatePlayerPoints(participant, participantIndex);
+
+  }
+
+  setExtraPoints(id: number, extraPoints: number) {
+    const participantIndex = this.participantList.findIndex(participant => participant._id === id.toString());
+    const participant = this.participantList[participantIndex];
+    participant.lanceExtraPoints = extraPoints;
+
+    let score = 0;
+    for (let i = 0; i < this.points.length; i++) {
+      score += this.participantList[participantIndex].lancePoints.charAt(i) === '1' ? this.points[i] as number : 0;
+    }
+
+    participant.lanceScore = score + extraPoints + this.participantList[participantIndex].lanceTime;
     this.updatePlayerPoints(participant, participantIndex);
 
   }
@@ -77,58 +93,57 @@ export class LanceComponent implements OnInit {
 
   chosenRow(player: IPlayerPoints) {
     this.selectedPlayerId = player._id!;
-    console.log(this.selectedPlayerId)
   }
 
   generatePDF() {
     const docDefinition = {
-  pageOrientation: 'landscape' as PageOrientation,
-  content: [
-    { width: '*', text: '' },
-    {
-      style: 'table',
-      width: 'auto',
-      table: {
-        headerRows: 3,
-        body: [
-          ['', '', 'P1', 'P2', '', 'P3 beczka', '', '', "P4 skok", '', 'P5', '', 'Punkty karne', '', '', ''],
-          ['Start', 'Imię', 'Pierścień 1', 'Pierścień 2', 'Niższy chód', 'Ominięcie przeszkody', 'Demontaż przeszkody', 'Zrzutka', 'Ominięcie przeszkody', 'Demontaż przeszkody', 'Pierścień 3', 'Utrata broni', 'Upadek jeźdźca', 'Upadek konia i jeźdźca', 'Czas [s]', 'Wynik'],
-          ['', '', ...this.points, '', ''],
-          ...this.participantList.map((player, rowIndex) => {
-            const saberPoints = [...player.lancePoints].map(point => { return point === '0' ? '' : 'X' })//'✔' : '✘'
-            return [
-              rowIndex + 1,
-              player.playerName,
-              ...saberPoints,
-              player.lanceTime,
-              player.lanceScore.toFixed(3)
+      pageOrientation: 'landscape' as PageOrientation,
+      content: [
+        { width: '*', text: '' },
+        {
+          style: 'table',
+          width: 'auto',
+          table: {
+            headerRows: 3,
+            body: [
+              ['', '', 'P1', 'P2', '', 'P3 beczka', '', '', "P4 skok", '', 'P5', '', 'Punkty karne', '', '', ''],
+              ['Start', 'Imię', 'Pierścień 1', 'Pierścień 2', 'Niższy chód', 'Ominięcie przeszkody', 'Demontaż przeszkody', 'Zrzutka', 'Ominięcie przeszkody', 'Demontaż przeszkody', 'Pierścień 3', 'Utrata broni', 'Upadek jeźdźca', 'Upadek konia i jeźdźca', 'Czas [s]', 'Wynik'],
+              ['', '', ...this.points, '', ''],
+              ...this.participantList.map((player, rowIndex) => {
+                const saberPoints = [...player.lancePoints].map(point => { return point === '0' ? '' : 'X' })//'✔' : '✘'
+                return [
+                  rowIndex + 1,
+                  player.playerName,
+                  ...saberPoints,
+                  player.lanceTime,
+                  player.lanceScore.toFixed(3)
+                ]
+              })
             ]
-          })
-        ]
+          },
+        },
+      ],
+      styles: {
+        // Define your styles here
+        // table: { alignment:'center' },
+        lineLeft: { fillColor: 'lightcyan', border: [true, true, false, true] },
+        lineRight: { fillColor: 'lightcyan', border: [false, true, true, true] },
+        lineBold: { fillColor: 'lightcyan', border: [true, true, true, true], lineWidth: 2 },
+        // cell: { fillColor: 'lightcyan', alignment: 'center', fontSize: 10 },
+        // anotherStyle: {   alignment: 'right', fontSize: 12 },
+        // subHeader: { bold: true, alignment: 'center', fontSize: 10 },
+        // centerText: { alignment: 'center', verticalAlignment: 'middle' },
+        // Define other styles here,
+        // anotherStyle: {
+        //   italics: true,
+        //   alignment: 'right'
+        // }
       },
-    },
-  ],
-  styles: {
-    // Define your styles here
-    // table: { alignment:'center' },
-    lineLeft: { fillColor: 'lightcyan', border: [true, true, false, true] },
-    lineRight: { fillColor: 'lightcyan', border: [false, true, true, true] },
-    lineBold: { fillColor: 'lightcyan', border: [true, true, true, true], lineWidth: 2 },
-    // cell: { fillColor: 'lightcyan', alignment: 'center', fontSize: 10 },
-    // anotherStyle: {   alignment: 'right', fontSize: 12 },
-    // subHeader: { bold: true, alignment: 'center', fontSize: 10 },
-    // centerText: { alignment: 'center', verticalAlignment: 'middle' },
-    // Define other styles here,
-    // anotherStyle: {
-    //   italics: true,
-    //   alignment: 'right'
-    // }
-  },
-  defaultStyle: { fontSize: 10 },
-};
+      defaultStyle: { fontSize: 10 },
+    };
 
 
-pdfMake.createPdf(docDefinition).open();
-}
+    pdfMake.createPdf(docDefinition).open();
+  }
 
 }
