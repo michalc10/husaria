@@ -6,9 +6,16 @@
     [value]="participantList"
     [tableStyle]="{ 'min-width': '50rem' }"
   >
+    <!-- Header Row -->
     <ng-template pTemplate="header">
       <tr>
-        <th rowspan="3" class="line-left line-right center-text" style="min-width: 30px">Start</th>
+        <th
+          rowspan="3"
+          class="line-left line-right center-text"
+          style="min-width: 30px"
+        >
+          Start
+        </th>
         <th rowspan="3" class="line-left line-right center-text">Imię</th>
 
         <th
@@ -19,7 +26,9 @@
           {{ category.name }}
         </th>
 
-        <th rowspan="3" class="line-left line-right center-text">Brak uzbrojenia / inne</th>
+        <th rowspan="3" class="line-left line-right center-text">
+          Brak uzbrojenia / inne
+        </th>
         <th rowspan="3" class="line-left line-right center-text">Czas [s]</th>
         <th rowspan="3" class="line-left line-right center-text">
           <button
@@ -36,10 +45,16 @@
           Wynik
         </th>
       </tr>
+
+      <!-- Sub-header for obstacles -->
       <tr>
         <ng-container *ngFor="let category of categories">
           <th
-            *ngFor="let obstacle of category.obstacles; let first = first; let last = last"
+            *ngFor="
+              let obstacle of category.obstacles;
+              let first = first;
+              let last = last
+            "
             [ngClass]="{
               'line-left': first,
               'line-right': last,
@@ -50,10 +65,16 @@
           </th>
         </ng-container>
       </tr>
+
+      <!-- Scores Row -->
       <tr>
         <ng-container *ngFor="let category of categories">
           <th
-            *ngFor="let obstacle of category.obstacles; let first = first; let last = last"
+            *ngFor="
+              let obstacle of category.obstacles;
+              let first = first;
+              let last = last
+            "
             [ngClass]="{
               'line-left': first,
               'line-right': last,
@@ -66,13 +87,16 @@
       </tr>
     </ng-template>
 
+    <!-- Body for Participant List -->
     <ng-template pTemplate="body" let-rowData let-rowIndex="rowIndex">
       <tr
         (click)="chosenRow(rowData)"
         [ngClass]="{ chosenRow: rowData._id === selectedPlayerId }"
       >
         <td class="line-left line-right center-text">{{ rowIndex + 1 }}</td>
-        <td class="line-left line-right center-text">{{ rowData.playerName }}</td>
+        <td class="line-left line-right center-text">
+          {{ rowData.playerName }}
+        </td>
 
         <ng-container *ngFor="let category of categories; let categoryIndex = index">
           <td
@@ -83,33 +107,50 @@
               'center-text': true
             }"
           >
-            <div *ngIf="rowData['battle_' + battleId + '_points'].charAt(getPointIndex(categoryIndex, i)) === '0'">
-              <p-button
-                (onClick)="changedButton(rowData, getPointIndex(categoryIndex, i), 1)"
-                icon="pi pi-check"
-                styleClass="p-button-rounded p-button-text p-button-raised"
-              ></p-button>
+            <!-- If the obstacle uses 0/1 logic -->
+            <div *ngIf="!isSelectButtonRequired(getPointIndex(categoryIndex, i))">
+              <div *ngIf="rowData['battle_' + battleId + '_points'].charAt(getPointIndex(categoryIndex, i)) === '0'">
+                <p-button
+                  (onClick)="changedButton(rowData, getPointIndex(categoryIndex, i), 1)"
+                  icon="pi pi-check"
+                  styleClass="p-button-rounded p-button-text p-button-raised"
+                ></p-button>
+              </div>
+              <div *ngIf="rowData['battle_' + battleId + '_points'].charAt(getPointIndex(categoryIndex, i)) === '1'">
+                <p-button
+                  (onClick)="changedButton(rowData, getPointIndex(categoryIndex, i), 0)"
+                  icon="pi pi-times"
+                  styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"
+                ></p-button>
+              </div>
             </div>
-            <div *ngIf="rowData['battle_' + battleId + '_points'].charAt(getPointIndex(categoryIndex, i)) === '1'">
-              <p-button
-                (onClick)="changedButton(rowData, getPointIndex(categoryIndex, i), 0)"
-                icon="pi pi-times"
-                styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"
-              ></p-button>
+        
+            <!-- If the obstacle uses selectButton -->
+            <div *ngIf="isSelectButtonRequired(getPointIndex(categoryIndex, i))"
+            style="min-width:250px">
+              <p-selectButton
+                [options]="brickOptions"
+                optionLabel="label"
+                [ngModel]="getSelectButtonValue(rowData, getPointIndex(categoryIndex, i))"
+                optionValue="label"
+                (onChange)="setBrick(rowData, getPointIndex(categoryIndex, i), $event)"
+              ></p-selectButton>
             </div>
           </td>
         </ng-container>
+        
 
+        <!-- Extra Points Input -->
         <td class="line-left line-right center-text">
           <p-inputNumber
-            #inputExtraPopints
-            (onBlur)="setExtraPoints(rowData._id, inputExtraPopints.value)"
+            #inputExtraPoints
+            (onBlur)="setExtraPoints(rowData._id, inputExtraPoints.value)"
             [ngModel]="rowData['battle_' + battleId + '_extraPoints']"
             (keypress)="allowOnlyNumbers($event)"
-          >
-          </p-inputNumber>
+          ></p-inputNumber>
         </td>
 
+        <!-- Time Input -->
         <td class="line-left line-right center-text">
           <p-inputNumber
             #inputTime
@@ -121,8 +162,9 @@
           ></p-inputNumber>
         </td>
 
-        <td class="line-left line-right center-text" style="min-width: 80px;">
-          {{ rowData['battle_' + battleId + '_score'] | number: '1.2-2' }}
+        <!-- Score Calculation -->
+        <td class="line-left line-right center-text">
+          {{ rowData["battle_" + battleId + "_score"] | number : "1.2-2" }}
         </td>
       </tr>
     </ng-template>

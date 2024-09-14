@@ -10,7 +10,7 @@ pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 interface Obstacle {
   name: string;
-  score: number;
+  score: string;  // Can be 'x-y-z-t'
 }
 
 interface Category {
@@ -25,10 +25,18 @@ interface Category {
 })
 export class BattleTableComponent implements OnInit {
   selectedPlayerId = '-1';
-  points: number[] = [];
+  points: string[] = [];
   categories: Category[] = [];
   participantList: IPlayerPoints[] = [];
   battleId: string = '';
+
+  // Brick options for select button
+  brickOptions = [
+    { label: '0', value: '10' },
+    { label: '1', value: '0' },
+    { label: '2', value: '6' },
+    { label: '3', value: '8' }
+  ];
 
   constructor(
     private playerPointsService: PlayerPointsService,
@@ -100,17 +108,15 @@ export class BattleTableComponent implements OnInit {
       }
     });
   }
-  
 
   parseBattleData(battleString: string) {
     const parts = battleString.split('/').filter(part => part.trim() !== '').slice(1);
     
-    // Przetwarzanie kategorii i przeszkód
     parts.forEach(part => {
       const [categoryName, ...obstacles] = part.split(';');
       const parsedObstacles = obstacles.map(obstacle => {
         const [name, score] = obstacle.split(':');
-        return { name, score: parseInt(score, 10) };
+        return { name, score };
       });
   
       this.categories.push({ name: categoryName, obstacles: parsedObstacles });
@@ -118,7 +124,6 @@ export class BattleTableComponent implements OnInit {
   
     this.points = this.categories.flatMap(category => category.obstacles.map(o => o.score));
   }
-  
 
   chosenRow(player: IPlayerPoints) {
     this.selectedPlayerId = player._id!;
@@ -130,9 +135,25 @@ export class BattleTableComponent implements OnInit {
     const participant = this.participantList[participantIndex];
     const points = participant[currentBattlePointsKey];
     participant[currentBattlePointsKey] = points.substring(0, index) + value + points.substring(index + 1);
-    participant[`battle_${this.battleId}_score`] += value === 1 ? this.points[index] : -this.points[index];
+    participant[`battle_${this.battleId}_score`] += value === 1 ? parseInt(this.points[index]) : -parseInt(this.points[index]);
     this.updatePlayerPoints(participant, participantIndex);
   }
+
+  setBrick(player: IPlayerPoints, index: number, event: any) {
+    const participantIndex = this.participantList.findIndex(participant => participant._id === player._id);
+    const participant = this.participantList[participantIndex];
+    const currentPoints = participant[`battle_${this.battleId}_points`];
+  
+    // Zaktualizuj label w stringu battle_x_points
+    participant[`battle_${this.battleId}_points`] = currentPoints.substring(0, index) + event.value + currentPoints.substring(index + 1);
+  
+    // Przelicz wynik na podstawie zaktualizowanej wartości
+    this.calculateScore(participant);
+    this.updatePlayerPoints(participant, participantIndex);
+  }
+  
+  
+  
 
   setExtraPoints(id: string, extraPoints: number) {
     const participantIndex = this.participantList.findIndex(participant => participant._id === id);
@@ -154,23 +175,36 @@ export class BattleTableComponent implements OnInit {
 
   calculateScore(participant: IPlayerPoints) {
     const baseScore = this.points.reduce((total, point, index) => {
-      return participant[`battle_${this.battleId}_points`].charAt(index) === '1' ? total + point : total;
+      const currentPointChar = participant[`battle_${this.battleId}_points`].charAt(index);
+      
+      // Sprawdź, czy punkt zawiera "-" (czyli używamy brickOptions)
+      if (point.includes('-')) {
+        // Zwróć wartość `value` z brickOptions, jeśli `point` zawiera '-'
+        const optionValue = this.brickOptions.find(option => option.label === currentPointChar)?.value || '0';
+        return total + parseInt(optionValue, 10);
+      } else {
+        // W przeciwnym razie użyj normalnej logiki (0/1)
+        return currentPointChar === '1' ? total + parseInt(point, 10) : total;
+      }
     }, 0);
   
+    // Aktualizujemy `score` na podstawie wartości `extraPoints` i `time`
     participant[`battle_${this.battleId}_score`] = baseScore +
-      participant[`battle_${this.battleId}_extraPoints`] +
-      participant[`battle_${this.battleId}_time`];
-    
-    // Trigger change detection if necessary (optional)
-    this.participantList = [...this.participantList];  // Force Angular to detect changes
+      (participant[`battle_${this.battleId}_extraPoints`] || 0) +
+      (participant[`battle_${this.battleId}_time`] || 0);
+  
+    // Wymuszenie przeliczenia wyników
+    this.participantList = [...this.participantList];
   }
   
+  
+  
+
   updatePlayerPoints(participant: IPlayerPoints, participantIndex: number) {
-    // Assuming you have a method to update the points in the backend or local storage
     this.playerPointsService.update(participant._id!, participant).subscribe({
       next: (updatedParticipant) => {
         this.participantList[participantIndex] = updatedParticipant;
-        this.participantList = [...this.participantList]; // Force change detection
+        this.participantList = [...this.participantList]; // Trigger change detection
       },
     });
   }
@@ -182,6 +216,15 @@ export class BattleTableComponent implements OnInit {
       event.preventDefault();
     }
   }
+
+  isSelectButtonRequired(index: number): boolean {
+    return this.points[index].includes('-');
+  }
+
+  getSelectButtonValue(rowData: IPlayerPoints, index: number): string {
+    return rowData[`battle_${this.battleId}_points`].charAt(index);
+  }
+  
 
   generatePDF() {
     const tableBody = this.buildTableBody();
@@ -229,7 +272,6 @@ export class BattleTableComponent implements OnInit {
   }
 
   getPointIndex(categoryIndex: number, obstacleIndex: number): number {
-    // Oblicz indeks punktu w `points` w zależności od kategorii i przeszkody
     let index = 0;
     for (let i = 0; i < categoryIndex; i++) {
       index += this.categories[i].obstacles.length;
