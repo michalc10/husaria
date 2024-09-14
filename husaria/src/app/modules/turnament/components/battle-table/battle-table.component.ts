@@ -214,4 +214,13 @@ export class BattleTableComponent implements OnInit {
     });
     return body;
   }
+
+  getPointIndex(categoryIndex: number, obstacleIndex: number): number {
+    // Oblicz indeks punktu w `points` w zależności od kategorii i przeszkody
+    let index = 0;
+    for (let i = 0; i < categoryIndex; i++) {
+      index += this.categories[i].obstacles.length;
+    }
+    return index + obstacleIndex;
+  }
 }

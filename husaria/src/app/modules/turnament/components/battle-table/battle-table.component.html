@@ -74,27 +74,33 @@
         <td class="line-left line-right center-text">{{ rowIndex + 1 }}</td>
         <td class="line-left line-right center-text">{{ rowData.playerName }}</td>
 
-        <td
-          *ngFor="let point of points; let i = index"
-          class="center-text"
-        >
-          <div *ngIf="rowData['battle_' + battleId + '_points'].charAt(i) === '0'">
-            <p-button
-              (onClick)="changedButton(rowData, i, 1)"
-              icon="pi pi-check"
-              styleClass="p-button-rounded p-button-text p-button-raised"
-            ></p-button>
-          </div>
-          <div *ngIf="rowData['battle_' + battleId + '_points'].charAt(i) === '1'">
-            <p-button
-              (onClick)="changedButton(rowData, i, 0)"
-              icon="pi pi-times"
-              styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"
-            ></p-button>
-          </div>
-        </td>
+        <ng-container *ngFor="let category of categories; let categoryIndex = index">
+          <td
+            *ngFor="let obstacle of category.obstacles; let i = index; let first = first; let last = last"
+            [ngClass]="{
+              'line-left': first,
+              'line-right': last,
+              'center-text': true
+            }"
+          >
+            <div *ngIf="rowData['battle_' + battleId + '_points'].charAt(getPointIndex(categoryIndex, i)) === '0'">
+              <p-button
+                (onClick)="changedButton(rowData, getPointIndex(categoryIndex, i), 1)"
+                icon="pi pi-check"
+                styleClass="p-button-rounded p-button-text p-button-raised"
+              ></p-button>
+            </div>
+            <div *ngIf="rowData['battle_' + battleId + '_points'].charAt(getPointIndex(categoryIndex, i)) === '1'">
+              <p-button
+                (onClick)="changedButton(rowData, getPointIndex(categoryIndex, i), 0)"
+                icon="pi pi-times"
+                styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"
+              ></p-button>
+            </div>
+          </td>
+        </ng-container>
 
-        <td class="line-right center-text">
+        <td class="line-left line-right center-text">
           <p-inputNumber
             #inputExtraPopints
             (onBlur)="setExtraPoints(rowData._id, inputExtraPopints.value)"
