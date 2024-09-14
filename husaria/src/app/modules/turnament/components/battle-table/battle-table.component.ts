@@ -66,10 +66,10 @@ export class BattleTableComponent implements OnInit {
 
   loadParticipants() {
     const tournamentId = localStorage.getItem('tournamentId')!;
+    
     this.playerPointsService.getPlayerPointsForTournament(tournamentId).subscribe({
       next: (value: IPlayerPoints[]) => {
-        const numb = Number(this.battleId) - 1;
-        const previousBattleScoreKey = `battle_${numb}_score`;
+        const battleNumber = Number(this.battleId);
         const currentBattlePointsKey = `battle_${this.battleId}_points`;
   
         const numberOfObstacles = this.points.length; 
@@ -83,11 +83,24 @@ export class BattleTableComponent implements OnInit {
           }
         });
   
-        this.participantList = value.sort((a, b) => (b[previousBattleScoreKey] || 0) - (a[previousBattleScoreKey] || 0));
-        this.participantList = [...this.participantList];
+        this.participantList = value.sort((a, b) => {
+          let totalScoreA = 0;
+          let totalScoreB = 0;
+  
+          for (let i = 1; i < battleNumber; i++) {
+            const scoreKey = `battle_${i}_score`;
+            totalScoreA += a[scoreKey] || 0;
+            totalScoreB += b[scoreKey] || 0;
+          }
+  
+          return totalScoreB - totalScoreA; 
+        });
+  
+        this.participantList = [...this.participantList]; 
       }
     });
   }
+  
 
   parseBattleData(battleString: string) {
     const parts = battleString.split('/').filter(part => part.trim() !== '').slice(1);
