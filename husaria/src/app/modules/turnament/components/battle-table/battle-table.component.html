@@ -1,0 +1,124 @@
+<div class="line-bold">
+  <p-table
+    styleClass="p-datatable-gridlines center-text"
+    [scrollable]="true"
+    scrollHeight="75vh"
+    [value]="participantList"
+    [tableStyle]="{ 'min-width': '50rem' }"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th rowspan="3" class="line-left line-right center-text" style="min-width: 30px">Start</th>
+        <th rowspan="3" class="line-left line-right center-text">Imię</th>
+
+        <th
+          *ngFor="let category of categories"
+          [attr.colspan]="category.obstacles.length"
+          class="line-left line-right center-text"
+        >
+          {{ category.name }}
+        </th>
+
+        <th rowspan="3" class="line-left line-right center-text">Brak uzbrojenia / inne</th>
+        <th rowspan="3" class="line-left line-right center-text">Czas [s]</th>
+        <th rowspan="3" class="line-left line-right center-text">
+          <button
+            pButton
+            pRipple
+            icon="pi pi-file-pdf"
+            class="p-button-warning mr-2"
+            pTooltip="PDF"
+            tooltipPosition="bottom"
+            (click)="generatePDF()"
+          >
+            PDF
+          </button>
+          Wynik
+        </th>
+      </tr>
+      <tr>
+        <ng-container *ngFor="let category of categories">
+          <th
+            *ngFor="let obstacle of category.obstacles; let first = first; let last = last"
+            [ngClass]="{
+              'line-left': first,
+              'line-right': last,
+              'center-text': true
+            }"
+          >
+            {{ obstacle.name }}
+          </th>
+        </ng-container>
+      </tr>
+      <tr>
+        <ng-container *ngFor="let category of categories">
+          <th
+            *ngFor="let obstacle of category.obstacles; let first = first; let last = last"
+            [ngClass]="{
+              'line-left': first,
+              'line-right': last,
+              'center-text': true
+            }"
+          >
+            {{ obstacle.score }}
+          </th>
+        </ng-container>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-rowData let-rowIndex="rowIndex">
+      <tr
+        (click)="chosenRow(rowData)"
+        [ngClass]="{ chosenRow: rowData._id === selectedPlayerId }"
+      >
+        <td class="line-left line-right center-text">{{ rowIndex + 1 }}</td>
+        <td class="line-left line-right center-text">{{ rowData.playerName }}</td>
+
+        <td
+          *ngFor="let point of points; let i = index"
+          class="center-text"
+        >
+          <div *ngIf="rowData['battle_' + battleId + '_points'].charAt(i) === '0'">
+            <p-button
+              (onClick)="changedButton(rowData, i, 1)"
+              icon="pi pi-check"
+              styleClass="p-button-rounded p-button-text p-button-raised"
+            ></p-button>
+          </div>
+          <div *ngIf="rowData['battle_' + battleId + '_points'].charAt(i) === '1'">
+            <p-button
+              (onClick)="changedButton(rowData, i, 0)"
+              icon="pi pi-times"
+              styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"
+            ></p-button>
+          </div>
+        </td>
+
+        <td class="line-right center-text">
+          <p-inputNumber
+            #inputExtraPopints
+            (onBlur)="setExtraPoints(rowData._id, inputExtraPopints.value)"
+            [ngModel]="rowData['battle_' + battleId + '_extraPoints']"
+            (keypress)="allowOnlyNumbers($event)"
+          >
+          </p-inputNumber>
+        </td>
+
+        <td class="line-left line-right center-text">
+          <p-inputNumber
+            #inputTime
+            (onBlur)="setTime(rowData, inputTime.value)"
+            [ngModel]="rowData['battle_' + battleId + '_time']"
+            styleClass="custom-input"
+            [minFractionDigits]="2"
+            (keypress)="allowOnlyNumbers($event)"
+          ></p-inputNumber>
+        </td>
+
+        <td class="line-left line-right center-text" style="min-width: 80px;">
+          {{ rowData['battle_' + battleId + '_score'] | number: '1.2-2' }}
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

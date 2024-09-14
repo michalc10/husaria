@@ -1,12 +1,37 @@
 import { Component, OnInit } from '@angular/core';
 import { PlayerPointsService } from '../../services/playerPoints/playerPoints.service';
-import { Location } from '@angular/common';
-import { IPlayerPoints } from 'src/app/models/playerPoints';
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import { PageOrientation } from 'pdfmake/interfaces';
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
+interface IPlayerPoints {
+  _id?: string,
+  tournamentId: string;
+  playerName: string,
+  horse: string,
+  flag: string,
+  playerId: string,
+
+  sabrePoints: string,
+  sabreExtraPoints: number,
+  sabreTime: number,
+  sabreScore: number,
+
+  broadswordPoints: string,
+  broadswordExtraPoints: number,
+  broadswordTime: number,
+  broadswordScore: number,
+
+  lancePoints: string,
+  lanceExtraPoints: number,
+  lanceTime: number,
+  lanceScore: number,
+
+  penalty: number,
+  score: number
+
+}
 
 @Component({
   selector: 'app-lance',

@@ -1,0 +1,126 @@
+<div class="battles-container">
+  <div
+    class="battle-column"
+    *ngFor="let battle of battles; let battleIndex = index"
+  >
+    <h2>Bitwa {{ battleIndex + 1 }} - {{ battle.name }}</h2>
+    <input [(ngModel)]="battle.name" placeholder="Wpisz nazwę bitwy" />
+
+    <div class="categories-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Kategoria</th>
+            <th>Przeszkoda</th>
+            <th>Wynik</th>
+            <th>Akcje przeszkody</th>
+            <th>Akcje kategorii</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Iteracja przez kategorie -->
+          <ng-container
+            *ngFor="
+              let category of battle.categories;
+              let categoryIndex = index
+            "
+          >
+            <tr
+              *ngFor="
+                let obstacle of category.obstacles;
+                let obstacleIndex = index
+              "
+            >
+              <td
+                *ngIf="obstacleIndex === 0"
+                [attr.rowspan]="category.obstacles.length + 1"
+                class="category-name-cell"
+              >
+                <div class="centered-cell">
+                  <input
+                    [(ngModel)]="category.name"
+                    placeholder="Nazwa kategorii"
+                  />
+                </div>
+              </td>
+              <td>
+                <input
+                  [(ngModel)]="obstacle.name"
+                  placeholder="Nazwa przeszkody"
+                />
+              </td>
+              <td>
+                <input
+                  [(ngModel)]="obstacle.score"
+                  placeholder="Wynik"
+                  (keypress)="allowOnlyNumbers($event)"
+                />
+              </td>
+              <td class="action-cell">
+                <button
+                  class="btn-small btn-danger"
+                  (click)="
+                    removeObstacle(battleIndex, categoryIndex, obstacleIndex)
+                  "
+                >
+                  Usuń przeszkodę
+                </button>
+              </td>
+              <td
+                *ngIf="obstacleIndex === 0"
+                [attr.rowspan]="category.obstacles.length + 1"
+                class="action-cell"
+              >
+                <button
+                  class="btn-small btn-warning"
+                  (click)="removeCategory(battleIndex, categoryIndex)"
+                >
+                  Usuń kategorię
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="3" class="centered-cell">
+                <button
+                  class="btn-small btn-primary"
+                  (click)="addObstacle(battleIndex, categoryIndex)"
+                >
+                  + Dodaj przeszkodę
+                </button>
+              </td>
+            </tr>
+          </ng-container>
+          <!-- Dodaj kategorię -->
+          <tr>
+            <td colspan="5" class="centered-cell">
+              <button
+                class="btn btn-primary"
+                (click)="addCategory(battleIndex)"
+              >
+                + Dodaj kategorię
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="battleIndex > 2" class="remove-battle-container">
+      <button class="btn btn-danger" (click)="removeBattle(battleIndex)">
+        Usuń bitwę {{ battleIndex + 1 }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Przycisk dodania nowej bitwy (bitwa 4 lub 5) -->
+  <div class="add-battle-container" *ngIf="!showBattle5">
+    <button class="btn btn-success" (click)="addBattle()">
+      Dodaj nową bitwę
+    </button>
+  </div>
+
+  <!-- Zapisz zmiany -->
+  <div class="save-button-container">
+    <button class="btn btn-success" (click)="save()">Zapisz zmiany</button>
+  </div>
+</div>
