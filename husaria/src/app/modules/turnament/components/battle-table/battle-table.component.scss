@@ -1,3 +1,23 @@
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.table-container {
+  overflow-x: auto; /* Dodanie poziomego przewijania */
+  max-width: 100vw; /* Ustawienie maksymalnej szerokości na 100% okna przeglądarki */
+  // white-space: nowrap; /* Zapobiega łamaniu zawartości */
+}
+
+.p-datatable {
+  width: auto; /* Ustawia automatyczną szerokość dla całej tabeli */
+}
+
+.p-datatable table {
+  width: 100%; /* Tabela dopasuje się do dostępnej szerokości */
+}
+
 .line-left {
   border-left: 1px solid black !important;
 }
@@ -9,6 +29,7 @@
 .line-bold {
   border: 2px solid black !important;
 }
+
 ::ng-deep .p-inputnumber .p-inputtext {
   min-width: 85px;
   max-width: 85px;
