@@ -4,7 +4,7 @@ import { ITournament } from 'src/app/models/tournament';
 
 interface Obstacle {
   name: string;
-  score: string; // Zmieniamy na string, aby umożliwić wpisywanie złożonych wartości
+  score: string;
 }
 
 interface Category {
@@ -20,7 +20,7 @@ interface Battle {
 @Component({
   selector: 'app-competition',
   templateUrl: './competition.component.html',
-  styleUrls: ['./competition.component.scss']
+  styleUrls: ['./competition.component.scss'],
 })
 export class CompetitionComponent implements OnInit {
   tournament!: ITournament;
@@ -29,44 +29,42 @@ export class CompetitionComponent implements OnInit {
   showBattle4 = false;
   showBattle5 = false;
 
-  constructor(
-    private tournamentService: TournamentService,
-  ) { }
+  constructor(private tournamentService: TournamentService) {}
 
   ngOnInit(): void {
-    const tournamentId = localStorage.getItem("tournamentId");
+    const tournamentId = localStorage.getItem('tournamentId');
     if (tournamentId) {
       this.loadTournament(tournamentId);
     } else {
-      // Domyślnie wyświetlamy trzy bitwy
       this.battles = [
         this.parseBattle(''),
         this.parseBattle(''),
-        this.parseBattle('')
+        this.parseBattle(''),
       ];
     }
   }
 
   loadTournament(idTournament: string): void {
-    this.tournamentService.get(idTournament).subscribe((tournament: ITournament) => {
-      this.tournament = tournament;
+    this.tournamentService
+      .get(idTournament)
+      .subscribe((tournament: ITournament) => {
+        this.tournament = tournament;
 
-      // Wczytujemy dane z backendu i parsujemy je na strukturę bitwy
-      this.battles = [
-        this.parseBattle(tournament.battle_1 || this.getDefaultBattle(1)),
-        this.parseBattle(tournament.battle_2 || this.getDefaultBattle(2)),
-        this.parseBattle(tournament.battle_3 || this.getDefaultBattle(3))
-      ];
+        this.battles = [
+          this.parseBattle(tournament.battle_1 || this.getDefaultBattle(1)),
+          this.parseBattle(tournament.battle_2 || this.getDefaultBattle(2)),
+          this.parseBattle(tournament.battle_3 || this.getDefaultBattle(3)),
+        ];
 
-      if (tournament.battle_4) {
-        this.battles.push(this.parseBattle(tournament.battle_4));
-        this.showBattle4 = true;
-      }
-      if (tournament.battle_5) {
-        this.battles.push(this.parseBattle(tournament.battle_5));
-        this.showBattle5 = true;
-      }
-    });
+        if (tournament.battle_4) {
+          this.battles.push(this.parseBattle(tournament.battle_4));
+          this.showBattle4 = true;
+        }
+        if (tournament.battle_5) {
+          this.battles.push(this.parseBattle(tournament.battle_5));
+          this.showBattle5 = true;
+        }
+      });
   }
 
   getDefaultBattle(number: number): string {
@@ -83,16 +81,31 @@ export class CompetitionComponent implements OnInit {
     if (!battleString || battleString.trim() === '') {
       return {
         name: 'Default Battle',
-        categories: [{ name: 'Kategoria 1', obstacles: [{ name: 'Przeszkoda 1', score: '0' }] }]
+        categories: [
+          {
+            name: 'Kategoria 1',
+            obstacles: [{ name: 'Przeszkoda 1', score: '0' }],
+          },
+        ],
       };
     }
 
-    const cleanBattleString = battleString.replace(/;{2,}/g, ';').replace(/\/{2,}/g, '/').replace(/;$/, '').replace(/\/$/, '');
-    const [battleName, ...categoryStrings] = cleanBattleString.split('/').map(s => s.trim()).filter(Boolean);
+    const cleanBattleString = battleString
+      .replace(/;{2,}/g, ';')
+      .replace(/\/{2,}/g, '/')
+      .replace(/;$/, '')
+      .replace(/\/$/, '');
+    const [battleName, ...categoryStrings] = cleanBattleString
+      .split('/')
+      .map((s) => s.trim())
+      .filter(Boolean);
 
-    const categories = categoryStrings.map(categoryString => {
-      const [categoryName, ...obstacleStrings] = categoryString.split(';').map(s => s.trim()).filter(Boolean);
-      const obstacles = obstacleStrings.map(obstacleString => {
+    const categories = categoryStrings.map((categoryString) => {
+      const [categoryName, ...obstacleStrings] = categoryString
+        .split(';')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const obstacles = obstacleStrings.map((obstacleString) => {
         const [obstacleName, score] = obstacleString.split(':');
         return { name: obstacleName, score }; // Przechowujemy jako string
       });
@@ -103,8 +116,10 @@ export class CompetitionComponent implements OnInit {
   }
 
   buildBattleString(battle: Battle): string {
-    const categoryStrings = battle.categories.map(category => {
-      const obstacleStrings = category.obstacles.map(obstacle => `${obstacle.name}:${obstacle.score}`);
+    const categoryStrings = battle.categories.map((category) => {
+      const obstacleStrings = category.obstacles.map(
+        (obstacle) => `${obstacle.name}:${obstacle.score}`
+      );
       return `${category.name};${obstacleStrings.join(';')}`;
     });
     return `${battle.name};/${categoryStrings.join('/')} `;
@@ -127,13 +142,18 @@ export class CompetitionComponent implements OnInit {
       this.tournament.battle_5 = '';
     }
 
-    this.tournamentService.update(this.tournament._id!, this.tournament).subscribe(response => {
-      console.log('Dane zapisane na serwerze:', response);
-      alert('Zmiany zapisane!');
-    }, error => {
-      console.error('Błąd podczas zapisu:', error);
-      alert('Błąd podczas zapisu zmian!');
-    });
+    this.tournamentService
+      .update(this.tournament._id!, this.tournament)
+      .subscribe(
+        (response) => {
+          console.log('Dane zapisane na serwerze:', response, this.tournament._id);
+          alert(`Zmiany zapisane!`);
+        },
+        (error) => {
+          console.error('Błąd podczas zapisu:', error);
+          alert('Błąd podczas zapisu zmian!');
+        }
+      );
   }
 
   allowOnlyNumbers(event: KeyboardEvent): void {
@@ -141,7 +161,7 @@ export class CompetitionComponent implements OnInit {
     const inputChar = String.fromCharCode(event.charCode);
 
     if (!allowedChars.test(inputChar) && event.charCode !== 0) {
-      event.preventDefault(); // Zablokowanie niedozwolonych znaków
+      event.preventDefault();
     }
   }
 
@@ -165,15 +185,28 @@ export class CompetitionComponent implements OnInit {
   }
 
   addObstacle(battleIndex: number, categoryIndex: number): void {
-    this.battles[battleIndex].categories[categoryIndex].obstacles.push({ name: '', score: '0' });
+    this.battles[battleIndex].categories[categoryIndex].obstacles.push({
+      name: '',
+      score: '0',
+    });
   }
 
-  removeObstacle(battleIndex: number, categoryIndex: number, obstacleIndex: number): void {
-    this.battles[battleIndex].categories[categoryIndex].obstacles.splice(obstacleIndex, 1);
+  removeObstacle(
+    battleIndex: number,
+    categoryIndex: number,
+    obstacleIndex: number
+  ): void {
+    this.battles[battleIndex].categories[categoryIndex].obstacles.splice(
+      obstacleIndex,
+      1
+    );
   }
 
   addCategory(battleIndex: number): void {
-    this.battles[battleIndex].categories.push({ name: 'Nowa kategoria', obstacles: [] });
+    this.battles[battleIndex].categories.push({
+      name: 'Nowa kategoria',
+      obstacles: [],
+    });
   }
 
   removeCategory(battleIndex: number, categoryIndex: number): void {
