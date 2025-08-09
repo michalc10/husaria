@@ -1,25 +1,100 @@
-form {
-    max-width: 500px;
-    margin: 0 auto;
+:host ::ng-deep .player-dialog {
+  width: 44rem;
+  max-width: 95vw;
+
+  .p-dialog-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--surface-200);
   }
-  
-  .form-group {
-    margin-bottom: 20px;
+
+  .p-dialog-content {
+    padding: 1.25rem;
+    background: var(--surface-0);
   }
-  
-  label {
-    display: block;
-    margin-bottom: 5px;
+
+  .p-dialog-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--surface-200);
   }
-  
-  input[type="text"] {
+}
+
+.pd-header {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.pd-header__icon {
+  color: var(--primary-color);
+  font-size: 1.25rem;
+}
+
+.pd-header__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.pd-form {
+  display: block;
+}
+
+.pd-card {
+  background: var(--surface-50);
+  border: 1px solid var(--surface-200);
+  border-radius: 10px;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.pd-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .pd-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.pd-label {
+  font-size: .875rem;
+  color: var(--text-color-secondary);
+  margin-bottom: .375rem;
+}
+
+.pd-input {
+  width: 100%;
+
+  > .pi {
+    color: var(--text-color-secondary);
+  }
+
+  .p-inputtext {
     width: 100%;
-    padding: 10px;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: .75rem .75rem .75rem 2.25rem; 
   }
-  
-  button[type="submit"] {
-    margin-top: 20px;
+
+  .p-inputtext:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 20%, transparent);
   }
+}
+
+.p-error {
+  margin-top: .375rem;
+  font-size: .75rem;
+}
+
+.pd-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+}

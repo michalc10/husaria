@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { TournamentService } from '../../services/tournament/tournament.service';
 import { ITournament } from 'src/app/models/tournament';
+import { Router } from '@angular/router';
 
 interface Obstacle {
   name: string;
@@ -29,7 +30,8 @@ export class CompetitionComponent implements OnInit {
   showBattle4 = false;
   showBattle5 = false;
 
-  constructor(private tournamentService: TournamentService) {}
+  constructor(private tournamentService: TournamentService, 
+      private router: Router) {}
 
   ngOnInit(): void {
     const tournamentId = localStorage.getItem('tournamentId');
@@ -144,16 +146,26 @@ export class CompetitionComponent implements OnInit {
 
     this.tournamentService
       .update(this.tournament._id!, this.tournament)
-      .subscribe(
-        (response) => {
-          console.log('Dane zapisane na serwerze:', response, this.tournament._id);
-          alert(`Zmiany zapisane!`);
+      .subscribe({
+        next: (response) => {
+          const currentUrl = this.router.url;
+          this.router
+            .navigateByUrl('/', { skipLocationChange: true })
+            .then(() => {
+              this.router.navigateByUrl(currentUrl);
+            });
+
+          console.log(
+            'Dane zapisane na serwerze:',
+            response,
+            this.tournament._id
+          );
         },
-        (error) => {
+        error: (error) => {
           console.error('Błąd podczas zapisu:', error);
           alert('Błąd podczas zapisu zmian!');
-        }
-      );
+        },
+      });
   }
 
   allowOnlyNumbers(event: KeyboardEvent): void {

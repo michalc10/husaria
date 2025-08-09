@@ -1,15 +1,59 @@
-<p-pickList [source]="sourceProducts" [target]="targetProducts" sourceHeader="Husarze" targetHeader="Husarze biorący udział w turnieju"
-    [dragdrop]="true" [responsive]="true" [sourceStyle]="{ height: '30rem' }" [targetStyle]="{ height: '30rem' }"
-    filterBy="name" sourceFilterPlaceholder="Search by name" targetFilterPlaceholder="Search by name"
-    breakpoint="1400px"
-    (onMoveToTarget)="onMoveToTarget($event)"
-    (onMoveToSource)="onMoveToSource($event)"
-    (onMoveAllToTarget)="onMoveAllToTarget($event)"
-    (onMoveAllToSource)="onMoveAllToSource($event)">
-    <ng-template let-player pTemplate="item">
-        <div class="flex flex-wrap p-2 align-items-center gap-3 player">
-            <p>{{player.name}} -> {{player.horse}}</p>
-            {{player.flag}}
+<p-pickList
+  [source]="sourceProducts"
+  [target]="targetProducts"
+  styleClass="players-picklist"
+  sourceHeader="Husarze"
+  targetHeader="Husarze biorący udział w turnieju"
+  [dragdrop]="true"
+  [responsive]="true"
+  [showSourceControls]="false"
+  [showTargetControls]="false"
+  filterBy="name"
+  sourceFilterPlaceholder="Szukaj po imieniu"
+  targetFilterPlaceholder="Szukaj po imieniu"
+  breakpoint="1200px"
+  (onMoveToTarget)="onMoveToTarget($event)"
+  (onMoveToSource)="onMoveToSource($event)"
+  (onMoveAllToTarget)="onMoveAllToTarget($event)"
+  (onMoveAllToSource)="onMoveAllToSource($event)"
+  (onTargetReorder)="onTargetReorder($event)"
+>
+  <ng-template pTemplate="sourceheader">
+    <div class="list-header">
+      <span>Husarze</span>
+      <span class="count">{{ sourceProducts.length }}</span>
+    </div>
+  </ng-template>
+
+  <ng-template pTemplate="targetheader">
+    <div class="list-header">
+      <span>Husarze biorący udział w turnieju</span>
+      <span class="count">{{ targetProducts.length }}</span>
+    </div>
+  </ng-template>
+
+  <ng-template let-player pTemplate="item">
+    <div class="player-item" [class.in-target]="isInTarget(player)">
+      <div class="avatar">{{ getInitials(player.name) }}</div>
+
+      <div class="details">
+        <div class="name" [title]="player.name">{{ player.name }}</div>
+        <div class="meta">
+          <span class="chip chip-horse">
+            <i class="pi pi-compass"></i>
+            {{ player.horse }}
+          </span>
+          <span class="chip chip-flag">
+            <i class="pi pi-flag"></i>
+            {{ player.flag }}
+          </span>
         </div>
-    </ng-template>
+      </div>
+
+      <div class="right" *ngIf="isInTarget(player)">
+        <span class="order-badge">{{ getTargetIndex(player) }}</span>
+        <i class="pi pi-arrows-all" title="Przeciągnij, aby zmienić kolejność"></i>
+      </div>
+    </div>
+  </ng-template>
 </p-pickList>

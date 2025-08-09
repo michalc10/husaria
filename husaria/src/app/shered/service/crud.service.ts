@@ -1,44 +1,48 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { api } from 'src/app/global';
+import { API_BASE_URL } from 'src/app/globals';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class CrudService {
+  constructor(private http: HttpClient) {}
 
-  constructor(private http: HttpClient) { }
-
-
-
-  // READ
-  read(rout: String, id: String): Observable<any> {
-    return this.http.get<any>(api + rout + '/' + id);
+  // GET /:route/:id
+  read<T>(route: string, id: string | number): Observable<T> {
+    return this.http.get<T>(this.url(route, id));
   }
 
-  // CREATE
-  create(rout: String, data: any): Observable<any> {
-    return this.http.post<any>(api + rout, data);
+  // GET /:route
+  list<T>(route: string): Observable<T[]> {
+    return this.http.get<T[]>(this.url(route));
   }
 
-  // UPDATE
-  update(rout: String, id: String, data: any): Observable<any> {
-    return this.http.put<any>(api + rout + '/' + id, data);
+  // POST /:route
+  create<TBody, TResp = TBody>(route: string, data: TBody): Observable<TResp> {
+    return this.http.post<TResp>(this.url(route), data);
   }
 
-  // DELETE
-  delete(rout: String, id: String): Observable<any> {
-    return this.http.delete<any>(api + rout + '/' + id);
+  // PUT /:route/:id
+  update<TBody, TResp = TBody>(route: string, id: string | number, data: Partial<TBody>): Observable<TResp> {
+    return this.http.put<TResp>(this.url(route, id), data);
   }
 
-  // LIST
-  list(rout: String): Observable<any[]> {
-    return this.http.get<any[]>(api + rout);
+  // PATCH /:route/:id (opcjonalnie)
+  patch<TBody, TResp = TBody>(route: string, id: string | number, data: Partial<TBody>): Observable<TResp> {
+    return this.http.patch<TResp>(this.url(route, id), data);
   }
 
-  // LIST BY ID
-  listById(rout: String, id: String): Observable<any[]> {
-    return this.http.get<any[]>(api + rout + '/' + id);
+  // DELETE /:route/:id
+  delete(route: string, id: string | number): Observable<void> {
+    return this.http.delete<void>(this.url(route, id));
+  }
+
+  // Helpers
+  private url(route: string, id?: string | number): string {
+    const trim = (s: string) => s.replace(/^\/+|\/+$/g, '');
+    const base = trim(API_BASE_URL);
+    const r = trim(route);
+    const path = id !== undefined ? `${r}/${encodeURIComponent(String(id))}` : r;
+    return `${base}/${path}`;
   }
 }

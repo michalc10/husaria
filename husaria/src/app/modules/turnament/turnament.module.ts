@@ -20,6 +20,7 @@ import { PdfMakeDialogComponent } from './components/pdf-make-dialog/pdf-make-di
 import { DialogModule } from 'primeng/dialog';
 import { CompetitionComponent } from './components/competition/competition.component';
 import { BattleTableComponent } from './components/battle-table/battle-table.component';
+import { SkeletonModule } from 'primeng/skeleton';
 
 @NgModule({
   declarations: [
@@ -44,7 +45,8 @@ import { BattleTableComponent } from './components/battle-table/battle-table.com
     TableModule,
     InputNumberModule,
     DropdownModule,
-    DialogModule
+    DialogModule,
+    SkeletonModule 
   ]
 })
 export class TurnamentModule { }

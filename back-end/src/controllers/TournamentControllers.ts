@@ -2,21 +2,20 @@ import { NextFunction, Request, Response, request } from "express";
 import { Tournament } from "../models/TournamentModel";
 import mongoose from "mongoose";
 
-
-
-const createTournament = (req: Request, res: Response, next: NextFunction) => {
+export const createTournament = async (req: Request, res: Response) => {
+  try {
     const { leagueId, city, date } = req.body;
     const tournament = new Tournament({
-        _id: new mongoose.Types.ObjectId(),
-        leagueId: leagueId,
-        city: city,
-        date: date
-
+      _id: new mongoose.Types.ObjectId(),
+      leagueId,
+      city,
+      date: date ? new Date(date) : new Date()
     });
-    return tournament
-        .save()
-        .then((tournament) => res.status(201).json(tournament))
-        .catch((err) => res.status(500).json({ err }));
+    const saved = await tournament.save();
+    return res.status(201).json(saved);
+  } catch (err) {
+    return res.status(500).json({ err });
+  }
 };
 
 

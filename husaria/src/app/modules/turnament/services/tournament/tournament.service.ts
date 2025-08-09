@@ -1,33 +1,28 @@
-import { HttpClient } from '@angular/common/http';
+// tournament.service.ts
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { api } from 'src/app/global';
+import { CrudService } from 'src/app/shered/service/crud.service';
 import { ITournament } from 'src/app/models/tournament';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class TournamentService {
+  private route = 'tournament';
 
-  url = api + 'tournament'
-  constructor(
-    private http: HttpClient
-  ) { }
+  constructor(private crud: CrudService) {}
 
-  get(idTournament: string): Observable<ITournament> {
-    return this.http.get<ITournament>(this.url +'/'+ idTournament)
+  get(id: string): Observable<ITournament> {
+    return this.crud.read<ITournament>(this.route, id);
   }
 
-  create(playerPoints: any): Observable<ITournament> {
-    return this.http.post<ITournament>(this.url, playerPoints)
+  create(data: Partial<ITournament>): Observable<ITournament> {
+    return this.crud.create<Partial<ITournament>, ITournament>(this.route, data);
   }
 
-  update(id: String, data: ITournament): Observable<ITournament> {
-    return this.http.put<ITournament>(this.url  + '/' + id, data);
+  update(id: string, data: Partial<ITournament>): Observable<ITournament> {
+    return this.crud.update<Partial<ITournament>, ITournament>(this.route, id, data);
   }
 
-  
-  delete( id: String): Observable<ITournament> {
-    return this.http.delete<ITournament>(this.url + '/' + id);
+  listByLeague(leagueId: string): Observable<ITournament[]> {
+    return this.crud.read<ITournament[]>('tournament/league', leagueId);
   }
 }

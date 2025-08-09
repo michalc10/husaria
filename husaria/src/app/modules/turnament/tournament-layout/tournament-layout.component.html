@@ -1,12 +1,24 @@
-<div class="position" style="margin:5px">
-    <div class="" style="display: flex;flex-direction: column;">
-
-        <div class="" style="display: flex; justify-content: space-around; align-items: center;">
-            <h1 >{{tournament?.city}}</h1>
-            <h2 >{{tournament?.date|date: 'dd.MM.yyyy'}}</h2>
-        </div>
-        <p-selectButton [ngModel]="tournamentOption" [options]="tournamentOptions" optionLabel="name"
-            optionValue="value" (onChange)="selectedTournamentOptions($event)"></p-selectButton>
+<div class="tl">
+  <div class="tl-header" *ngIf="tournament$ | async as tournament; else headerLoading">
+    <h1 class="tl-city">{{ tournament.city }}</h1>
+    <h2 class="tl-date">{{ tournament.date | date: 'dd.MM.yyyy' }}</h2>
+  </div>
+  <ng-template #headerLoading>
+    <div class="tl-header">
+      <p-skeleton width="12rem" height="2rem"></p-skeleton>
+      <p-skeleton width="8rem" height="1.5rem"></p-skeleton>
     </div>
+  </ng-template>
+
+  <div class="tl-controls">
+    <p-selectButton
+      [options]="(options$ | async) ?? []"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="(selectedOption$ | async) ?? 1"
+      (ngModelChange)="onOptionChange($event)"
+    ></p-selectButton>
+  </div>
+
+  <router-outlet></router-outlet>
 </div>
-<router-outlet></router-outlet>

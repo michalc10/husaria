@@ -1,29 +1,73 @@
-<p-dialog [(visible)]="display" [modal]="true" (onHide)="closingWithoutSaving()" [draggable]="false" [resizable]="true"
-    [style]="{width: '50vw', height:'auto'}">
+<p-dialog
+  [(visible)]="display"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="true"
+  (onHide)="closingWithoutSaving()"
+  styleClass="league-dialog"
+>
+  <ng-template pTemplate="header">
+    <div class="ld-header">
+      <i class="pi pi-sitemap ld-icon"></i>
+      <span class="ld-title">Liga Husarska</span>
+    </div>
+  </ng-template>
 
-    <form [formGroup]="leagueForm" (ngSubmit)="onSubmit()">
-        <div class="" style="display: flex; flex-direction: column; align-items: center; gap:10px">
-            <h1 style="font-weight: bold; font-size: 20px;">Liga Husarska</h1>
-            <div class="" style="display: flex;flex-direction: row; gap:5px;">
-                <div class="form-group">
-                    <label for="name">Nazwa:</label>
-                    <input pInputText type="text" id="name" class="form-control" formControlName="name">
-                </div>
-                <div class="form-group">
-                    <label for="flag">Rok:</label>
-                    <input pInputText type="text" id="flag" class="form-control" formControlName="year">
-                </div>
-            </div>
-            <h2 *ngIf="tournamentList.length != 0" style="font-weight: bold; font-size: 18px;">Turnieje</h2>
-            <div *ngFor="let rowData of tournamentList; let i = index" class=""
-                style="display: flex;flex-direction: row; gap:5px; align-items: center;">
-                {{i+1}}.
-                <input pInputText [(ngModel)]="rowData.city" [ngModelOptions]="{ standalone: true }" />
-                <p-calendar dateFormat="dd.mm.yy" [(ngModel)]="rowData.date" [ngModelOptions]="{ standalone: true }"
-                    appendTo="body"></p-calendar>
-            </div>
-            <p-button type="submit" class="btn btn-primary">{{ buttonText }}</p-button>
-
+  <form [formGroup]="leagueForm" (ngSubmit)="onSubmit()" class="ld-form p-fluid">
+    <div class="ld-card">
+      <div class="ld-row">
+        <div class="field">
+          <label for="name">Nazwa</label>
+          <input pInputText id="name" formControlName="name" />
         </div>
-    </form>
+
+        <div class="field">
+          <label for="year">Rok</label>
+          <input pInputText id="year" formControlName="year" />
+        </div>
+      </div>
+
+      <div class="ld-section">
+        <div class="ld-section__head">
+          <h3>Turnieje</h3>
+          <button
+            type="button"
+            pButton
+            icon="pi pi-plus"
+            label="Dodaj turniej"
+            class="p-button-sm"
+            (click)="addTournamentRow()"
+          ></button>
+        </div>
+
+        <div class="ld-tournaments" *ngIf="tournamentList.length; else emptyTournaments">
+          <div class="ld-tournament-row" *ngFor="let rowData of tournamentList; let i = index">
+            <span class="ld-number">{{ i + 1 }}.</span>
+            <input
+              pInputText
+              [(ngModel)]="rowData.city"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="Miasto"
+            />
+            <p-calendar
+              [(ngModel)]="rowData.date"
+              [ngModelOptions]="{ standalone: true }"
+              dateFormat="dd.mm.yy"
+              appendTo="body"
+            ></p-calendar>
+          </div>
+        </div>
+        <ng-template #emptyTournaments>
+          <div class="ld-empty">Brak turniejów. Dodaj pierwszy.</div>
+        </ng-template>
+      </div>
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <div class="ld-actions">
+      <button type="button" pButton label="Anuluj" icon="pi pi-times" severity="secondary" (click)="closingWithoutSaving()"></button>
+      <button type="submit" pButton [label]="buttonText" icon="pi pi-save" [disabled]="leagueForm.invalid" (click)="onSubmit()"></button>
+    </div>
+  </ng-template>
 </p-dialog>

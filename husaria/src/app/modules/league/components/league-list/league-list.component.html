@@ -1,48 +1,57 @@
-<div class="card">
-    <p-table [value]="leagueList" [tableStyle]="{ 'min-width': '50rem' }">
-        <ng-template pTemplate="header" let-columns>
-            <tr>
-                <th style="width: 40%;">Nazwa</th>
-                <th style="width: 40%;">Rok</th>
-                <th>
-                    <p-button icon="pi pi-plus" styleClass="p-button-rounded p-button-success"
-                        (onClick)="createLeague()"></p-button>
-                </th>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-league>
-            <tr (click)="chosedRow(league)">
-                <td>
-                    <div class="items">{{ league.name }}</div>
-                </td>
-                <td>{{ league.year }}</td>
-                <td style="display: flex;gap: 5px;">
-                    <p-button icon="pi pi-pencil"
-                        styleClass="p-button-rounded p-button-info p-button-text p-button-raised"
-                        (onClick)="changeLeague(league)"></p-button>
-                </td>
+<div class="league-list">
+  <p-table [value]="leagueList" styleClass="league-table p-datatable-gridlines p-datatable-striped">
+    <ng-template pTemplate="header">
+      <tr>
+        <th class="col-name">Nazwa</th>
+        <th class="col-year">Rok</th>
+        <th class="col-actions">
+          <p-button
+            icon="pi pi-plus"
+            styleClass="p-button-rounded p-button-success"
+            (onClick)="createLeague()"
+            [ariaLabel]="'Dodaj ligę'"
+          ></p-button>
+        </th>
+      </tr>
+    </ng-template>
 
-            </tr>
-            <tr class="" *ngIf="idchosenRaw === league._id">
-                <td colspan="3">
-                    <div *ngFor="let tournament of tournamentList">
-                        <div class="tournament">
-                            <div class="items" (click)="selectedTournament(tournament)"
-                                style="display: flex; justify-content: center;">
-                                <div class=""
-                                    style="width: 50%;display: flex; justify-content: space-between; align-items: center;">
-                                    <div class="">{{tournament.city}}</div>
-                                    <div class="">{{tournament.date|date: 'dd.MM.yyyy'}}</div>
-                                    
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        </ng-template>
-    </p-table>
+    <ng-template pTemplate="body" let-league>
+      <tr (click)="chosedRow(league)">
+        <td><div class="items">{{ league.name }}</div></td>
+        <td>{{ league.year }}</td>
+        <td class="actions">
+          <p-button
+            icon="pi pi-pencil"
+            styleClass="p-button-rounded p-button-info p-button-text p-button-raised"
+            (onClick)="changeLeague(league)"
+            [ariaLabel]="'Edytuj ' + league.name"
+          ></p-button>
+        </td>
+      </tr>
+
+      <tr *ngIf="idchosenRaw === league._id">
+        <td colspan="3">
+          <div class="tournaments">
+            <div
+              class="tournament"
+              *ngFor="let tournament of tournamentList"
+              (click)="selectedTournament(tournament)"
+            >
+              <div class="tournament__content">
+                <div>{{ tournament.city }}</div>
+                <div>{{ tournament.date | date: 'dd.MM.yyyy' }}</div>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
 </div>
-<app-league-dialog [display]="display" [league]="chosenLeague"
-    (comunicationWithoutSaving)="closedDialogWithoutSaving($event)"
-    (comunication)="returnFromChild($event)"></app-league-dialog>
+
+<app-league-dialog
+  [display]="display"
+  [league]="chosenLeague"
+  (comunicationWithoutSaving)="closedDialogWithoutSaving($event)"
+  (comunication)="returnFromChild($event)"
+></app-league-dialog>

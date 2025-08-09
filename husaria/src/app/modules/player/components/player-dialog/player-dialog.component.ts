@@ -1,60 +1,82 @@
-import { Component, Input, OnInit, Output, EventEmitter, SimpleChange } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { IPlayer } from 'src/app/models/player';
-import { CrudService } from 'src/app/shered/service/crud.service';
 
 @Component({
   selector: 'app-player-dialog',
   templateUrl: './player-dialog.component.html',
   styleUrls: ['./player-dialog.component.scss']
 })
-export class PlayerDialogComponent implements OnInit {
+export class PlayerDialogComponent {
+  @Input() display = false;
 
-  playerForm: FormGroup = this.formBuilder.group({
-    name: ['', Validators.required],
-    horse: ['', Validators.required],
-    flag: [''],
-    _id: ['']
-  });
-
-  @Input() display: boolean = false;
-  @Input() set player(player: IPlayer) {
-    this.playerForm.setValue({
-      name: player.name,
-      horse: player.horse,
-      flag: player.flag,
-      _id: player._id
-    })
-    this.buttonText = player._id != '-1' ? 'Zmień' : 'Dodaj'
-
+  private _player: IPlayer | null = null;
+  @Input() set player(value: IPlayer | null) {
+    this._player = value;
+    this.patchForm(value);
+    this.updateUiTexts(value);
   }
-  @Output() comunication: EventEmitter<IPlayer> = new EventEmitter<IPlayer>();
-  @Output() comunicationWithoutSaving: EventEmitter<Boolean> = new EventEmitter<Boolean>()
-
-
-  buttonText: String = 'Add';
-
-  constructor(
-    private formBuilder: FormBuilder
-  ) { }
-
-  ngOnInit() {
-
+  get player(): IPlayer | null {
+    return this._player;
   }
 
-  onSubmit() {
-    const playerData = this.playerForm.value;
-    const player2: IPlayer = {
-      name: playerData.name,
-      horse: playerData.horse,
-      flag: playerData.flag,
-      _id: playerData._id
+  @Output() comunication = new EventEmitter<IPlayer>();
+  @Output() comunicationWithoutSaving = new EventEmitter<boolean>();
+
+  form: FormGroup;
+
+  header = 'Dodaj husarza';
+  buttonText = 'Dodaj';
+
+  constructor(private fb: FormBuilder) {
+    this.form = this.fb.group({
+      name: ['', Validators.required],
+      horse: ['', Validators.required],
+      flag: ['']
+    });
+  }
+
+  private patchForm(p: IPlayer | null) {
+    this.form.reset({
+      name: p?.name ?? '',
+      horse: p?.horse ?? '',
+      flag: p?.flag ?? ''
+    }, { emitEvent: false });
+  }
+
+  private updateUiTexts(p: IPlayer | null) {
+    const isEdit = !!p && !!p._id && p._id !== '-1';
+    this.header = isEdit ? 'Edytuj husarza' : 'Dodaj husarza';
+    this.buttonText = isEdit ? 'Zapisz' : 'Dodaj';
+  }
+
+  onSubmit(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
     }
 
-    this.comunication.emit(player2);
+    const { name, horse, flag } = this.form.getRawValue();
+
+    // Zachowujemy _id z wejścia (również sentinel '-1' dla CREATE)
+    const id = this.player?._id ?? '-1';
+
+    const payload: IPlayer = {
+      _id: id,
+      name,
+      horse,
+      flag
+    };
+
+    this.comunication.emit(payload);
   }
 
-  closingWithoutSaving() {
+  closingWithoutSaving(): void {
     this.comunicationWithoutSaving.emit(true);
   }
+
+  isInvalid(ctrl: string): boolean {
+  const c = this.form.get(ctrl);
+  return !!c && c.invalid && (c.dirty || c.touched);
+}
 }

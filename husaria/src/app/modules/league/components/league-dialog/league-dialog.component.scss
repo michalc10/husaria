@@ -1,25 +1,59 @@
-form {
-    max-width: 500px;
-    margin: 0 auto;
+:host ::ng-deep .league-dialog {
+  width: 52vw;
+  max-width: 980px;
+  .p-dialog-header, .p-dialog-footer { padding: 1rem 1.25rem; }
+  .p-dialog-content { padding: 1.25rem; }
+}
+
+.ld-header {
+  display: flex; align-items: center; gap: .5rem;
+  .ld-icon { color: var(--primary-color); }
+  .ld-title { font-weight: 600; font-size: 1.125rem; }
+}
+
+.ld-form { display: block; }
+
+.ld-card {
+  background: var(--surface-50);
+  border: 1px solid var(--surface-200);
+  border-radius: 10px;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.ld-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .ld-row { grid-template-columns: 1fr 1fr; }
+}
+
+.field { display: flex; flex-direction: column; gap: .375rem; }
+
+.ld-section {
+  display: grid; gap: .75rem;
+  &__head {
+    display: flex; align-items: center; justify-content: space-between;
   }
-  
-  .form-group {
-    margin-bottom: 20px;
-  }
-  
-  label {
-    display: block;
-    margin-bottom: 5px;
-  }
-  
-  input[type="text"] {
-    width: 100%;
-    padding: 10px;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  
-  button[type="submit"] {
-    margin-top: 20px;
-  }
+}
+
+.ld-tournaments { display: grid; gap: .5rem; }
+.ld-tournament-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: .5rem;
+  align-items: center;
+  background: var(--surface-0);
+  border: 1px solid var(--surface-200);
+  border-radius: 8px;
+  padding: .5rem .75rem;
+}
+
+.ld-number { width: 2ch; text-align: right; color: var(--text-color-secondary); }
+
+.ld-empty { color: var(--text-color-secondary); font-size: .875rem; }
+
+.ld-actions { display: flex; justify-content: flex-end; gap: .5rem; }

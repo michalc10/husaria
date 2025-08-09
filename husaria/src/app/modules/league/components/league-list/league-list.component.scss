@@ -1,45 +1,75 @@
-p-table {
-  font-size: 1rem;
-  margin-bottom: 20px;
+.league-list {
+  width: 100%;
+
+  .league-table {
+    width: 100%;
+  }
+
+  .tournaments {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .tournament {
+    background: var(--surface-50);
+    border: 1px solid var(--surface-200);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+
+    &__content {
+      width: min(560px, 100%);
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    &:hover {
+      background: var(--surface-100);
+    }
+  }
+
+  .items {
+    word-break: break-word;
+  }
 }
 
-th {
-  text-align: left;
-  font-weight: normal;
-  background-color: #f2f2f2;
+:host ::ng-deep .league-table {
+  width: 100%;
+
+  .p-datatable-wrapper {
+    overflow-x: auto; /* jeśli min-width > kontenera, pokaż poziomy scroll */
+  }
+
+  .p-datatable-table {
+    width: 100%;
+    min-width: 60rem; /* dopasuj (50–80rem) */
+    table-layout: fixed; /* kluczowe */
+  }
+
+  .p-datatable-thead > tr > th,
+  .p-datatable-tbody > tr > td {
+    padding: 0.75rem 1rem;
+  }
 }
 
-td {
-  text-align: left;
-  vertical-align: middle;
-  padding: 8px;
+/* proporcje (spójne z colgroup) */
+.col-name {
+  width: 50%;
 }
-
-.p-paginator {
-  margin-top: 20px;
+.col-year {
+  width: 30%;
 }
-
-.tournament {
-  margin: 5px;
-  padding: 5px;
-
-
-}
-
-.tournament:hover {
-
-  border: solid 1px;
-  margin: 4px;
-  border-radius: 20px;
-}
-
-
-
-.items {
+.col-actions {
+  width: 10rem;
+  width: 100%;
   display: flex;
-
+  justify-content: center;
 }
 
-.items:hover {
-  cursor: pointer
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
 }

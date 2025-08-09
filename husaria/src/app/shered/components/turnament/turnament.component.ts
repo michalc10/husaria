@@ -5,28 +5,22 @@ import { IPlayer } from 'src/app/models/player';
 @Component({
   selector: 'app-turnament',
   templateUrl: './turnament.component.html',
-  styleUrls: ['./turnament.component.scss']
+  styleUrls: ['./turnament.component.scss'],
 })
 export class TurnamentComponent {
-
   routPlayer = 'player';
-  checkboxValues: any[20] = []
+  checkboxValues: any[20] = [];
   users = ['User 1', 'User 2', 'User 3'];
   features = ['Feature 1', 'Feature 2', 'Feature 3'];
 
   playerList: IPlayer[] = [];
 
-  constructor(
-    private crudService: CrudService
-  ) {
-    this.crudService.list(this.routPlayer)
-      .subscribe({
-        next: (value) => {
-          this.playerList = value;
-        },error(err) {
-          console.log(err)
-        },
-      })
+  constructor(private crudService: CrudService) {
+    
+    this.crudService.list<IPlayer>(this.routPlayer).subscribe({
+      next: (players) => (this.playerList = players),
+      error: (err) => console.error('Nie udało się pobrać listy husarzy', err)
+    });
   }
 
   onCheckboxChange(event: any, user: string, feature: string) {

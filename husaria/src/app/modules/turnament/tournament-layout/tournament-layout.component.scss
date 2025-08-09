@@ -1,9 +1,23 @@
-.position {
+.tl {
+  padding: .75rem;
+
+  .tl-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .75rem;
+  }
+
+  .tl-city { font-size: 1.25rem; font-weight: 600; }
+  .tl-date { font-size: 1rem; color: var(--text-color-secondary); }
+
+  .tl-controls {
+    margin-bottom: 1rem;
     display: flex;
     justify-content: center;
-}
-
-h1, h2{
-    font-weight: bold;
-    font-size:25px;
+    :host ::ng-deep .p-selectbutton .p-button {
+      padding: .5rem .75rem;
+    }
+  }
 }

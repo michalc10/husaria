@@ -1,34 +1,30 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { IPlayerPoints } from 'src/app/models/playerPoints';
-import { api } from 'src/app/global';
 import { Observable } from 'rxjs';
+import { CrudService } from 'src/app/shered/service/crud.service';
+import { IPlayerPoints } from 'src/app/models/playerPoints';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class PlayerPointsService {
+  private readonly route = 'playerPoints';
 
-  url = api + 'playerPoints'
-  constructor(
-    private http: HttpClient
-  ) { }
+  constructor(private crud: CrudService) {}
 
-  getPlayerPointsForTournament(idTournament: string): Observable<IPlayerPoints[]> {
-    return this.http.get<IPlayerPoints[]>(this.url + '/tournament/' + idTournament)
+  getPlayerPointsForTournament(tournamentId: string): Observable<IPlayerPoints[]> {
+    return this.crud.read<IPlayerPoints[]>(`${this.route}/tournament`, tournamentId);
   }
 
-  create(playerPoints: any): Observable<IPlayerPoints> {
-    return this.http.post<IPlayerPoints>(this.url, playerPoints)
+  create(data: Partial<IPlayerPoints>): Observable<IPlayerPoints> {
+    return this.crud.create<Partial<IPlayerPoints>, IPlayerPoints>(this.route, data);
   }
+  
+  update(id: string, data: Partial<IPlayerPoints>) {
+  return this.crud.update<Partial<IPlayerPoints>, IPlayerPoints>('playerPoints', id, data);
+}
 
-  update(id: String, data: IPlayerPoints): Observable<IPlayerPoints> {
-    return this.http.put<IPlayerPoints>(this.url  + '/' + id, data);
+  delete(id: string): Observable<void> {
+    return this.crud.delete(this.route, id);
   }
+}
+ 
 
   
-  delete( id: String): Observable<IPlayerPoints> {
-    return this.http.delete<IPlayerPoints>(this.url + '/' + id);
-  }
-
-}

@@ -1,19 +1,68 @@
-<p-dialog [(visible)]="display" [modal]="true" [style]="{width: '30%'  }" (onHide)="closingWithoutSaving()" [draggable]="false"
-    [resizable]="true">
+<p-dialog
+  [(visible)]="display"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  [dismissableMask]="true"
+  (onHide)="closingWithoutSaving()"
+  styleClass="player-dialog"
+>
+  <ng-template pTemplate="header">
+    <div class="pd-header">
+      <i class="pi pi-user pd-header__icon"></i>
+      <span class="pd-header__title">{{ header }}</span>
+    </div>
+  </ng-template>
 
-    <form [formGroup]="playerForm" (ngSubmit)="onSubmit()">
-        <div class="form-group">
-            <label for="name">Imię i Nazwisko:</label>
-            <input type="text" id="name" class="form-control" formControlName="name">
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="pd-form">
+    <div class="pd-card">
+      <div class="field">
+        <label class="pd-label" for="name">Imię i nazwisko</label>
+        <span class="p-input-icon-left pd-input">
+          <i class="pi pi-user"></i>
+          <input
+            pInputText
+            id="name"
+            formControlName="name"
+            [ngClass]="{ 'p-invalid': isInvalid('name') }"
+            autocomplete="off"
+          />
+        </span>
+        <small class="p-error" *ngIf="isInvalid('name')">To pole jest wymagane.</small>
+      </div>
+
+      <div class="pd-row">
+        <div class="field pd-col">
+          <label class="pd-label" for="horse">Koń</label>
+          <span class="p-input-icon-left pd-input">
+            <i class="pi pi-compass"></i>
+            <input
+              pInputText
+              id="horse"
+              formControlName="horse"
+              [ngClass]="{ 'p-invalid': isInvalid('horse') }"
+              autocomplete="off"
+            />
+          </span>
+          <small class="p-error" *ngIf="isInvalid('horse')">To pole jest wymagane.</small>
         </div>
-        <div class="form-group">
-            <label for="horse">Koń:</label>
-            <input type="text" id="horse" class="form-control" formControlName="horse">
+
+        <div class="field pd-col">
+          <label class="pd-label" for="flag">Chorągiew</label>
+          <span class="p-input-icon-left pd-input">
+            <i class="pi pi-flag"></i>
+            <input pInputText id="flag" formControlName="flag" autocomplete="off" />
+          </span>
         </div>
-        <div class="form-group">
-            <label for="flag">Chorągiew:</label>
-            <input type="text" id="flag" class="form-control" formControlName="flag">
-        </div>
-        <p-button type="submit" class="btn btn-primary">{{ buttonText }}</p-button>
-    </form>
+      </div>
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <div class="pd-actions">
+      <button type="button" pButton label="Anuluj" icon="pi pi-times" severity="secondary" (click)="closingWithoutSaving()"></button>
+      <button type="submit" pButton [label]="buttonText" icon="pi pi-save" [disabled]="form.invalid" (click)="onSubmit()"></button>
+    </div>
+  </ng-template>
 </p-dialog>

@@ -5,31 +5,30 @@ import { Tournament } from "../models/TournamentModel";
 
 
 
-const createLeague = (req: Request, res: Response, next: NextFunction) => {
+const createLeague = async (req: Request, res: Response) => {
+  try {
     const { name, year } = req.body;
+
     const league = new League({
-        _id: new mongoose.Types.ObjectId(),
-        name: name,
-        year: year,
-
+      _id: new mongoose.Types.ObjectId(),
+      name,
+      year
     });
-    return league
-        .save()
-        .then((league) => {
-            for (let i = 0; i < 5; i++) {
-                const tournament = new Tournament({
-                    _id: new mongoose.Types.ObjectId(),
-                    leagueId: league._id,
-                    city: 'miasto ' + (i + 1).toString(),
-                    date: new Date()
 
-                });
-                tournament.save()
-            }
+    await league.save();
 
-            return res.status(201).json(league);
-        })
-        .catch((err) => res.status(500).json({ err }));
+    const tournament = new Tournament({
+      _id: new mongoose.Types.ObjectId(),
+      leagueId: league._id,
+      city: 'Miasto 1',
+      date: new Date()
+    });
+    await tournament.save();
+
+    return res.status(201).json(league);
+  } catch (err) {
+    return res.status(500).json({ err });
+  }
 };
 
 
