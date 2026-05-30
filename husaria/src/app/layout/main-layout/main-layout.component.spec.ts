@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TEST_IMPORTS, TEST_PROVIDERS } from 'src/app/testing/component-test-utils';
+import { NavbarComponent } from '../navbar/navbar.component';
 
 import { MainLayoutComponent } from './main-layout.component';
 
@@ -8,7 +10,9 @@ describe('MainLayoutComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ MainLayoutComponent ]
+      declarations: [ MainLayoutComponent, NavbarComponent ],
+      imports: TEST_IMPORTS,
+      providers: TEST_PROVIDERS,
     })
     .compileComponents();
 

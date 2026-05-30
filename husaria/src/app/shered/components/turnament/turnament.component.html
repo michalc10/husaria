@@ -1,22 +1,32 @@
 <table>
-    <thead>
+  <thead>
+    <tr>
+      <th>{{ 'shared.user' | transloco }}</th>
+      @for (user of users; track user) {
+        <th>{{ user }}</th>
+      }
+    </tr>
+  </thead>
+  <tbody>
+    @for (feature of features; track feature) {
       <tr>
-        <th>Użytkownik</th>
-        <th *ngFor="let user of users">{{ user }}</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let feature of features">
         <td>{{ feature }}</td>
-        <td *ngFor="let user of users">
-          <label class="checkbox-container">
-            <input type="checkbox" [(ngModel)]="checkboxValues[user + '_' + feature]">
-            <span class="checkmark" [ngClass]="{'checked': checkboxValues[user + '_' + feature]}">
-              <span *ngIf="checkboxValues[user + '_' + feature]" class="checkmark-icon">✓</span>
-              <span *ngIf="!checkboxValues[user + '_' + feature]" class="checkmark-icon">X</span>
-            </span>
-          </label>
-        </td>
+        @for (user of users; track user) {
+          <td>
+            <label class="checkbox-container">
+              <input type="checkbox" [(ngModel)]="checkboxValues[user + '_' + feature]">
+              <span class="checkmark" [ngClass]="{'checked': checkboxValues[user + '_' + feature]}">
+                @if (checkboxValues[user + '_' + feature]) {
+                  <span class="checkmark-icon">✓</span>
+                }
+                @if (!checkboxValues[user + '_' + feature]) {
+                  <span class="checkmark-icon">X</span>
+                }
+              </span>
+            </label>
+          </td>
+        }
       </tr>
-    </tbody>
-  </table>
+    }
+  </tbody>
+</table>

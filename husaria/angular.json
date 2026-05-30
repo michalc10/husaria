@@ -32,9 +32,7 @@
             "styles": [
               "@angular/material/prebuilt-themes/indigo-pink.css",
               "src/styles.scss",
-              "node_modules/primeicons/primeicons.css",
-              "node_modules/primeng/resources/themes/lara-light-blue/theme.css",
-              "node_modules/primeng/resources/primeng.min.css"
+              "node_modules/primeicons/primeicons.css"
             ],
             "scripts": []
           },
@@ -69,10 +67,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "husaria:build:production"
+              "buildTarget": "husaria:build:production"
             },
             "development": {
-              "browserTarget": "husaria:build:development"
+              "buildTarget": "husaria:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -80,7 +78,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "husaria:build"
+            "buildTarget": "husaria:build"
           }
         },
         "test": {

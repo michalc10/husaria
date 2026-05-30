@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { LeagueDialogComponent } from './league-dialog.component';
+import { LeagueModule } from '../../league.module';
+import { TEST_IMPORTS, TEST_PROVIDERS } from 'src/app/testing/component-test-utils';
 
 describe('PlayerDialogComponent', () => {
   let component: LeagueDialogComponent;
@@ -8,7 +10,8 @@ describe('PlayerDialogComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ LeagueDialogComponent ]
+      imports: [...TEST_IMPORTS, LeagueModule],
+      providers: TEST_PROVIDERS,
     })
     .compileComponents();
 

@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
+import { TEST_IMPORTS, TEST_PROVIDERS } from 'src/app/testing/component-test-utils';
 
 import { TurnamentComponent } from './turnament.component';
 
@@ -8,7 +10,9 @@ describe('TurnamentComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ TurnamentComponent ]
+      declarations: [ TurnamentComponent ],
+      imports: [...TEST_IMPORTS, FormsModule],
+      providers: TEST_PROVIDERS,
     })
     .compileComponents();
 

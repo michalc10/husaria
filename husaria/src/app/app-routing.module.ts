@@ -2,12 +2,19 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
+import { JudgeMobileComponent } from './modules/judge-mobile/judge-mobile.component';
+import { LoginComponent } from './modules/auth/login/login.component';
+import { adminGuard, authChildGuard, authGuard } from './modules/auth/auth.guard';
 
 const routes: Routes = [
   { path: '', redirectTo: 'league', pathMatch: 'full' },
+  { path: 'login', component: LoginComponent },
+  { path: 'judge/:token', component: JudgeMobileComponent },
   {
     path: '',
     component: MainLayoutComponent,
+    canActivate: [authGuard],
+    canActivateChild: [authChildGuard],
     children: [
       {
         path: 'league',
@@ -24,6 +31,15 @@ const routes: Routes = [
       {
         path: 'player',
         loadChildren: () => import('./modules/player/player.module').then(m => m.PlayerModule)
+      },
+      {
+        path: 'banner',
+        loadChildren: () => import('./modules/banner/banner.module').then(m => m.BannerModule)
+      },
+      {
+        path: 'users',
+        canActivate: [adminGuard],
+        loadChildren: () => import('./modules/users/users.module').then(m => m.UsersModule)
       }
     ]
   },

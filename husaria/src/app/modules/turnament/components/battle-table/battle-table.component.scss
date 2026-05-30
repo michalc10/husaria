@@ -1,50 +1,202 @@
-body {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+:host {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .table-container {
-  overflow-x: auto; /* Dodanie poziomego przewijania */
-  max-width: 100vw; /* Ustawienie maksymalnej szerokości na 100% okna przeglądarki */
-  // white-space: nowrap; /* Zapobiega łamaniu zawartości */
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: var(--md-sys-elevation-1);
 }
 
-.p-datatable {
-  width: auto; /* Ustawia automatyczną szerokość dla całej tabeli */
+.judge-control-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-low);
 }
 
-.p-datatable table {
-  width: 100%; /* Tabela dopasuje się do dostępnej szerokości */
+.judge-control-panel__active,
+.judge-stations__header,
+.judge-station-card,
+.judge-active-actions,
+.judge-station-card__actions {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.judge-control-panel__active,
+.judge-stations__header,
+.judge-station-card {
+  justify-content: space-between;
+}
+
+.eyebrow,
+.judge-station-card span,
+.judge-stations__header p {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: .8rem;
+}
+
+.judge-control-panel h2,
+.judge-stations__header h3,
+.judge-stations__header p {
+  margin: 0;
+}
+
+.judge-control-panel h2 {
+  display: grid;
+  gap: 2px;
+  font-size: 1.15rem;
+}
+
+.judge-control-panel h2 small {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: .85rem;
+  font-weight: 500;
+}
+
+.judge-active-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.judge-active-actions select {
+  min-width: 18rem;
+}
+
+.judge-station-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+}
+
+.judge-station-card {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.judge-station-card > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.judge-station-card.is-online {
+  border-color: color-mix(in srgb, #2e7d32 38%, var(--md-sys-color-outline-variant));
+}
+
+.judge-station-card.is-revoked {
+  opacity: .68;
+}
+
+.judge-qr {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  max-width: 24rem;
+}
+
+.judge-qr img {
+  width: min(100%, 320px);
+  height: auto;
+}
+
+.judge-qr a {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .line-left {
-  border-left: 1px solid black !important;
+  border-left: 1px solid var(--md-sys-color-outline-variant) !important;
 }
 
 .line-right {
-  border-right: 1px solid black !important;
+  border-right: 1px solid var(--md-sys-color-outline-variant) !important;
 }
 
 .line-bold {
-  border: 2px solid black !important;
+  border-color: var(--md-sys-color-outline-variant) !important;
 }
 
-::ng-deep .p-inputnumber .p-inputtext {
-  min-width: 85px;
-  max-width: 85px;
+:host ::ng-deep {
+  .p-datatable .p-datatable-thead > tr > th {
+    background: var(--md-sys-color-surface-container);
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: .82rem;
+    font-weight: 700;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .p-datatable .p-datatable-tbody > tr > td {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .battle-score-table .p-datatable-table {
+    min-width: 50rem;
+  }
+
+  .p-inputnumber .p-inputtext {
+    width: 86px;
+  }
 }
 
 .chosenRow {
-  background-color: lightcyan !important;
+  background-color: var(--md-sys-color-secondary-container) !important;
 }
 
-.p-datatable .p-datatable-tbody > tr > td {
-  text-align: center !important;
-  vertical-align: middle !important;
+.active-participant-row {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: -3px;
+}
+
+.selected-column {
+  background: color-mix(in srgb, var(--md-sys-color-primary-container) 42%, #ffffff) !important;
+}
+
+.chosenRow > td.selected-column {
+  background: color-mix(in srgb, var(--md-sys-color-secondary-container) 68%, var(--md-sys-color-primary-container)) !important;
 }
 
 .center-text {
   text-align: center !important;
   vertical-align: middle !important;
+}
+
+.start-column {
+  min-width: 3rem;
+}
+
+.select-score-cell {
+  min-width: 250px;
+}
+
+.pdf-button {
+  margin-right: .5rem;
+}
+
+@media (max-width: 720px) {
+  .judge-control-panel__active,
+  .judge-stations__header,
+  .judge-station-card,
+  .judge-active-actions,
+  .judge-station-card__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .judge-active-actions select {
+    min-width: 0;
+  }
 }

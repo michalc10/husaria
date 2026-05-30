@@ -1,100 +1,25 @@
 :host ::ng-deep .player-dialog {
-  width: 44rem;
-  max-width: 95vw;
-
-  .p-dialog-header {
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--surface-200);
-  }
-
-  .p-dialog-content {
-    padding: 1.25rem;
-    background: var(--surface-0);
-  }
-
-  .p-dialog-footer {
-    padding: 1rem 1.25rem;
-    border-top: 1px solid var(--surface-200);
-  }
-}
-
-.pd-header {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-}
-
-.pd-header__icon {
-  color: var(--primary-color);
-  font-size: 1.25rem;
-}
-
-.pd-header__title {
-  font-size: 1.125rem;
-  font-weight: 600;
+  width: min(44rem, calc(100vw - 24px));
 }
 
 .pd-form {
   display: block;
 }
 
-.pd-card {
-  background: var(--surface-50);
-  border: 1px solid var(--surface-200);
-  border-radius: 10px;
-  padding: 1rem;
-  display: grid;
-  gap: 1rem;
-}
-
-.pd-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-
-@media (min-width: 768px) {
-  .pd-row {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-}
-
-.pd-label {
-  font-size: .875rem;
-  color: var(--text-color-secondary);
-  margin-bottom: .375rem;
-}
-
-.pd-input {
+:host ::ng-deep .pd-select {
   width: 100%;
 
-  > .pi {
-    color: var(--text-color-secondary);
-  }
-
-  .p-inputtext {
-    width: 100%;
-    padding: .75rem .75rem .75rem 2.25rem; 
-  }
-
-  .p-inputtext:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 20%, transparent);
+  &.p-select {
+    min-height: 2.75rem;
   }
 }
 
-.p-error {
-  margin-top: .375rem;
-  font-size: .75rem;
-}
-
-.pd-actions {
+.banner-option {
   display: flex;
-  justify-content: flex-end;
-  gap: .5rem;
+  flex-direction: column;
+  gap: .125rem;
+
+  small {
+    color: var(--md-sys-color-on-surface-variant);
+  }
 }

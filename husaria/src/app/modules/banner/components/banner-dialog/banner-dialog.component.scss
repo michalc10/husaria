@@ -1,0 +1,7 @@
+:host ::ng-deep .banner-dialog {
+  width: min(42rem, calc(100vw - 24px));
+}
+
+.bd-form {
+  display: block;
+}

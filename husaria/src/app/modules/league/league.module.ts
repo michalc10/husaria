@@ -11,7 +11,8 @@ import { LeagueListComponent } from './components/league-list/league-list.compon
 import { LeagueDialogComponent } from './components/league-dialog/league-dialog.component';
 import { ConfirmationService } from 'primeng/api';
 import { InputTextModule } from 'primeng/inputtext';
-import { CalendarModule } from 'primeng/calendar';
+import { DatePickerModule } from 'primeng/datepicker';
+import { TranslocoModule } from '@jsverse/transloco';
 
 
 @NgModule({
@@ -29,7 +30,8 @@ import { CalendarModule } from 'primeng/calendar';
     ReactiveFormsModule,
     ConfirmPopupModule,
     InputTextModule,
-    CalendarModule
+    DatePickerModule,
+    TranslocoModule
   ],
   providers: [ConfirmationService],
 })

@@ -1,20 +1,50 @@
-::ng-deep .p-inputnumber .p-inputtext {
-    width: 45px;
+.table-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .86);
+  box-shadow: var(--md-sys-elevation-1);
 }
 
 .print {
-    display: flex;
-    // flex-direction: row;
-    gap: 10px;
-    // justify-content: flex-end;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
-.table-navigation {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
+.result-table-card {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+:host ::ng-deep {
+  .p-inputnumber .p-inputtext {
+    width: 64px;
+  }
+
+  .results-table .p-datatable-table {
+    min-width: 58rem;
+  }
+
+  .team-results-table .p-datatable-table {
+    min-width: 60rem;
+  }
 }
 
 p {
-    margin: 6px
+  margin: 4px 0;
+}
+
+@media (max-width: 760px) {
+  .table-navigation,
+  .print {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }

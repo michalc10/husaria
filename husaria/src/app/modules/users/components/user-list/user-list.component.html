@@ -1,0 +1,182 @@
+<div class="user-list view-stack">
+  @if (errorMessage) {
+    <div class="error-banner">{{ errorMessage }}</div>
+  }
+
+  <div class="data-card">
+    <div class="data-toolbar">
+      <div class="data-toolbar__title">
+        <span class="data-toolbar__icon">
+          <i class="pi pi-users"></i>
+        </span>
+        <div>
+          <div class="data-toolbar__text">{{ 'users.title' | transloco }}</div>
+          <div class="data-toolbar__meta">{{ 'common.records' | transloco: { count: users.length } }}</div>
+        </div>
+      </div>
+
+      <div class="data-toolbar__actions">
+        <span class="search-field">
+          <i class="pi pi-search"></i>
+          <input pInputText type="text" (input)="onGlobalFilter($event)" [placeholder]="'users.search' | transloco" />
+        </span>
+        <p-button
+          icon="pi pi-plus"
+          styleClass="p-button-rounded"
+          (onClick)="createUser()"
+          [label]="'users.add' | transloco"
+        ></p-button>
+      </div>
+    </div>
+
+    <p-table
+      #dt
+      [value]="users"
+      dataKey="_id"
+      [loading]="loading"
+      [globalFilterFields]="['email', 'name', 'role']"
+      [rowHover]="true"
+      [paginator]="true"
+      [rows]="10"
+      styleClass="p-datatable-sm p-datatable-striped"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="name">{{ 'users.name' | transloco }} <p-sortIcon field="name"></p-sortIcon></th>
+          <th pSortableColumn="email">{{ 'users.email' | transloco }} <p-sortIcon field="email"></p-sortIcon></th>
+          <th>{{ 'users.role' | transloco }}</th>
+          <th>{{ 'users.status' | transloco }}</th>
+          <th class="table-action-cell"></th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-user>
+        <tr>
+          <td>{{ user.name }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ roleLabel(user.role) }}</td>
+          <td>
+            <div class="user-status">
+              <p-tag
+                [severity]="user.active ? 'success' : 'danger'"
+                [value]="user.active ? ('users.active' | transloco) : ('users.inactive' | transloco)"
+              ></p-tag>
+              @if (user.mustChangePassword) {
+                <p-tag severity="warn" [value]="'users.mustChangePassword' | transloco"></p-tag>
+              }
+            </div>
+          </td>
+          <td class="table-action-cell">
+            <div class="row-actions">
+              <p-button icon="pi pi-pencil" styleClass="p-button-rounded p-button-text" (onClick)="editUser(user)" [ariaLabel]="'common.editItem' | transloco: { name: user.name }"></p-button>
+              <p-button icon="pi pi-key" styleClass="p-button-rounded p-button-text" (onClick)="openResetPassword(user)" [ariaLabel]="'users.resetPassword' | transloco"></p-button>
+              @if (user.active) {
+                <p-button icon="pi pi-ban" styleClass="p-button-rounded p-button-danger p-button-text" (onClick)="setActive(user, false)" [ariaLabel]="'users.deactivate' | transloco"></p-button>
+              } @else {
+                <p-button icon="pi pi-check" styleClass="p-button-rounded p-button-success p-button-text" (onClick)="setActive(user, true)" [ariaLabel]="'users.activate' | transloco"></p-button>
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5" class="empty-state">{{ 'users.empty' | transloco }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [(visible)]="formVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  styleClass="user-dialog"
+>
+  <ng-template pTemplate="header">
+    <div class="dialog-title">
+      <span class="dialog-title__icon"><i class="pi pi-user-plus"></i></span>
+      <span class="dialog-title__text">{{ form._id ? ('users.edit' | transloco) : ('users.add' | transloco) }}</span>
+    </div>
+  </ng-template>
+
+  <div class="form-card">
+    <div class="form-grid form-grid--two">
+      <label class="form-field">
+        <span class="field-label">{{ 'users.name' | transloco }}</span>
+        <input pInputText [(ngModel)]="form.name" />
+        @if (submitted && !form.name.trim()) {
+          <small class="field-error">{{ 'common.required' | transloco }}</small>
+        }
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">{{ 'users.email' | transloco }}</span>
+        <input pInputText type="email" [(ngModel)]="form.email" />
+        @if (submitted && !form.email.trim()) {
+          <small class="field-error">{{ 'common.required' | transloco }}</small>
+        }
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">{{ 'users.role' | transloco }}</span>
+        <p-select [options]="roleOptions" [(ngModel)]="form.role" optionLabel="label" optionValue="value"></p-select>
+      </label>
+
+      @if (!form._id) {
+        <label class="form-field">
+          <span class="field-label">{{ 'users.temporaryPassword' | transloco }}</span>
+          <input pInputText type="password" [(ngModel)]="form.temporaryPassword" autocomplete="new-password" />
+          @if (submitted && !form.temporaryPassword) {
+            <small class="field-error">{{ 'common.required' | transloco }}</small>
+          }
+        </label>
+      }
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-actions">
+      <button type="button" pButton [label]="'common.cancel' | transloco" icon="pi pi-times" severity="secondary" (click)="formVisible = false"></button>
+      <button type="button" pButton [label]="'common.save' | transloco" icon="pi pi-save" (click)="saveUser()"></button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="resetVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  styleClass="user-dialog"
+>
+  <ng-template pTemplate="header">
+    <div class="dialog-title">
+      <span class="dialog-title__icon"><i class="pi pi-key"></i></span>
+      <span class="dialog-title__text">{{ 'users.resetPassword' | transloco }}</span>
+    </div>
+  </ng-template>
+
+  <div class="form-card">
+    <p>{{ 'users.resetPasswordHint' | transloco: { name: selectedUser?.name || '' } }}</p>
+    <label class="form-field">
+      <span class="field-label">{{ 'users.temporaryPassword' | transloco }}</span>
+      <input pInputText type="password" [(ngModel)]="resetPasswordValue" autocomplete="new-password" />
+      @if (submitted && !resetPasswordValue) {
+        <small class="field-error">{{ 'common.required' | transloco }}</small>
+      }
+    </label>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-actions">
+      <button type="button" pButton [label]="'common.cancel' | transloco" icon="pi pi-times" severity="secondary" (click)="resetVisible = false"></button>
+      <button type="button" pButton [label]="'users.resetPassword' | transloco" icon="pi pi-key" (click)="resetPassword()"></button>
+    </div>
+  </ng-template>
+</p-dialog>

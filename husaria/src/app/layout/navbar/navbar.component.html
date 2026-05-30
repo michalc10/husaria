@@ -1,2 +1,101 @@
+<header class="app-nav">
+  <nav class="app-nav__inner" [attr.aria-label]="'app.navigation.main' | transloco">
+    <button
+      type="button"
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive('/league') || isActive('/tournament')"
+      (click)="navigate('/league/league-list')"
+    >
+      <i class="pi pi-home"></i>
+      {{ 'app.navigation.league' | transloco }}
+    </button>
+    <button
+      type="button"
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive('/player')"
+      (click)="navigate('/player/player-list')"
+    >
+      <i class="pi pi-user"></i>
+      {{ 'app.navigation.players' | transloco }}
+    </button>
+    <button
+      type="button"
+      class="app-nav__item"
+      [class.app-nav__item--active]="isActive('/banner')"
+      (click)="navigate('/banner/banner-list')"
+    >
+      <i class="pi pi-flag"></i>
+      {{ 'app.navigation.banners' | transloco }}
+    </button>
+    @if (isAdmin$ | async) {
+      <button
+        type="button"
+        class="app-nav__item"
+        [class.app-nav__item--active]="isActive('/users')"
+        (click)="navigate('/users/user-list')"
+      >
+        <i class="pi pi-users"></i>
+        {{ 'app.navigation.users' | transloco }}
+      </button>
+    }
+  </nav>
 
-<p-tabMenu [model]="items"></p-tabMenu>
+  @if (user$ | async; as user) {
+    <div class="app-nav__user">
+      <button type="button" class="app-nav__user-button" (click)="toggleMenu()">
+        <i class="pi pi-user"></i>
+        <span>{{ user.name || user.email }}</span>
+        <small>{{ user.role === 'ADMIN' ? ('users.admin' | transloco) : ('users.judge' | transloco) }}</small>
+      </button>
+
+      @if (menuOpen) {
+        <div class="app-nav__user-menu">
+          <button type="button" (click)="openChangePassword()">
+            <i class="pi pi-key"></i>
+            {{ 'auth.changePassword' | transloco }}
+          </button>
+          <button type="button" (click)="logout()">
+            <i class="pi pi-sign-out"></i>
+            {{ 'auth.logout' | transloco }}
+          </button>
+        </div>
+      }
+    </div>
+  }
+</header>
+
+@if (changePasswordOpen) {
+  <div class="nav-modal-backdrop" (click)="changePasswordOpen = false"></div>
+  <section class="nav-modal" role="dialog" [attr.aria-label]="'auth.changePassword' | transloco">
+    <div class="nav-modal__header">
+      <strong>{{ 'auth.changePassword' | transloco }}</strong>
+      <button type="button" class="nav-modal__close" (click)="changePasswordOpen = false">
+        <i class="pi pi-times"></i>
+      </button>
+    </div>
+
+    @if (passwordError) {
+      <div class="nav-modal__error">{{ passwordError }}</div>
+    }
+
+    <label class="form-field">
+      <span class="field-label">{{ 'auth.currentPassword' | transloco }}</span>
+      <input type="password" [(ngModel)]="currentPassword" autocomplete="current-password" />
+    </label>
+
+    <label class="form-field">
+      <span class="field-label">{{ 'auth.newPassword' | transloco }}</span>
+      <input type="password" [(ngModel)]="newPassword" autocomplete="new-password" />
+    </label>
+
+    <label class="form-field">
+      <span class="field-label">{{ 'auth.repeatPassword' | transloco }}</span>
+      <input type="password" [(ngModel)]="repeatedPassword" autocomplete="new-password" />
+    </label>
+
+    <div class="nav-modal__actions">
+      <button type="button" class="btn btn-tonal" (click)="changePasswordOpen = false">{{ 'common.cancel' | transloco }}</button>
+      <button type="button" class="btn btn-primary" (click)="savePassword()">{{ 'auth.savePassword' | transloco }}</button>
+    </div>
+  </section>
+}

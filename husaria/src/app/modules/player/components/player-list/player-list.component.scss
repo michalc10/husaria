@@ -1,74 +1,20 @@
-.player-list {
-  .card {
-    padding: 1rem;
-    background: var(--surface-0);
-    border: 1px solid var(--surface-200);
-    border-radius: 10px;
+:host ::ng-deep .player-table {
+  .p-datatable-wrapper {
+    overflow-x: auto;
   }
 
-  .table-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: .75rem;
-    padding: .25rem 0 .75rem;
+  .p-datatable-table {
+    min-width: 58rem;
   }
 
-  .title {
-    font-size: 1.125rem;
-    font-weight: 600;
+  .p-datatable-thead > tr > th,
+  .p-datatable-tbody > tr > td {
+    vertical-align: middle;
   }
+}
 
-  .tools {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-  }
-
-  .search {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-
-    .pi {
-      position: absolute;
-      left: .5rem;
-      color: var(--text-color-secondary);
-    }
-
-    .p-inputtext {
-      padding-left: 2rem;
-      width: 220px;
-    }
-  }
-
-  /* P-Table: nagłówki i wiersze */
-  :host ::ng-deep .player-table {
-    .p-datatable-thead > tr > th {
-      white-space: nowrap;
-      vertical-align: middle;
-    }
-
-    .p-datatable-tbody > tr > td {
-      vertical-align: middle;
-    }
-
-    /* Kolumna z akcjami */
-    .col-actions {
-      width: 8rem;
-      text-align: center;
-    }
-  }
-
-  .actions {
-    display: flex;
-    justify-content: center;
-    gap: .5rem;
-  }
-
-  .empty {
-    text-align: center;
-    color: var(--text-color-secondary);
-    padding: 1rem 0;
+@media (max-width: 720px) {
+  :host ::ng-deep .player-table .p-datatable-table {
+    min-width: 52rem;
   }
 }

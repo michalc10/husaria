@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TEST_IMPORTS } from '../testing/component-test-utils';
 
 import { SheredComponent } from './shered.component';
 
@@ -8,7 +9,8 @@ describe('SheredComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ SheredComponent ]
+      declarations: [ SheredComponent ],
+      imports: TEST_IMPORTS
     })
     .compileComponents();
 

@@ -1,15 +1,15 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { TranslocoService } from '@jsverse/transloco';
 import { ILeague } from 'src/app/models/league';
 import { ITournament } from 'src/app/models/tournament';
 import { CrudService } from 'src/app/shered/service/crud.service';
-import { TournamentService } from 'src/app/modules/turnament/services/tournament/tournament.service';
 
 @Component({
   selector: 'app-league-dialog',
   templateUrl: './league-dialog.component.html',
-  styleUrls: ['./league-dialog.component.scss']
+  styleUrls: ['./league-dialog.component.scss'],
+  standalone: false
 })
 export class LeagueDialogComponent {
   @Input() display = false;
@@ -18,7 +18,7 @@ export class LeagueDialogComponent {
   @Input() set league(value: ILeague) {
     this._league = value;
     this.patchForm(value);
-    this.updateButtonText(value);
+    this.updateUiTexts(value);
 
     if (value?._id && value._id !== '-1') {
       this.loadTournaments(value._id);
@@ -26,21 +26,24 @@ export class LeagueDialogComponent {
       this.tournamentList = [];
     }
   }
-  get league(): ILeague { return this._league; }
+  get league(): ILeague {
+    return this._league;
+  }
 
   @Output() comunication = new EventEmitter<ILeague>();
   @Output() comunicationWithoutSaving = new EventEmitter<boolean>();
 
   leagueForm: FormGroup;
-  buttonText = 'Stwórz';
-
-  // pozwala dodawać nowe (bez _id)
+  headerKey = 'league.add';
+  buttonTextKey = 'common.create';
+  submitted = false;
   tournamentList: Array<Partial<ITournament>> = [];
+  private submittedSuccessfully = false;
 
   constructor(
     private fb: FormBuilder,
     private crudService: CrudService,
-    private tournamentService: TournamentService
+    private transloco: TranslocoService
   ) {
     this.leagueForm = this.fb.group({
       name: ['', Validators.required],
@@ -48,93 +51,106 @@ export class LeagueDialogComponent {
     });
   }
 
-  private loadTournaments(leagueId: string): void {
-    this.crudService.read<ITournament[]>('tournament/league', leagueId).subscribe({
-      next: (list) => {
-        const normalized = list.map(t => ({
-          ...t,
-          date: t.date instanceof Date ? t.date : new Date((t as any).date)
-        })) as ITournament[];
-        this.tournamentList = normalized;
-      },
-      error: (err) => console.error('Błąd pobierania turniejów', err)
-    });
-  }
-
   addTournamentRow(): void {
-    if (!this._league?._id || this._league._id === '-1') {
-      // nowa liga – pozwalamy dodać wiersze, ale leagueId wypełnimy po utworzeniu ligi (po stronie rodzica)
-      this.tournamentList = [
-        ...this.tournamentList,
-        { city: '', date: new Date() }
-      ];
-    } else {
-      this.tournamentList = [
-        ...this.tournamentList,
-        { leagueId: this._league._id, city: '', date: new Date() }
-      ];
-    }
+    const leagueId = this._league?._id && this._league._id !== '-1'
+      ? this._league._id
+      : undefined;
+
+    this.tournamentList = [
+      ...this.tournamentList,
+      { leagueId, city: '', date: new Date() }
+    ];
   }
 
-  private patchForm(league: ILeague): void {
-    this.leagueForm.reset({
-      name: league?.name ?? '',
-      year: league?.year ?? ''
-    }, { emitEvent: false });
-  }
+  removeTournamentRow(index: number): void {
+    const row = this.tournamentList[index];
+    if (row?._id) return;
 
-  private updateButtonText(league: ILeague): void {
-    const isEdit = !!league?._id && league._id !== '-1';
-    this.buttonText = isEdit ? 'Zapisz' : 'Stwórz';
+    this.tournamentList = this.tournamentList.filter((_, rowIndex) => rowIndex !== index);
   }
 
   onSubmit(): void {
+    this.submitted = true;
+
     if (this.leagueForm.invalid) {
       this.leagueForm.markAllAsTouched();
       return;
     }
 
     const { name, year } = this.leagueForm.getRawValue();
-    this._league.name = name;
-    this._league.year = year;
+    this._league = {
+      ...this._league,
+      name,
+      year
+    };
 
-    // 1) aktualizacje istniejących
-    const updates = this.tournamentList
-      .filter(t => !!t._id)
-      .map(t => {
-        const payload: Partial<ITournament> = {
-          city: t.city,
-          date: t.date instanceof Date ? t.date.toISOString() : (t.date as any),
-        };
-        return this.tournamentService.update(t._id as string, payload);
-      });
+    const tournamentPayloads = this.tournamentList.map((t) => this.toTournamentPayload(t));
 
-    // 2) tworzenie nowych
-    const creates = this.tournamentList
-      .filter(t => !t._id)
-      .map(t => {
-        const payload: Partial<ITournament> = {
-          leagueId: this._league._id, // jeśli liga jest nowa, rodzic powinien utworzyć ligę, a potem turnieje
-          city: t.city,
-          date: t.date instanceof Date ? t.date.toISOString() : (t.date as any),
-        };
-        return this.tournamentService.create(payload);
-      });
-
-    if (updates.length || creates.length) {
-      forkJoin([...updates, ...creates]).subscribe({
-        next: () => this.comunication.emit(this._league),
-        error: (err) => {
-          console.error('Błąd zapisu turniejów', err);
-          // mimo błędu ligi nie emitujemy, zostawiamy w dialogu
-        }
-      });
-    } else {
-      this.comunication.emit(this._league);
-    }
+    this.submittedSuccessfully = true;
+    this.comunication.emit({
+      ...this._league,
+      tournaments: tournamentPayloads
+    });
   }
 
   closingWithoutSaving(): void {
+    this.submitted = false;
+    if (this.submittedSuccessfully) {
+      this.submittedSuccessfully = false;
+      return;
+    }
+
     this.comunicationWithoutSaving.emit(true);
+  }
+
+  isInvalid(ctrl: string): boolean {
+    const control = this.leagueForm.get(ctrl);
+    return !!control && control.invalid && (control.dirty || control.touched || this.submitted);
+  }
+
+  canRemoveTournament(row: Partial<ITournament>): boolean {
+    return !row._id;
+  }
+
+  trackTournament(index: number, tournament: Partial<ITournament>): string {
+    return tournament._id || `new-${index}`;
+  }
+
+  private toTournamentPayload(tournament: Partial<ITournament>): Partial<ITournament> {
+    return {
+      _id: tournament._id,
+      city: tournament.city || '',
+      date: tournament.date instanceof Date
+        ? tournament.date
+        : new Date((tournament as any).date || Date.now())
+    };
+  }
+
+  private loadTournaments(leagueId: string): void {
+    this.crudService.read<ITournament[]>('tournament/league', leagueId).subscribe({
+      next: (list) => {
+        this.tournamentList = list.map(t => ({
+          ...t,
+          date: t.date instanceof Date ? t.date : new Date((t as any).date)
+        }));
+      },
+      error: (err) => console.error(this.transloco.translate('league.loadTournamentsError'), err)
+    });
+  }
+
+  private patchForm(league: ILeague): void {
+    this.submitted = false;
+    this.leagueForm.reset({
+      name: league?.name ?? '',
+      year: league?.year ?? ''
+    }, { emitEvent: false });
+    this.leagueForm.markAsPristine();
+    this.leagueForm.markAsUntouched();
+  }
+
+  private updateUiTexts(league: ILeague): void {
+    const isEdit = !!league?._id && league._id !== '-1';
+    this.headerKey = isEdit ? 'league.edit' : 'league.add';
+    this.buttonTextKey = isEdit ? 'common.save' : 'common.create';
   }
 }

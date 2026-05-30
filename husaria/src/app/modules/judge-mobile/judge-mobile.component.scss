@@ -1,0 +1,151 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--md-sys-color-surface-container-low);
+}
+
+.judge-mobile {
+  display: grid;
+  gap: 14px;
+  width: min(100% - 24px, 680px);
+  margin: 0 auto;
+  padding: 14px 0 96px;
+}
+
+.judge-mobile__header,
+.judge-card,
+.obstacle-card,
+.judge-mobile__footer {
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: var(--md-sys-elevation-1);
+}
+
+.judge-mobile__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+}
+
+.judge-mobile__header h1,
+.judge-card h1,
+.judge-card h2,
+.judge-mobile__header p,
+.judge-card p {
+  margin: 0;
+}
+
+.judge-mobile__header span,
+.judge-mobile__header p,
+.judge-card span,
+.judge-card p,
+.obstacle-card span,
+.judge-mobile__footer {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.connection-pill {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-error);
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.connection-pill.is-online {
+  background: color-mix(in srgb, #2e7d32 14%, #ffffff);
+  color: #1b5e20;
+}
+
+.judge-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.judge-card--center {
+  justify-items: center;
+  min-height: 14rem;
+  place-content: center;
+  text-align: center;
+}
+
+.active-player-card h2 {
+  font-size: clamp(1.8rem, 8vw, 3rem);
+  line-height: 1;
+}
+
+.obstacle-list {
+  display: grid;
+  gap: 12px;
+}
+
+.obstacle-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.obstacle-card strong {
+  display: block;
+  font-size: 1.15rem;
+}
+
+.mobile-score-button,
+.refresh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 3.2rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  font-weight: 800;
+}
+
+.mobile-score-button.is-selected {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+.select-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
+  gap: 8px;
+}
+
+.judge-mobile__footer {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: min(100% - 24px, 680px);
+  margin: 0 auto;
+  padding: 10px;
+}
+
+.status-dot {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: var(--md-sys-color-primary);
+}
+
+@media (max-width: 560px) {
+  .judge-mobile__header,
+  .judge-mobile__footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

@@ -1,13 +1,18 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { TranslocoService } from '@jsverse/transloco';
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+import { PageOrientation } from 'pdfmake/interfaces';
 import { IPlayerPoints } from 'src/app/models/playerPoints';
 import { PlayerPointsService } from '../../services/playerPoints/playerPoints.service';
-import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
-import { PageOrientation } from 'pdfmake/interfaces';
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+
+(pdfMake as any).vfs = (pdfFonts as any)['pdfMake']?.vfs ?? (pdfFonts as any).vfs;
 
 interface PlayersWithTotalScore {
-  flag: string;
+  bannerId: string | null;
+  bannerName: string;
+  bannerCity: string;
   totalScore: number;
   players: IPlayerPoints[];
 }
@@ -15,68 +20,62 @@ interface PlayersWithTotalScore {
 @Component({
   selector: 'app-results',
   templateUrl: './results.component.html',
-  styleUrls: ['./results.component.scss']
+  styleUrls: ['./results.component.scss'],
+  standalone: false
 })
-
 export class ResultsComponent implements OnInit {
   pdfTextSize = 15;
   selectedPlayerId = '-1';
   participantList: IPlayerPoints[] = [];
-  tournamentId = "-1";
-  orientationList: string[] = ['rosnąco', 'malejąco'];
-  orientationPaper: string[] = ['poziomo', 'pionowo'];
-  chosenOrientationList: string = this.orientationList[0];
-  chosenOrientationPaper: string = this.orientationPaper[0];
+  tournamentId = '-1';
+  orientationList: Array<{ label: string; value: 'asc' | 'desc' }> = [];
+  orientationPaper: Array<{ label: string; value: PageOrientation }> = [];
+  chosenOrientationList: 'asc' | 'desc' = 'asc';
+  chosenOrientationPaper: PageOrientation = 'landscape';
 
   resultOptions: any[] = [
-    { label: 'Indywidualne', valueResultOption: 'individualResults' }, 
-    { label: 'Drużynowe', valueResultOption: 'teamResults' }
+    { label: '', valueResultOption: 'individualResults' },
+    { label: '', valueResultOption: 'teamResults' }
   ];
-  valueResultOption: string = 'individualResults';
+  valueResultOption = 'individualResults';
 
-  teamResults: any[] = [];
   top3Players: PlayersWithTotalScore[] = [];
 
   constructor(
-    private playerPointsService: PlayerPointsService
-  ) { }
+    private playerPointsService: PlayerPointsService,
+    private route: ActivatedRoute,
+    private transloco: TranslocoService
+  ) {
+    this.refreshLabels();
+    this.transloco.langChanges$.subscribe(() => this.refreshLabels());
+  }
 
-  ngOnInit() {
-    this.tournamentId = localStorage.getItem('tournamentId')!;
+  ngOnInit(): void {
+    this.tournamentId = this.route.parent?.snapshot.paramMap.get('idTournament') ?? '-1';
+    if (this.tournamentId === '-1') {
+      console.error(this.transloco.translate('battleTable.missingRoute'));
+      return;
+    }
+
     this.playerPointsService.getPlayerPointsForTournament(this.tournamentId).subscribe({
       next: (value: IPlayerPoints[]) => {
-        this.participantList = value.map(tournament => ({
-          ...tournament,
-          score: this.calculateTotalScore(tournament) // Dynamic score calculation
-        })).sort((a, b) => 
-          this.chosenOrientationList === this.orientationList[0] ? a.score - b.score : b.score - a.score
-        );
+        this.participantList = this.sortParticipants(value.map(participant => ({
+          ...participant,
+          score: this.calculateTotalScore(participant)
+        })));
       }
     });
   }
 
-  // Dynamic total score calculation based on the number of battles
   calculateTotalScore(player: IPlayerPoints): number {
-    let totalScore = 0;
-    for (let i = 1; i <= 5; i++) {
-      if (player[`battle_${i}_score`]) {
-        totalScore += player[`battle_${i}_score`];
-      }
-    }
-    return +totalScore.toFixed(3);
+    const totalScore = player.totalScore ?? (player.battleResults || []).reduce((total, result) => total + (result.score || 0), 0);
+    return Number((totalScore || 0).toFixed(3));
   }
 
-  exportPdf() {
-    // Sort participants by score before building the table body
-    const sortedParticipants = [...this.participantList].sort((a, b) => {
-      // Apply the selected sorting (ascending or descending)
-      return this.chosenOrientationList === this.orientationList[0]
-        ? a.score - b.score // Ascending
-        : b.score - a.score; // Descending
-    });
-
+  exportPdf(): void {
+    const sortedParticipants = this.sortParticipants([...this.participantList]);
     const tableBody = this.buildTableBody(sortedParticipants);
-    const orientation = this.chosenOrientationPaper === this.orientationPaper[0] ? 'landscape' : 'portrait';
+    const orientation = this.chosenOrientationPaper;
 
     const documentDefinition = this.valueResultOption === this.resultOptions[0].valueResultOption ? {
       pageOrientation: orientation as PageOrientation,
@@ -86,11 +85,12 @@ export class ResultsComponent implements OnInit {
             headerRows: 1,
             body: [
               [
-                { text: '#', bold: true },
-                { text: 'Husarz', bold: true },
-                { text: 'Koń', bold: true },
-                { text: 'Chorągiew', bold: true },
-                { text: 'Wynik', bold: true }
+                { text: this.transloco.translate('results.rank'), bold: true },
+                { text: this.transloco.translate('results.player'), bold: true },
+                { text: this.transloco.translate('results.horse'), bold: true },
+                { text: this.transloco.translate('results.banner'), bold: true },
+                { text: this.transloco.translate('results.city'), bold: true },
+                { text: this.transloco.translate('results.score'), bold: true }
               ],
               ...tableBody
             ]
@@ -98,7 +98,7 @@ export class ResultsComponent implements OnInit {
         }
       ],
       defaultStyle: {
-        fontSize: this.pdfTextSize,
+        fontSize: this.pdfTextSize
       }
     } : {
       pageOrientation: orientation as PageOrientation,
@@ -109,67 +109,111 @@ export class ResultsComponent implements OnInit {
             body: [
               [
                 '',
-                'Chorągiew',
-                'Husarz',
-                'Koń',
-                'Punkty',
-                'Suma'
+                this.transloco.translate('results.banner'),
+                this.transloco.translate('results.city'),
+                this.transloco.translate('results.player'),
+                this.transloco.translate('results.horse'),
+                this.transloco.translate('results.points'),
+                this.transloco.translate('results.sum')
               ],
-              ...this.top3Players
-                .sort((a, b) => this.chosenOrientationList === this.orientationList[0] ? a.totalScore - b.totalScore : b.totalScore - a.totalScore)
-                .map((top3Players, rowIndex) => [
+              ...this.sortTeams(this.getTop3Players())
+                .map((team, rowIndex) => [
                   rowIndex + 1,
-                  top3Players.flag,
-                  top3Players.players.map(player => player.playerName).join('\n'),
-                  top3Players.players.map(player => player.horse).join('\n'),
-                  top3Players.players.map(player => player.score.toFixed(3)).join('\n'),
-                  top3Players.totalScore.toFixed(3)
+                  team.bannerName,
+                  team.bannerCity,
+                  team.players.map(player => player.playerName).join('\n'),
+                  team.players.map(player => player.horse).join('\n'),
+                  team.players.map(player => this.playerScore(player).toFixed(3)).join('\n'),
+                  team.totalScore.toFixed(3)
                 ])
             ]
           }
         }
       ],
       defaultStyle: {
-        fontSize: this.pdfTextSize,
+        fontSize: this.pdfTextSize
       }
     };
 
     pdfMake.createPdf(documentDefinition).open();
-}
+  }
 
-  buildTableBody(data: IPlayerPoints[]) {
-    const body: any[] = [];
-    let i = 1;
-    data.forEach(row => {
-      body.push([i, row.playerName, row.horse, row.flag, row.score.toFixed(3)]);
-      i++;
-    });
-    return body;
+  buildTableBody(data: IPlayerPoints[]): Array<Array<string | number>> {
+    return data.map((row, index) => [
+      index + 1,
+      row.playerName,
+      row.horse,
+      this.bannerName(row),
+      this.bannerCity(row),
+      this.playerScore(row).toFixed(3)
+    ]);
   }
 
   getTop3Players(): PlayersWithTotalScore[] {
-    let top3ByFlag: Record<string, IPlayerPoints[]> = {};
-    this.participantList.forEach(player => {
-      if (!top3ByFlag[player.flag]) {
-        top3ByFlag[player.flag] = [];
+    const top3ByBanner: Record<string, IPlayerPoints[]> = {};
+
+    this.sortParticipants([...this.participantList]).forEach(player => {
+      const key = player.bannerId || this.bannerName(player);
+      if (!top3ByBanner[key]) {
+        top3ByBanner[key] = [];
       }
-      if (top3ByFlag[player.flag].length < 3) {
-        top3ByFlag[player.flag].push(player);
+
+      if (top3ByBanner[key].length < 3) {
+        top3ByBanner[key].push(player);
       }
     });
 
-    this.top3Players = [];
-    for (const flag in top3ByFlag) {
-      let totalScore = 0;
-      let players: IPlayerPoints[] = [];
-      if (top3ByFlag.hasOwnProperty(flag)) {
-        for (const player of top3ByFlag[flag]) {
-          players.push(player);
-          totalScore += player.score;
-        }
-        this.top3Players.push({ players, totalScore, flag });
-      }
-    }
-    return this.top3Players.sort((a, b) => a.totalScore - b.totalScore);
+    this.top3Players = Object.entries(top3ByBanner).map(([bannerId, players]) => ({
+      bannerId,
+      bannerName: this.bannerName(players[0]),
+      bannerCity: this.bannerCity(players[0]),
+      players,
+      totalScore: Number(players.reduce((total, player) => total + this.playerScore(player), 0).toFixed(3))
+    }));
+
+    return this.sortTeams(this.top3Players);
+  }
+
+  playerScore(player: IPlayerPoints): number {
+    return player.score ?? this.calculateTotalScore(player);
+  }
+
+  bannerName(player: IPlayerPoints): string {
+    return player.bannerName || player.flag || this.transloco.translate('banner.none');
+  }
+
+  bannerCity(player: IPlayerPoints): string {
+    return player.bannerCity || '';
+  }
+
+  private sortParticipants(participants: IPlayerPoints[]): IPlayerPoints[] {
+    return participants.sort((a, b) =>
+      this.chosenOrientationList === 'asc'
+        ? this.playerScore(a) - this.playerScore(b)
+        : this.playerScore(b) - this.playerScore(a)
+    );
+  }
+
+  private sortTeams(teams: PlayersWithTotalScore[]): PlayersWithTotalScore[] {
+    return teams.sort((a, b) =>
+      this.chosenOrientationList === 'asc'
+        ? a.totalScore - b.totalScore
+        : b.totalScore - a.totalScore
+    );
+  }
+
+  private refreshLabels(): void {
+    this.orientationList = [
+      { label: this.transloco.translate('results.ascending'), value: 'asc' },
+      { label: this.transloco.translate('results.descending'), value: 'desc' }
+    ];
+    this.orientationPaper = [
+      { label: this.transloco.translate('results.horizontal'), value: 'landscape' },
+      { label: this.transloco.translate('results.vertical'), value: 'portrait' }
+    ];
+    this.resultOptions = [
+      { label: this.transloco.translate('results.individual'), valueResultOption: 'individualResults' },
+      { label: this.transloco.translate('results.team'), valueResultOption: 'teamResults' }
+    ];
   }
 }

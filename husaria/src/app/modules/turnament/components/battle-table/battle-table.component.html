@@ -1,172 +1,341 @@
-<div class="line-bold table-container">
-  <p-table
-    styleClass="p-datatable-gridlines center-text"
-    [scrollable]="true"
-    scrollHeight="75vh"
-    [value]="participantList"
-    [tableStyle]="{ 'min-width': '50rem' }"
->
-    <!-- Header Row -->
-    <ng-template pTemplate="header">
-      <tr>
-        <th
-          rowspan="3"
-          class="line-left line-right center-text"
-          style="min-width: 30px"
-        >
-          Start
-        </th>
-        <th rowspan="3" class="line-left line-right center-text">Imię</th>
+@if (battle; as currentBattle) {
+  <div class="table-container">
+    <section class="judge-control-panel">
+      <div class="judge-control-panel__active">
+        <div>
+          <span class="eyebrow">{{ 'judge.activePlayer' | transloco }}</span>
+          <h2>
+            @if (liveState.activeParticipant) {
+              {{ liveState.activeParticipant.playerName }}
+              <small>{{ liveState.activeParticipant.horse }}</small>
+            } @else {
+              {{ 'judge.noActivePlayer' | transloco }}
+            }
+          </h2>
+        </div>
 
-        <th
-          *ngFor="let category of categories"
-          [attr.colspan]="category.obstacles.length"
-          class="line-left line-right center-text"
-        >
-          {{ category.name }}
-        </th>
-
-        <th rowspan="3" class="line-left line-right center-text">
-          Brak uzbrojenia / inne
-        </th>
-        <th rowspan="3" class="line-left line-right center-text">Czas [s]</th>
-        <th rowspan="3" class="line-left line-right center-text">
-          <button
-            pButton
-            pRipple
-            icon="pi pi-file-pdf"
-            class="p-button-warning mr-2"
-            pTooltip="PDF"
-            tooltipPosition="bottom"
-            (click)="generatePDF()"
-          >
-            PDF
+        <div class="judge-active-actions">
+          <button class="btn btn-tonal" type="button" (click)="setPreviousParticipant()" [disabled]="activeParticipantIndex() <= 0">
+            <i class="pi pi-chevron-left"></i>
+            {{ 'judge.previousPlayer' | transloco }}
           </button>
-          Wynik
-        </th>
-      </tr>
 
-      <!-- Sub-header for obstacles -->
-      <tr>
-        <ng-container *ngFor="let category of categories">
-          <th
-            *ngFor="
-              let obstacle of category.obstacles;
-              let first = first;
-              let last = last
-            "
-            [ngClass]="{
-              'line-left': first,
-              'line-right': last,
-              'center-text': true
-            }"
+          <select
+            [ngModel]="liveState.activeTournamentPlayerId"
+            (ngModelChange)="setActiveParticipant($event || null)"
+            [attr.aria-label]="'judge.chooseActivePlayer' | transloco"
           >
-            {{ obstacle.name }}
-          </th>
-        </ng-container>
-      </tr>
+            <option [ngValue]="null">{{ 'judge.noActivePlayer' | transloco }}</option>
+            @for (participant of participantList; track participant._id) {
+              <option [ngValue]="participant._id">{{ participant.playerName }} · {{ participant.horse }}</option>
+            }
+          </select>
 
-      <!-- Scores Row -->
-      <tr>
-        <ng-container *ngFor="let category of categories">
-          <th
-            *ngFor="
-              let obstacle of category.obstacles;
-              let first = first;
-              let last = last
-            "
-            [ngClass]="{
-              'line-left': first,
-              'line-right': last,
-              'center-text': true
-            }"
-          >
-            {{ obstacle.score }}
-          </th>
-        </ng-container>
-      </tr>
-    </ng-template>
+          <button class="btn btn-primary" type="button" (click)="setNextParticipant()" [disabled]="activeParticipantIndex() >= participantList.length - 1 && activeParticipantIndex() !== -1">
+            {{ 'judge.nextPlayer' | transloco }}
+            <i class="pi pi-chevron-right"></i>
+          </button>
+        </div>
+      </div>
 
-    <!-- Body for Participant List -->
-    <ng-template pTemplate="body" let-rowData let-rowIndex="rowIndex">
-      <tr
-        (click)="chosenRow(rowData)"
-        [ngClass]="{ chosenRow: rowData._id === selectedPlayerId }"
-      >
-        <td class="line-left line-right center-text">{{ rowIndex + 1 }}</td>
-        <td class="line-left line-right center-text">
-          {{ rowData.playerName }}
-        </td>
+      <div class="judge-stations">
+        <div class="judge-stations__header">
+          <div>
+            <span class="eyebrow">{{ 'judge.stations' | transloco }}</span>
+            <h3>{{ 'judge.mobileStations' | transloco }}</h3>
+          </div>
+          <p>{{ 'judge.stationHint' | transloco }}</p>
+        </div>
 
-        <ng-container *ngFor="let category of categories; let categoryIndex = index">
-          <td
-            *ngFor="let obstacle of category.obstacles; let i = index; let first = first; let last = last"
-            [ngClass]="{
-              'line-left': first,
-              'line-right': last,
-              'center-text': true
-            }"
-          >
-            <!-- If the obstacle uses 0/1 logic -->
-            <div *ngIf="!isSelectButtonRequired(getPointIndex(categoryIndex, i))">
-              <div *ngIf="rowData['battle_' + battleId + '_points'].charAt(getPointIndex(categoryIndex, i)) === '0'">
-                <p-button
-                  (onClick)="changedButton(rowData, getPointIndex(categoryIndex, i), 1)"
-                  icon="pi pi-check"
-                  styleClass="p-button-rounded p-button-text p-button-raised"
-                ></p-button>
+        <div class="judge-station-grid">
+          @for (item of stationCategories; track item.category._id) {
+            <article class="judge-station-card" [class.is-online]="isStationOnline(item.station)" [class.is-revoked]="item.station?.revokedAt">
+              <div>
+                <strong>{{ item.category.name }}</strong>
+                <span>
+                  @if (item.station?.revokedAt) {
+                    {{ 'judge.revoked' | transloco }}
+                  } @else if (isStationOnline(item.station)) {
+                    {{ 'judge.online' | transloco }}
+                  } @else {
+                    {{ 'judge.offline' | transloco }} · {{ stationLastSeen(item.station) }}
+                  }
+                </span>
               </div>
-              <div *ngIf="rowData['battle_' + battleId + '_points'].charAt(getPointIndex(categoryIndex, i)) === '1'">
-                <p-button
-                  (onClick)="changedButton(rowData, getPointIndex(categoryIndex, i), 0)"
-                  icon="pi pi-times"
-                  styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"
-                ></p-button>
+
+              <div class="judge-station-card__actions">
+                <button class="btn-small btn-primary" type="button" (click)="createOrShowStation(item)">
+                  <i class="pi pi-qrcode"></i>
+                  {{ item.station ? ('judge.showQr' | transloco) : ('judge.createQr' | transloco) }}
+                </button>
+                @if (item.station && !item.station.revokedAt) {
+                  <button class="btn-small btn-danger" type="button" (click)="revokeStation(item)">
+                    <i class="pi pi-ban"></i>
+                    {{ 'judge.revoke' | transloco }}
+                  </button>
+                }
               </div>
-            </div>
-        
-            <!-- If the obstacle uses selectButton -->
-            <div *ngIf="isSelectButtonRequired(getPointIndex(categoryIndex, i))"
-            style="min-width:250px">
-              <p-selectButton
-                [options]="brickOptions"
-                optionLabel="label"
-                [ngModel]="getSelectButtonValue(rowData, getPointIndex(categoryIndex, i))"
-                optionValue="label"
-                (onChange)="setBrick(rowData, getPointIndex(categoryIndex, i), $event)"
-              ></p-selectButton>
-            </div>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <p-table
+      styleClass="battle-score-table p-datatable-gridlines center-text"
+      [scrollable]="true"
+      scrollHeight="75vh"
+      [value]="participantList"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th rowspan="3" class="line-left line-right center-text start-column">
+            {{ 'battleTable.startOrder' | transloco }}
+          </th>
+          <th rowspan="3" class="line-left line-right center-text">{{ 'battleTable.player' | transloco }}</th>
+          @for (category of currentBattle.categories; track category) {
+            <th
+              [attr.colspan]="category.obstacles.length"
+              class="line-left line-right center-text"
+            >
+              {{ category.name }}
+            </th>
+          }
+          @if (currentBattle.penalties.length) {
+            <th
+              [attr.colspan]="currentBattle.penalties.length"
+              class="line-left line-right center-text"
+            >
+              {{ 'battleTable.penalties' | transloco }}
+            </th>
+          }
+          <th
+            rowspan="3"
+            class="line-left line-right center-text"
+            [class.selected-column]="isColumnSelected('extraPoints')"
+          >
+            {{ 'battleTable.extraPoints' | transloco }}
+          </th>
+          <th
+            rowspan="3"
+            class="line-left line-right center-text"
+            [class.selected-column]="isColumnSelected('time')"
+          >
+            {{ 'battleTable.time' | transloco }}
+          </th>
+          <th
+            rowspan="3"
+            class="line-left line-right center-text"
+            [class.selected-column]="isColumnSelected('score')"
+          >
+            <button
+              pButton
+              pRipple
+              icon="pi pi-file-pdf"
+              class="p-button-rounded p-button-warning pdf-button"
+              [pTooltip]="'battleTable.pdf' | transloco"
+              tooltipPosition="bottom"
+              (click)="generatePDF()"
+            >
+              {{ 'battleTable.pdf' | transloco }}
+            </button>
+            {{ 'battleTable.battleScore' | transloco }}
+          </th>
+        </tr>
+        <tr>
+          @for (category of currentBattle.categories; track category) {
+            @for (obstacle of category.obstacles; track obstacle; let first = $first; let last = $last) {
+              <th
+                [ngClass]="{
+                  'line-left': first,
+                  'line-right': last,
+                  'center-text': true,
+                  'selected-column': isColumnSelected(obstacleColumnKey(obstacle))
+                }"
+              >
+                {{ obstacle.name }}
+              </th>
+            }
+          }
+          @for (penalty of currentBattle.penalties; track penalty; let first = $first; let last = $last) {
+            <th
+              [ngClass]="{
+                'line-left': first,
+                'line-right': last,
+                'center-text': true,
+                'selected-column': isColumnSelected(penaltyColumnKey(penalty))
+              }"
+            >
+              {{ penalty.name }}
+            </th>
+          }
+        </tr>
+        <tr>
+          @for (category of currentBattle.categories; track category) {
+            @for (obstacle of category.obstacles; track obstacle; let first = $first; let last = $last) {
+              <th
+                [ngClass]="{
+                  'line-left': first,
+                  'line-right': last,
+                  'center-text': true,
+                  'selected-column': isColumnSelected(obstacleColumnKey(obstacle))
+                }"
+              >
+                {{ obstacle.scoreRaw }}
+              </th>
+            }
+          }
+          @for (penalty of currentBattle.penalties; track penalty; let first = $first; let last = $last) {
+            <th
+              [ngClass]="{
+                'line-left': first,
+                'line-right': last,
+                'center-text': true,
+                'selected-column': isColumnSelected(penaltyColumnKey(penalty))
+              }"
+            >
+              {{ penalty.score }}
+            </th>
+          }
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-rowData let-rowIndex="rowIndex">
+        <tr
+          (click)="chosenRow(rowData)"
+          [ngClass]="{ chosenRow: rowData._id === selectedPlayerId, 'active-participant-row': isActiveParticipant(rowData) }"
+        >
+          <td class="line-left line-right center-text">{{ rowIndex + 1 }}</td>
+          <td class="line-left line-right center-text">
+            {{ rowData.playerName }}
           </td>
-        </ng-container>
-        
+          @for (category of currentBattle.categories; track category) {
+            @for (obstacle of category.obstacles; track obstacle; let first = $first; let last = $last) {
+              <td
+                (click)="chosenCell(rowData, obstacleColumnKey(obstacle))"
+                [ngClass]="{
+                  'line-left': first,
+                  'line-right': last,
+                  'center-text': true,
+                  'selected-column': isColumnSelected(obstacleColumnKey(obstacle))
+                }"
+              >
+                @if (!isSelectObstacle(obstacle)) {
+                  <div>
+                    @if (!isObstacleSelected(rowData, obstacle)) {
+                      <p-button
+                        (onClick)="toggleObstacle(rowData, obstacle)"
+                        icon="pi pi-check"
+                        styleClass="p-button-rounded p-button-text"
+                      ></p-button>
+                    }
+                    @if (isObstacleSelected(rowData, obstacle)) {
+                      <p-button
+                        (onClick)="toggleObstacle(rowData, obstacle)"
+                        icon="pi pi-times"
+                        styleClass="p-button-rounded p-button-danger p-button-text"
+                      ></p-button>
+                    }
+                  </div>
+                }
+                @if (isSelectObstacle(obstacle)) {
+                  <div class="select-score-cell">
+                    <p-selectButton
+                      [options]="selectOptions(obstacle)"
+                      optionLabel="label"
+                      optionValue="value"
+                      [ngModel]="getObstacleValue(rowData, obstacle)"
+                      (onChange)="setSelectObstacle(rowData, obstacle, $event)"
+                    ></p-selectButton>
+                  </div>
+                }
+              </td>
+            }
+          }
+          @for (penalty of currentBattle.penalties; track penalty; let first = $first; let last = $last) {
+            <td
+              (click)="chosenCell(rowData, penaltyColumnKey(penalty))"
+              [ngClass]="{
+                'line-left': first,
+                'line-right': last,
+                'center-text': true,
+                'selected-column': isColumnSelected(penaltyColumnKey(penalty))
+              }"
+            >
+              @if (!isPenaltySelected(rowData, penalty)) {
+                <p-button
+                  (onClick)="togglePenalty(rowData, penalty)"
+                  icon="pi pi-check"
+                  styleClass="p-button-rounded p-button-text"
+                ></p-button>
+              }
+              @if (isPenaltySelected(rowData, penalty)) {
+                <p-button
+                  (onClick)="togglePenalty(rowData, penalty)"
+                  icon="pi pi-times"
+                  styleClass="p-button-rounded p-button-danger p-button-text"
+                ></p-button>
+              }
+            </td>
+          }
+          <td
+            class="line-left line-right center-text"
+            [class.selected-column]="isColumnSelected('extraPoints')"
+            (click)="chosenCell(rowData, 'extraPoints')"
+          >
+            <p-inputNumber
+              #inputExtraPoints
+              (onBlur)="setExtraPoints(rowData, inputExtraPoints.value)"
+              [ngModel]="getExtraPoints(rowData)"
+              (keypress)="allowOnlyNumbers($event)"
+            ></p-inputNumber>
+          </td>
+          <td
+            class="line-left line-right center-text"
+            [class.selected-column]="isColumnSelected('time')"
+            (click)="chosenCell(rowData, 'time')"
+          >
+            <p-inputNumber
+              #inputTime
+              (onBlur)="setTime(rowData, inputTime.value)"
+              [ngModel]="getTime(rowData)"
+              styleClass="custom-input"
+              [minFractionDigits]="2"
+              (keypress)="allowOnlyNumbers($event)"
+            ></p-inputNumber>
+          </td>
+          <td
+            class="line-left line-right center-text"
+            [class.selected-column]="isColumnSelected('score')"
+            (click)="chosenCell(rowData, 'score')"
+          >
+            {{ getBattleScore(rowData) | number : "1.2-2" }}
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
 
-        <!-- Extra Points Input -->
-        <td class="line-left line-right center-text">
-          <p-inputNumber
-            #inputExtraPoints
-            (onBlur)="setExtraPoints(rowData._id, inputExtraPoints.value)"
-            [ngModel]="rowData['battle_' + battleId + '_extraPoints']"
-            (keypress)="allowOnlyNumbers($event)"
-          ></p-inputNumber>
-        </td>
-
-        <!-- Time Input -->
-        <td class="line-left line-right center-text">
-          <p-inputNumber
-            #inputTime
-            (onBlur)="setTime(rowData, inputTime.value)"
-            [ngModel]="rowData['battle_' + battleId + '_time']"
-            styleClass="custom-input"
-            [minFractionDigits]="2"
-            (keypress)="allowOnlyNumbers($event)"
-          ></p-inputNumber>
-        </td>
-
-        <!-- Score Calculation -->
-        <td class="line-left line-right center-text">
-          {{ rowData["battle_" + battleId + "_score"] | number : "1.2-2" }}
-        </td>
-      </tr>
+  <p-dialog
+    [(visible)]="qrDialogVisible"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    styleClass="judge-qr-dialog"
+  >
+    <ng-template pTemplate="header">
+      <div class="dialog-title">
+        <span class="dialog-title__icon"><i class="pi pi-qrcode"></i></span>
+        <span class="dialog-title__text">{{ qrStationLabel }}</span>
+      </div>
     </ng-template>
-  </p-table>
-</div>
+
+    <div class="judge-qr">
+      @if (qrCodeDataUrl) {
+        <img [src]="qrCodeDataUrl" [alt]="'judge.qrAlt' | transloco" />
+      }
+      <p>{{ 'judge.qrHint' | transloco }}</p>
+      <a [href]="qrGuestUrl" target="_blank" rel="noopener">{{ qrGuestUrl }}</a>
+    </div>
+  </p-dialog>
+}

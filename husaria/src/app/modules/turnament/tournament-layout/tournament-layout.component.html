@@ -1,21 +1,81 @@
 <div class="tl">
-  <div class="tl-header" *ngIf="tournament$ | async as tournament; else headerLoading">
-    <h1 class="tl-city">{{ tournament.city }}</h1>
-    <h2 class="tl-date">{{ tournament.date | date: 'dd.MM.yyyy' }}</h2>
-  </div>
-  <ng-template #headerLoading>
+  @if (tournament$ | async; as tournament) {
+    <div class="tl-header">
+      <div class="tl-title">
+        <p class="tl-eyebrow">{{ 'tournament.title' | transloco }}</p>
+        <h1 class="tl-city">{{ tournament.city }}</h1>
+        <h2 class="tl-date">{{ tournament.date | date: 'dd.MM.yyyy' }}</h2>
+      </div>
+
+      <div class="tl-status-panel">
+        <span class="tl-status" [ngClass]="statusClass(tournament.status)">
+          {{ statusKey(tournament.status) | transloco }}
+        </span>
+
+        <div class="tl-status-actions">
+          @if (tournament.status === 'PLANNING') {
+            <p-button
+              icon="pi pi-play"
+              [label]="'tournament.start' | transloco"
+              [disabled]="statusSaving"
+              (onClick)="updateStatus('LIVE')"
+            ></p-button>
+          } @else if (tournament.status === 'LIVE') {
+            <p-button
+              icon="pi pi-arrow-left"
+              severity="secondary"
+              [label]="'tournament.backToPlanning' | transloco"
+              [disabled]="statusSaving"
+              (onClick)="updateStatus('PLANNING')"
+            ></p-button>
+            <p-button
+              icon="pi pi-flag-fill"
+              [label]="'tournament.finish' | transloco"
+              [disabled]="statusSaving"
+              (onClick)="updateStatus('FINISHED')"
+            ></p-button>
+          } @else {
+            <p-button
+              icon="pi pi-arrow-left"
+              severity="secondary"
+              [label]="'tournament.backToPlanning' | transloco"
+              [disabled]="statusSaving"
+              (onClick)="updateStatus('PLANNING')"
+            ></p-button>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if ((selectedStage$ | async) === 'planning' && tournament.status === 'LIVE') {
+      <div class="tl-warning">
+        <i class="pi pi-info-circle"></i>
+        <span>{{ 'tournament.livePlanningWarning' | transloco }}</span>
+      </div>
+    }
+  } @else {
     <div class="tl-header">
       <p-skeleton width="12rem" height="2rem"></p-skeleton>
       <p-skeleton width="8rem" height="1.5rem"></p-skeleton>
     </div>
-  </ng-template>
+  }
 
-  <div class="tl-controls">
+  <div class="tl-stage-controls">
+    <p-selectButton
+      [options]="(stageOptions$ | async) ?? []"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="(selectedStage$ | async) ?? 'planning'"
+      (ngModelChange)="onStageChange($event)"
+    ></p-selectButton>
+  </div>
+
+  <div class="tl-section-controls">
     <p-selectButton
       [options]="(options$ | async) ?? []"
       optionLabel="label"
       optionValue="value"
-      [ngModel]="(selectedOption$ | async) ?? 1"
+      [ngModel]="(selectedOption$ | async) ?? 'planning/participants'"
       (ngModelChange)="onOptionChange($event)"
     ></p-selectButton>
   </div>

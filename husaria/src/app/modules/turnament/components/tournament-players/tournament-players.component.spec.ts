@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { TournamentPlayersComponent } from './tournament-players.component';
+import { TurnamentModule } from '../../turnament.module';
+import { TEST_IMPORTS, TEST_PROVIDERS } from 'src/app/testing/component-test-utils';
 
 describe('TournamentPlayersComponent', () => {
   let component: TournamentPlayersComponent;
@@ -8,7 +10,8 @@ describe('TournamentPlayersComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ TournamentPlayersComponent ]
+      imports: [...TEST_IMPORTS, TurnamentModule],
+      providers: TEST_PROVIDERS,
     })
     .compileComponents();
 

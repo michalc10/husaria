@@ -1,6 +1,9 @@
-import { Component, OnInit, ViewChild, ChangeDetectionStrategy } from '@angular/core';
-import { Table } from 'primeng/table';
+import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
+import { TranslocoService } from '@jsverse/transloco';
 import { ConfirmationService } from 'primeng/api';
+import { Table } from 'primeng/table';
+import { forkJoin } from 'rxjs';
+import { IBanner } from 'src/app/models/banner';
 import { IPlayer } from 'src/app/models/player';
 import { CrudService } from 'src/app/shered/service/crud.service';
 
@@ -8,21 +11,24 @@ import { CrudService } from 'src/app/shered/service/crud.service';
   selector: 'app-player-list',
   templateUrl: './player-list.component.html',
   styleUrls: ['./player-list.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Default
+  changeDetection: ChangeDetectionStrategy.Default,
+  standalone: false
 })
 export class PlayerListComponent implements OnInit {
   @ViewChild('dt') dt!: Table;
 
   readonly playerRoute = 'player';
+  readonly bannerRoute = 'banner';
 
   playerList: IPlayer[] = [];
-  selectedPlayer: IPlayer = { name: '', horse: '', flag: '', _id: '-1' };
-
-  display = false; // widoczność dialogu
+  bannerList: IBanner[] = [];
+  selectedPlayer: IPlayer = { name: '', horse: '', bannerId: '', _id: '-1' };
+  display = false;
 
   constructor(
     private crudService: CrudService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private transloco: TranslocoService
   ) {}
 
   ngOnInit(): void {
@@ -30,9 +36,15 @@ export class PlayerListComponent implements OnInit {
   }
 
   loadPlayers(): void {
-    this.crudService.list<IPlayer>(this.playerRoute).subscribe({
-      next: (players) => (this.playerList = players),
-      error: (err) => console.error('Nie udało się pobrać listy husarzy', err)
+    forkJoin({
+      players: this.crudService.list<IPlayer>(this.playerRoute),
+      banners: this.crudService.list<IBanner>(this.bannerRoute)
+    }).subscribe({
+      next: ({ players, banners }) => {
+        this.playerList = players;
+        this.bannerList = banners;
+      },
+      error: (err) => console.error(this.transloco.translate('player.loadError'), err)
     });
   }
 
@@ -42,56 +54,65 @@ export class PlayerListComponent implements OnInit {
   }
 
   createPlayer(): void {
-    this.selectedPlayer = { name: '', horse: '', flag: '', _id: '-1' };
+    this.selectedPlayer = { name: '', horse: '', bannerId: '', _id: '-1' };
     this.display = true;
   }
 
   editPlayer(player: IPlayer): void {
-    // kopiujemy, by nie modyfikować listy w trakcie edycji
     this.selectedPlayer = { ...player };
     this.display = true;
   }
 
-  // z dziecka: zamknięcie bez zapisu
   closedDialogWithoutSaving(_: boolean): void {
     this.display = false;
   }
 
-  // z dziecka: zapis
   returnFromChild(player: IPlayer): void {
     this.display = false;
+    const payload = this.toPayload(player);
 
     if (player._id === '-1') {
-      // CREATE
-      const { _id, ...payload } = player; // opcjonalnie usuń sentinel
-      this.crudService.create<IPlayer>(this.playerRoute, payload).subscribe({
-        next: (saved) => (this.playerList = [...this.playerList, saved]),
-        error: (err) => console.error('Błąd tworzenia', err)
+      this.crudService.create<Partial<IPlayer>, IPlayer>(this.playerRoute, payload).subscribe({
+        next: () => this.loadPlayers(),
+        error: (err) => console.error(this.transloco.translate('player.saveError'), err)
       });
-    } else {
-      // UPDATE
-      this.crudService.update<IPlayer>(this.playerRoute, player._id!, player).subscribe({
-        next: (updated) => {
-          this.playerList = this.playerList.map(p => (p._id === updated._id ? updated : p));
-        },
-        error: (err) => console.error('Błąd aktualizacji', err)
-      });
+      return;
     }
+
+    this.crudService.update<Partial<IPlayer>, IPlayer>(this.playerRoute, player._id!, payload).subscribe({
+      next: () => this.loadPlayers(),
+      error: (err) => console.error(this.transloco.translate('player.saveError'), err)
+    });
   }
 
   confirmDelete(event: Event, id: string): void {
     this.confirmationService.confirm({
       target: event.target as EventTarget,
-      message: 'Chcesz usunąć husarza?',
+      message: this.transloco.translate('player.deleteConfirm'),
       icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.transloco.translate('common.yes'),
+      rejectLabel: this.transloco.translate('common.no'),
       accept: () => {
         this.crudService.delete(this.playerRoute, id).subscribe({
-          next: () => {
-            this.playerList = this.playerList.filter(p => p._id !== id);
-          },
-          error: (err) => console.error('Błąd usuwania', err)
+          next: () => this.loadPlayers(),
+          error: (err) => console.error(this.transloco.translate('player.deleteError'), err)
         });
       }
     });
+  }
+
+  bannerLabel(player: IPlayer): string {
+    const name = player.bannerName || player.flag || '';
+    const city = player.bannerCity || '';
+    return city ? `${name} (${city})` : name || '-';
+  }
+
+  private toPayload(player: IPlayer): Partial<IPlayer> {
+    return {
+      name: player.name,
+      horse: player.horse,
+      bannerId: player.bannerId || null,
+      flag: player.flag
+    };
   }
 }

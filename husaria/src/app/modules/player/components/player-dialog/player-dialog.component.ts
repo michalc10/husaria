@@ -1,14 +1,18 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { TranslocoService } from '@jsverse/transloco';
+import { IBanner } from 'src/app/models/banner';
 import { IPlayer } from 'src/app/models/player';
 
 @Component({
   selector: 'app-player-dialog',
   templateUrl: './player-dialog.component.html',
-  styleUrls: ['./player-dialog.component.scss']
+  styleUrls: ['./player-dialog.component.scss'],
+  standalone: false
 })
 export class PlayerDialogComponent {
   @Input() display = false;
+  @Input() banners: IBanner[] = [];
 
   private _player: IPlayer | null = null;
   @Input() set player(value: IPlayer | null) {
@@ -24,59 +28,83 @@ export class PlayerDialogComponent {
   @Output() comunicationWithoutSaving = new EventEmitter<boolean>();
 
   form: FormGroup;
+  header = '';
+  buttonText = '';
+  submitted = false;
 
-  header = 'Dodaj husarza';
-  buttonText = 'Dodaj';
-
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private transloco: TranslocoService
+  ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
       horse: ['', Validators.required],
-      flag: ['']
+      bannerId: ['', Validators.required]
     });
-  }
-
-  private patchForm(p: IPlayer | null) {
-    this.form.reset({
-      name: p?.name ?? '',
-      horse: p?.horse ?? '',
-      flag: p?.flag ?? ''
-    }, { emitEvent: false });
-  }
-
-  private updateUiTexts(p: IPlayer | null) {
-    const isEdit = !!p && !!p._id && p._id !== '-1';
-    this.header = isEdit ? 'Edytuj husarza' : 'Dodaj husarza';
-    this.buttonText = isEdit ? 'Zapisz' : 'Dodaj';
+    this.updateUiTexts(null);
   }
 
   onSubmit(): void {
+    this.submitted = true;
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    const { name, horse, flag } = this.form.getRawValue();
+    const { name, horse, bannerId } = this.form.getRawValue();
 
-    // Zachowujemy _id z wejścia (również sentinel '-1' dla CREATE)
-    const id = this.player?._id ?? '-1';
-
-    const payload: IPlayer = {
-      _id: id,
+    this.comunication.emit({
+      _id: this.player?._id ?? '-1',
       name,
       horse,
-      flag
-    };
-
-    this.comunication.emit(payload);
+      bannerId: bannerId || null,
+      flag: this.player?.flag
+    });
   }
 
   closingWithoutSaving(): void {
+    this.submitted = false;
     this.comunicationWithoutSaving.emit(true);
   }
 
   isInvalid(ctrl: string): boolean {
-  const c = this.form.get(ctrl);
-  return !!c && c.invalid && (c.dirty || c.touched);
-}
+    const control = this.form.get(ctrl);
+    return !!control && control.invalid && (control.dirty || control.touched || this.submitted);
+  }
+
+  bannerLabel(banner: IBanner): string {
+    return banner.city ? `${banner.name} (${banner.city})` : banner.name;
+  }
+
+  private patchForm(player: IPlayer | null): void {
+    this.submitted = false;
+    this.syncBannerValidation(player);
+    this.form.reset({
+      name: player?.name ?? '',
+      horse: player?.horse ?? '',
+      bannerId: player?.bannerId ?? ''
+    }, { emitEvent: false });
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
+  }
+
+  private updateUiTexts(player: IPlayer | null): void {
+    const isEdit = !!player && !!player._id && player._id !== '-1';
+    this.header = this.transloco.translate(isEdit ? 'player.edit' : 'player.add');
+    this.buttonText = this.transloco.translate(isEdit ? 'common.save' : 'common.add');
+  }
+
+  private syncBannerValidation(player: IPlayer | null): void {
+    const bannerControl = this.form.get('bannerId');
+    if (!bannerControl) return;
+
+    const isEdit = !!player && !!player._id && player._id !== '-1';
+    if (isEdit) {
+      bannerControl.clearValidators();
+    } else {
+      bannerControl.setValidators(Validators.required);
+    }
+    bannerControl.updateValueAndValidity({ emitEvent: false });
+  }
 }

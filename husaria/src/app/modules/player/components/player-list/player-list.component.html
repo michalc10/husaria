@@ -1,47 +1,56 @@
-<div class="player-list">
-  <div class="card">
+<div class="player-list view-stack">
+  <div class="data-card">
+    <div class="data-toolbar">
+      <div class="data-toolbar__title">
+        <span class="data-toolbar__icon">
+          <i class="pi pi-user"></i>
+        </span>
+        <div>
+          <div class="data-toolbar__text">{{ 'player.title' | transloco }}</div>
+          <div class="data-toolbar__meta">{{ 'common.records' | transloco: { count: playerList.length } }}</div>
+        </div>
+      </div>
+
+      <div class="data-toolbar__actions">
+        <span class="search-field">
+          <i class="pi pi-search"></i>
+          <input
+            pInputText
+            type="text"
+            (input)="onGlobalFilter($event)"
+            [placeholder]="'player.search' | transloco"
+          />
+        </span>
+        <p-button
+          icon="pi pi-plus"
+          styleClass="p-button-rounded"
+          (onClick)="createPlayer()"
+          [label]="'common.add' | transloco"
+          [ariaLabel]="'player.add' | transloco"
+        ></p-button>
+      </div>
+    </div>
+
     <p-table
       #dt
       [value]="playerList"
       dataKey="_id"
-      [globalFilterFields]="['name', 'horse', 'flag']"
+      [globalFilterFields]="['name', 'horse', 'bannerName', 'bannerCity', 'flag']"
       [rowHover]="true"
       [paginator]="true"
       [rows]="10"
       [rowsPerPageOptions]="[10, 20, 100]"
       [showCurrentPageReport]="true"
-      currentPageReportTemplate="Wyświetlanie {first}-{last} z {totalRecords}"
-      styleClass="player-table p-datatable-sm p-datatable-striped p-datatable-gridlines"
+      [currentPageReportTemplate]="'common.displaying' | transloco"
+      styleClass="player-table p-datatable-sm p-datatable-striped"
     >
-      <ng-template pTemplate="caption">
-        <div class="table-header">
-          <div class="title">Husarze</div>
-          <div class="tools">
-            <span class="search">
-              <i class="pi pi-search"></i>
-              <input
-                pInputText
-                type="text"
-                (input)="onGlobalFilter($event)"
-                placeholder="Szukaj..."
-              />
-            </span>
-            <p-button
-              icon="pi pi-plus"
-              styleClass="p-button-rounded p-button-success"
-              (onClick)="createPlayer()"
-              label="Dodaj"
-            ></p-button>
-          </div>
-        </div>
-      </ng-template>
-
       <ng-template pTemplate="header">
         <tr>
-          <th pSortableColumn="name">Husarz <p-sortIcon field="name"></p-sortIcon></th>
-          <th pSortableColumn="horse">Koń <p-sortIcon field="horse"></p-sortIcon></th>
-          <th pSortableColumn="flag">Chorągiew <p-sortIcon field="flag"></p-sortIcon></th>
-          <th class="col-actions"></th>
+          <th pSortableColumn="name">{{ 'player.name' | transloco }} <p-sortIcon field="name"></p-sortIcon></th>
+          <th pSortableColumn="horse">{{ 'player.horse' | transloco }} <p-sortIcon field="horse"></p-sortIcon></th>
+          <th pSortableColumn="bannerName">{{ 'player.banner' | transloco }} <p-sortIcon field="bannerName"></p-sortIcon></th>
+          <th pSortableColumn="bannerCity">{{ 'player.bannerCity' | transloco }} <p-sortIcon field="bannerCity"></p-sortIcon></th>
+          <th class="table-action-cell"></th>
         </tr>
       </ng-template>
 
@@ -49,37 +58,41 @@
         <tr>
           <td>{{ player.name }}</td>
           <td>{{ player.horse }}</td>
-          <td>{{ player.flag }}</td>
-          <td class="actions">
-            <p-button
-              icon="pi pi-user-edit"
-              styleClass="p-button-rounded p-button-info p-button-text p-button-raised"
-              (onClick)="editPlayer(player)"
-              [ariaLabel]="'Edytuj ' + player.name"
-            ></p-button>
-            <p-button
-              icon="pi pi-times"
-              styleClass="p-button-rounded p-button-danger p-button-text p-button-raised"
-              (onClick)="confirmDelete($event, player._id!)"
-              [ariaLabel]="'Usuń ' + player.name"
-            ></p-button>
+          <td>{{ player.bannerName || player.flag || ('common.dash' | transloco) }}</td>
+          <td>{{ player.bannerCity || ('common.dash' | transloco) }}</td>
+          <td class="table-action-cell">
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-user-edit"
+                styleClass="p-button-rounded p-button-text"
+                (onClick)="editPlayer(player)"
+                [ariaLabel]="'common.editItem' | transloco: { name: player.name }"
+              ></p-button>
+              <p-button
+                icon="pi pi-times"
+                styleClass="p-button-rounded p-button-danger p-button-text"
+                (onClick)="confirmDelete($event, player._id!)"
+                [ariaLabel]="'common.deleteItem' | transloco: { name: player.name }"
+              ></p-button>
+            </div>
           </td>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="4" class="empty">Brak husarzy</td>
+          <td colspan="5" class="empty-state">{{ 'player.empty' | transloco }}</td>
         </tr>
       </ng-template>
     </p-table>
   </div>
 
-  <p-confirmPopup></p-confirmPopup>
+  <p-confirmpopup></p-confirmpopup>
 
   <app-player-dialog
     [display]="display"
     [player]="selectedPlayer"
+    [banners]="bannerList"
     (comunicationWithoutSaving)="closedDialogWithoutSaving($event)"
     (comunication)="returnFromChild($event)"
   ></app-player-dialog>

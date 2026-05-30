@@ -1,0 +1,18 @@
+:host ::ng-deep .banner-table {
+  .p-datatable-wrapper {
+    overflow-x: auto;
+  }
+
+  .p-datatable-table {
+    min-width: 42rem;
+  }
+
+  .p-datatable-thead > tr > th,
+  .p-datatable-tbody > tr > td {
+    vertical-align: middle;
+  }
+}
+
+.error-banner {
+  padding: .75rem 1rem;
+}

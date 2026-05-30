@@ -1,0 +1,93 @@
+<div class="banner-list view-stack">
+  @if (errorMessage) {
+    <div class="error-banner">{{ errorMessage }}</div>
+  }
+
+  <div class="data-card">
+    <div class="data-toolbar">
+      <div class="data-toolbar__title">
+        <span class="data-toolbar__icon">
+          <i class="pi pi-flag"></i>
+        </span>
+        <div>
+          <div class="data-toolbar__text">{{ 'banner.title' | transloco }}</div>
+          <div class="data-toolbar__meta">{{ 'common.records' | transloco: { count: bannerList.length } }}</div>
+        </div>
+      </div>
+
+      <div class="data-toolbar__actions">
+        <span class="search-field">
+          <i class="pi pi-search"></i>
+          <input pInputText type="text" (input)="onGlobalFilter($event)" [placeholder]="'banner.search' | transloco" />
+        </span>
+        <p-button
+          icon="pi pi-plus"
+          styleClass="p-button-rounded"
+          (onClick)="createBanner()"
+          [label]="'common.add' | transloco"
+          [ariaLabel]="'banner.add' | transloco"
+        ></p-button>
+      </div>
+    </div>
+
+    <p-table
+      #dt
+      [value]="bannerList"
+      dataKey="_id"
+      [globalFilterFields]="['name', 'city']"
+      [rowHover]="true"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 20, 100]"
+      [showCurrentPageReport]="true"
+      [currentPageReportTemplate]="'common.displaying' | transloco"
+      styleClass="banner-table p-datatable-sm p-datatable-striped"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="name">{{ 'banner.name' | transloco }} <p-sortIcon field="name"></p-sortIcon></th>
+          <th pSortableColumn="city">{{ 'banner.city' | transloco }} <p-sortIcon field="city"></p-sortIcon></th>
+          <th class="table-action-cell"></th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-banner>
+        <tr>
+          <td>{{ banner.name }}</td>
+          <td>{{ banner.city || ('common.dash' | transloco) }}</td>
+          <td class="table-action-cell">
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-pencil"
+                styleClass="p-button-rounded p-button-text"
+                (onClick)="editBanner(banner)"
+                [ariaLabel]="'common.editItem' | transloco: { name: banner.name }"
+              ></p-button>
+              <p-button
+                icon="pi pi-times"
+                styleClass="p-button-rounded p-button-danger p-button-text"
+                (onClick)="confirmDelete($event, banner)"
+                [ariaLabel]="'common.deleteItem' | transloco: { name: banner.name }"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="3" class="empty-state">{{ 'banner.empty' | transloco }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <p-confirmpopup></p-confirmpopup>
+
+  <app-banner-dialog
+    [display]="display"
+    [banner]="selectedBanner"
+    (closed)="closeDialog()"
+    (saved)="saveBanner($event)"
+  ></app-banner-dialog>
+</div>

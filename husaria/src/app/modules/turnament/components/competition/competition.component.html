@@ -1,126 +1,419 @@
 <div class="battles-container">
-  <div
-    class="battle-column"
-    *ngFor="let battle of battles; let battleIndex = index"
-  >
-    <h2>Bitwa {{ battleIndex + 1 }} - {{ battle.name }}</h2>
-    <input [(ngModel)]="battle.name" placeholder="Wpisz nazwę bitwy" />
+  @if (!battles.length) {
+    <section class="template-start panel-card">
+      <div class="template-start__header">
+        <div>
+          <h2>{{ 'competition.templateStartTitle' | transloco }}</h2>
+          <p>{{ 'competition.templateStartHint' | transloco }}</p>
+        </div>
 
-    <div class="categories-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Kategoria</th>
-            <th>Przeszkoda</th>
-            <th>Wynik</th>
-            <th>Akcje przeszkody</th>
-            <th>Akcje kategorii</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Iteracja przez kategorie -->
-          <ng-container
-            *ngFor="
-              let category of battle.categories;
-              let categoryIndex = index
-            "
-          >
-            <tr
-              *ngFor="
-                let obstacle of category.obstacles;
-                let obstacleIndex = index
-              "
-            >
-              <td
-                *ngIf="obstacleIndex === 0"
-                [attr.rowspan]="category.obstacles.length + 1"
-                class="category-name-cell"
-              >
-                <div class="centered-cell">
-                  <input
-                    [(ngModel)]="category.name"
-                    placeholder="Nazwa kategorii"
-                  />
-                </div>
-              </td>
-              <td>
-                <input
-                  [(ngModel)]="obstacle.name"
-                  placeholder="Nazwa przeszkody"
-                />
-              </td>
-              <td>
-                <input
-                  [(ngModel)]="obstacle.score"
-                  placeholder="Wynik"
-                  (keypress)="allowOnlyNumbers($event)"
-                />
-              </td>
-              <td class="action-cell">
-                <button
-                  class="btn-small btn-danger"
-                  (click)="
-                    removeObstacle(battleIndex, categoryIndex, obstacleIndex)
-                  "
-                >
-                  Usuń przeszkodę
-                </button>
-              </td>
-              <td
-                *ngIf="obstacleIndex === 0"
-                [attr.rowspan]="category.obstacles.length + 1"
-                class="action-cell"
-              >
-                <button
-                  class="btn-small btn-warning"
-                  (click)="removeCategory(battleIndex, categoryIndex)"
-                >
-                  Usuń kategorię
-                </button>
-              </td>
-            </tr>
-            <tr>
-              <td colspan="3" class="centered-cell">
-                <button
-                  class="btn-small btn-primary"
-                  (click)="addObstacle(battleIndex, categoryIndex)"
-                >
-                  + Dodaj przeszkodę
-                </button>
-              </td>
-            </tr>
-          </ng-container>
-          <!-- Dodaj kategorię -->
-          <tr>
-            <td colspan="5" class="centered-cell">
-              <button
-                class="btn btn-primary"
-                (click)="addCategory(battleIndex)"
-              >
-                + Dodaj kategorię
+        <button class="btn btn-primary" (click)="startBlank()">
+          <i class="pi pi-pencil"></i>
+          {{ 'competition.createOwn' | transloco }}
+        </button>
+      </div>
+
+      @if (templates.length) {
+        <div class="template-grid">
+          @for (template of templates; track template._id) {
+            <button class="template-card" type="button" (click)="applyTemplate(template)">
+              <span class="template-card__icon"><i class="pi pi-copy"></i></span>
+              <span class="template-card__body">
+                <strong>{{ template.name }}</strong>
+                <small>{{ template.description || ('competition.noTemplateDescription' | transloco) }}</small>
+                <span>{{ 'competition.templateBattleCount' | transloco: { count: template.battles.length } }}</span>
+              </span>
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">{{ 'competition.noTemplates' | transloco }}</div>
+      }
+    </section>
+  } @else {
+    <section class="competition-toolbar panel-card">
+      <div class="competition-toolbar__summary">
+        <div>
+          <h2>{{ 'competition.editorTitle' | transloco }}</h2>
+          <p>{{ 'competition.editorHint' | transloco }}</p>
+        </div>
+
+        <div class="competition-toolbar__save">
+          <span>{{ 'competition.saveGroup' | transloco }}</span>
+          <button class="btn btn-success btn-save" (click)="save()">
+            <i class="pi pi-save"></i>
+            {{ 'competition.saveChanges' | transloco }}
+          </button>
+        </div>
+      </div>
+
+      <div class="competition-toolbar__groups">
+        <div class="toolbar-group toolbar-group--add">
+          <span class="toolbar-group__label">{{ 'competition.addGroup' | transloco }}</span>
+
+          <div class="toolbar-group__controls">
+            @if (templates.length) {
+              <select [(ngModel)]="selectedTemplateId" [attr.aria-label]="'competition.selectTemplate' | transloco">
+                @for (template of templates; track template._id) {
+                  <option [ngValue]="template._id">{{ template.name }}</option>
+                }
+              </select>
+              <button class="btn btn-primary" (click)="replaceWithSelectedTemplate()">
+                <i class="pi pi-copy"></i>
+                {{ 'competition.replaceWithTemplate' | transloco }}
               </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            }
+            <button class="btn btn-tonal" (click)="addBattle()">
+              <i class="pi pi-plus"></i>
+              {{ 'competition.addBattle' | transloco }}
+            </button>
+          </div>
+        </div>
+
+        <div class="toolbar-group toolbar-group--template">
+          <span class="toolbar-group__label">{{ 'competition.templateGroup' | transloco }}</span>
+
+          <div class="toolbar-group__controls">
+            <button class="btn btn-warning" (click)="openSaveTemplateDialog()">
+              <i class="pi pi-bookmark"></i>
+              {{ 'competition.saveAsTemplate' | transloco }}
+            </button>
+            <button class="btn btn-tonal" [disabled]="!selectedTemplate" (click)="overwriteSelectedTemplate()">
+              <i class="pi pi-save"></i>
+              {{ 'competition.overwriteTemplate' | transloco }}
+            </button>
+            <button class="btn btn-danger" [disabled]="!selectedTemplate" (click)="requestDeleteSelectedTemplate()">
+              <i class="pi pi-trash"></i>
+              {{ 'competition.deleteTemplate' | transloco }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="competition-editor-layout">
+      <div class="competition-battles-list">
+    @for (battle of battles; track trackBattle($index, battle); let battleIndex = $index) {
+      <section class="battle-column">
+        <div class="battle-column__header">
+          <button
+            class="collapse-button"
+            type="button"
+            [attr.aria-expanded]="!isBattleCollapsed(battle, battleIndex)"
+            (click)="toggleBattle(battle, battleIndex)"
+          >
+            <i class="pi" [ngClass]="isBattleCollapsed(battle, battleIndex) ? 'pi-chevron-right' : 'pi-chevron-down'"></i>
+          </button>
+
+          <div class="battle-title">
+            <h2>{{ battle.name || ('competition.battle' | transloco: { index: battleIndex + 1 }) }}</h2>
+            <span>
+              {{ 'competition.categoryCount' | transloco: { count: battle.categories.length } }}
+              ·
+              {{ 'competition.obstacleCount' | transloco: { count: battleObstacleCount(battle) } }}
+            </span>
+          </div>
+
+          <button class="btn-small btn-danger" (click)="removeBattle(battleIndex)">
+            <i class="pi pi-trash"></i>
+            {{ 'competition.removeBattle' | transloco }}
+          </button>
+        </div>
+
+        @if (!isBattleCollapsed(battle, battleIndex)) {
+          <div class="battle-body">
+            <label class="field-label" [for]="'battle-name-' + battleIndex">{{ 'competition.battleName' | transloco }}</label>
+            <input [id]="'battle-name-' + battleIndex" [(ngModel)]="battle.name" [placeholder]="'competition.battleName' | transloco" />
+
+            <div class="categories-container">
+              @for (category of battle.categories; track trackCategory($index, category); let categoryIndex = $index) {
+                <section class="category-card">
+                  <div class="category-card__header">
+                    <button
+                      class="collapse-button"
+                      type="button"
+                      [attr.aria-expanded]="!isCategoryCollapsed(battle, battleIndex, category, categoryIndex)"
+                      (click)="toggleCategory(battle, battleIndex, category, categoryIndex)"
+                    >
+                      <i class="pi" [ngClass]="isCategoryCollapsed(battle, battleIndex, category, categoryIndex) ? 'pi-chevron-right' : 'pi-chevron-down'"></i>
+                    </button>
+
+                    <div class="category-title">
+                      <strong>{{ category.name || ('competition.category' | transloco) }}</strong>
+                      <span>{{ 'competition.obstacleCount' | transloco: { count: category.obstacles.length } }}</span>
+                    </div>
+
+                    <button class="btn-small btn-warning" (click)="removeCategory(battleIndex, categoryIndex)">
+                      <i class="pi pi-minus-circle"></i>
+                      {{ 'competition.removeCategory' | transloco }}
+                    </button>
+                  </div>
+
+                  @if (!isCategoryCollapsed(battle, battleIndex, category, categoryIndex)) {
+                    <div class="category-card__body">
+                      <label class="field-label" [for]="'category-name-' + battleIndex + '-' + categoryIndex">{{ 'competition.categoryName' | transloco }}</label>
+                      <input
+                        [id]="'category-name-' + battleIndex + '-' + categoryIndex"
+                        [(ngModel)]="category.name"
+                        [placeholder]="'competition.categoryName' | transloco"
+                      />
+
+                      <div class="table-wrap">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>{{ 'competition.obstacle' | transloco }}</th>
+                              <th>{{ 'competition.type' | transloco }}</th>
+                              <th>{{ 'competition.pointsOptions' | transloco }}</th>
+                              <th>{{ 'common.actions' | transloco }}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (obstacle of category.obstacles; track trackObstacle($index, obstacle); let obstacleIndex = $index) {
+                              <tr>
+                                <td>
+                                  <input [(ngModel)]="obstacle.name" [placeholder]="'competition.obstacleName' | transloco" />
+                                </td>
+                                <td>
+                                  <select [(ngModel)]="obstacle.inputType">
+                                    <option value="toggle">0/1</option>
+                                    <option value="select">{{ 'competition.selectType' | transloco }}</option>
+                                  </select>
+                                </td>
+                                <td>
+                                  <input
+                                    [(ngModel)]="obstacle.scoreRaw"
+                                    [placeholder]="'competition.scorePlaceholder' | transloco"
+                                    (ngModelChange)="syncScore(obstacle)"
+                                  />
+                                </td>
+                                <td class="action-cell">
+                                  <button class="btn-small btn-danger" (click)="removeObstacle(battleIndex, categoryIndex, obstacleIndex)">
+                                    <i class="pi pi-trash"></i>
+                                    {{ 'competition.removeObstacle' | transloco }}
+                                  </button>
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <button class="btn-small btn-primary" (click)="addObstacle(battleIndex, categoryIndex)">
+                        <i class="pi pi-plus"></i>
+                        {{ 'competition.addObstacle' | transloco }}
+                      </button>
+                    </div>
+                  }
+                </section>
+              }
+
+              <button class="btn btn-primary add-category" (click)="addCategory(battleIndex)">
+                <i class="pi pi-plus"></i>
+                {{ 'competition.addCategory' | transloco }}
+              </button>
+            </div>
+
+            <section class="penalties-card">
+              <div class="penalties-card__header">
+                <h3>{{ 'competition.penalties' | transloco }}</h3>
+                <button class="btn-small btn-primary" (click)="addPenalty(battleIndex)">
+                  <i class="pi pi-plus"></i>
+                  {{ 'competition.addPenalty' | transloco }}
+                </button>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>{{ 'competition.penalty' | transloco }}</th>
+                      <th>{{ 'competition.points' | transloco }}</th>
+                      <th>{{ 'common.actions' | transloco }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (penalty of battle.penalties; track trackPenalty($index, penalty); let penaltyIndex = $index) {
+                      <tr>
+                        <td><input [(ngModel)]="penalty.name" [placeholder]="'competition.penaltyName' | transloco" /></td>
+                        <td><input type="number" [(ngModel)]="penalty.score" /></td>
+                        <td class="action-cell">
+                          <button class="btn-small btn-danger" (click)="removePenalty(battleIndex, penaltyIndex)">
+                            <i class="pi pi-trash"></i>
+                            {{ 'competition.removePenalty' | transloco }}
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        }
+      </section>
+    }
+      </div>
+
+      <aside class="competition-legend" [attr.aria-labelledby]="'competition-legend-title'">
+        <div class="competition-legend__header">
+          <span class="competition-legend__icon"><i class="pi pi-info-circle"></i></span>
+          <div>
+            <h3 id="competition-legend-title">{{ 'competition.legend.title' | transloco }}</h3>
+            <p>{{ 'competition.legend.hint' | transloco }}</p>
+          </div>
+        </div>
+
+        <div class="legend-list">
+          <div class="legend-item">
+            <span class="legend-item__icon"><i class="pi pi-flag"></i></span>
+            <div>
+              <strong>{{ 'competition.legend.battleTitle' | transloco }}</strong>
+              <small>{{ 'competition.legend.battleDescription' | transloco }}</small>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <span class="legend-item__icon"><i class="pi pi-sitemap"></i></span>
+            <div>
+              <strong>{{ 'competition.legend.categoryTitle' | transloco }}</strong>
+              <small>{{ 'competition.legend.categoryDescription' | transloco }}</small>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <span class="legend-item__icon"><i class="pi pi-check-square"></i></span>
+            <div>
+              <strong>{{ 'competition.legend.obstacleTitle' | transloco }}</strong>
+              <small>{{ 'competition.legend.obstacleDescription' | transloco }}</small>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <span class="legend-item__icon"><i class="pi pi-exclamation-triangle"></i></span>
+            <div>
+              <strong>{{ 'competition.legend.penaltyTitle' | transloco }}</strong>
+              <small>{{ 'competition.legend.penaltyDescription' | transloco }}</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="legend-score">
+          <span class="legend-token">0/1</span>
+          <span>{{ 'competition.legend.toggleScore' | transloco }}</span>
+        </div>
+
+        <div class="legend-score">
+          <span class="legend-token">10-0-6-8</span>
+          <span>{{ 'competition.legend.selectScore' | transloco }}</span>
+        </div>
+      </aside>
     </div>
-
-    <div *ngIf="battleIndex > 2" class="remove-battle-container">
-      <button class="btn btn-danger" (click)="removeBattle(battleIndex)">
-        Usuń bitwę {{ battleIndex + 1 }}
-      </button>
-    </div>
-  </div>
-
-  <!-- Przycisk dodania nowej bitwy (bitwa 4 lub 5) -->
-  <div class="add-battle-container" *ngIf="!showBattle5">
-    <button class="btn btn-success" (click)="addBattle()">
-      Dodaj nową bitwę
-    </button>
-  </div>
-
-  <!-- Zapisz zmiany -->
-  <div class="save-button-container">
-    <button class="btn btn-success" (click)="save()">Zapisz zmiany</button>
-  </div>
+  }
 </div>
+
+<p-dialog
+  [(visible)]="saveTemplateDialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  styleClass="template-dialog"
+  (onHide)="onSaveTemplateDialogHide()"
+>
+  <ng-template pTemplate="header">
+    <div class="dialog-title">
+      <span class="dialog-title__icon"><i class="pi pi-copy"></i></span>
+      <span class="dialog-title__text">{{ 'competition.saveAsTemplate' | transloco }}</span>
+    </div>
+  </ng-template>
+
+  <div class="form-card">
+    <div class="form-field">
+      <label class="field-label" for="template-name">{{ 'competition.templateName' | transloco }}</label>
+      <input
+        id="template-name"
+        [(ngModel)]="templateName"
+        [ngClass]="{ 'p-invalid': submittedTemplate && !templateName.trim() }"
+      />
+      @if (submittedTemplate && !templateName.trim()) {
+        <small class="field-error">{{ 'common.required' | transloco }}</small>
+      } @else {
+        <small class="field-hint"></small>
+      }
+    </div>
+
+    <div class="form-field">
+      <label class="field-label" for="template-description">{{ 'competition.templateDescription' | transloco }}</label>
+      <textarea
+        id="template-description"
+        rows="3"
+        [(ngModel)]="templateDescription"
+      ></textarea>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-actions">
+      <button type="button" pButton [label]="'common.cancel' | transloco" icon="pi pi-times" severity="secondary" (click)="closeSaveTemplateDialog()"></button>
+      <button type="button" pButton [label]="'common.save' | transloco" icon="pi pi-save" (click)="saveAsTemplate()"></button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="replaceTemplateDialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  styleClass="template-dialog"
+  (onHide)="onReplaceTemplateDialogHide()"
+>
+  <ng-template pTemplate="header">
+    <div class="dialog-title">
+      <span class="dialog-title__icon"><i class="pi pi-exclamation-triangle"></i></span>
+      <span class="dialog-title__text">{{ 'competition.replaceUnsavedTitle' | transloco }}</span>
+    </div>
+  </ng-template>
+
+  <div class="form-card">
+    <p>{{ 'competition.replaceUnsavedMessage' | transloco }}</p>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-actions">
+      <button type="button" pButton [label]="'common.cancel' | transloco" icon="pi pi-times" severity="secondary" (click)="cancelTemplateReplacement()"></button>
+      <button type="button" pButton [label]="'competition.saveAsNewTemplateFirst' | transloco" icon="pi pi-bookmark" severity="secondary" (click)="saveCurrentAsTemplateBeforeReplace()"></button>
+      <button type="button" pButton [label]="'competition.discardAndReplace' | transloco" icon="pi pi-refresh" severity="danger" (click)="discardAndReplaceTemplate()"></button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="deleteTemplateDialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  styleClass="template-dialog"
+  (onHide)="cancelDeleteTemplate()"
+>
+  <ng-template pTemplate="header">
+    <div class="dialog-title">
+      <span class="dialog-title__icon"><i class="pi pi-trash"></i></span>
+      <span class="dialog-title__text">{{ 'competition.deleteTemplateTitle' | transloco }}</span>
+    </div>
+  </ng-template>
+
+  <div class="form-card">
+    <p>{{ 'competition.deleteTemplateMessage' | transloco: { name: templateToDelete?.name || '' } }}</p>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-actions">
+      <button type="button" pButton [label]="'common.cancel' | transloco" icon="pi pi-times" severity="secondary" (click)="cancelDeleteTemplate()"></button>
+      <button type="button" pButton [label]="'competition.confirmDeleteTemplate' | transloco" icon="pi pi-trash" severity="danger" (click)="deleteSelectedTemplate()"></button>
+    </div>
+  </ng-template>
+</p-dialog>

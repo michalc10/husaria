@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { PlayerListComponent } from './player-list.component';
+import { PlayerModule } from '../../player.module';
+import { TEST_IMPORTS, TEST_PROVIDERS } from 'src/app/testing/component-test-utils';
 
 describe('PlayerListComponent', () => {
   let component: PlayerListComponent;
@@ -8,7 +10,8 @@ describe('PlayerListComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ PlayerListComponent ]
+      imports: [...TEST_IMPORTS, PlayerModule],
+      providers: TEST_PROVIDERS,
     })
     .compileComponents();
 

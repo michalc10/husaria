@@ -1,0 +1,27 @@
+.user-list {
+  width: 100%;
+}
+
+.user-status {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+}
+
+.user-dialog {
+  width: min(42rem, calc(100vw - 2rem));
+}
+
+.error-banner {
+  background: var(--md-sys-color-error-container);
+  border-radius: 14px;
+  color: var(--md-sys-color-error);
+  padding: .85rem;
+}
+
+@media (max-width: 720px) {
+  .form-grid--two {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,60 @@
+<p-dialog
+  [(visible)]="display"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  [dismissableMask]="true"
+  (onHide)="close()"
+  styleClass="banner-dialog"
+>
+  <ng-template pTemplate="header">
+    <div class="dialog-title">
+      <span class="dialog-title__icon">
+        <i class="pi pi-flag"></i>
+      </span>
+      <span class="dialog-title__text">{{ header }}</span>
+    </div>
+  </ng-template>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="bd-form">
+    <div class="form-card">
+      <div class="form-grid form-grid--two">
+        <div class="form-field">
+          <label class="field-label" for="name">{{ 'banner.name' | transloco }}</label>
+          <span class="p-input-icon-left field-control">
+            <i class="pi pi-flag"></i>
+            <input
+              pInputText
+              id="name"
+              formControlName="name"
+              [ngClass]="{ 'p-invalid': isInvalid('name') }"
+              autocomplete="off"
+            />
+          </span>
+          @if (isInvalid('name')) {
+            <small class="field-error">{{ 'common.required' | transloco }}</small>
+          } @else {
+            <small class="field-hint"></small>
+          }
+        </div>
+
+        <div class="form-field">
+          <label class="field-label" for="city">{{ 'banner.city' | transloco }}</label>
+          <span class="p-input-icon-left field-control">
+            <i class="pi pi-map-marker"></i>
+            <input pInputText id="city" formControlName="city" autocomplete="off" />
+          </span>
+          <small class="field-hint"></small>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-actions">
+      <button type="button" pButton [label]="'common.cancel' | transloco" icon="pi pi-times" severity="secondary" (click)="close()"></button>
+      <button type="submit" pButton [label]="buttonText" icon="pi pi-save" (click)="onSubmit()"></button>
+    </div>
+  </ng-template>
+</p-dialog>

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { TranslocoService } from '@jsverse/transloco';
 import { forkJoin, map } from 'rxjs';
 import { IPlayer } from 'src/app/models/player';
 import { IPlayerPoints } from 'src/app/models/playerPoints';
@@ -10,6 +11,7 @@ import { PlayerPointsService } from '../../services/playerPoints/playerPoints.se
   selector: 'app-tournament-players',
   templateUrl: './tournament-players.component.html',
   styleUrls: ['./tournament-players.component.scss'],
+  standalone: false
 })
 export class TournamentPlayersComponent implements OnInit {
   sourceProducts: IPlayer[] = [];
@@ -20,96 +22,58 @@ export class TournamentPlayersComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private crudService: CrudService,
-    private playerPointsService: PlayerPointsService
+    private playerPointsService: PlayerPointsService,
+    private transloco: TranslocoService
   ) {}
 
   ngOnInit(): void {
     const parent = this.route.parent ?? this.route;
     const id = parent.snapshot.paramMap.get('idTournament');
     if (!id) {
-      console.error(
-        'Brak param id w ścieżce /tournament/:idTournament/participant'
-      );
+      console.error(this.transloco.translate('tournament.missingRoute'));
       return;
     }
     this.tournamentId = id;
 
-    forkJoin({
-      points: this.playerPointsService.getPlayerPointsForTournament(id),
-      players: this.crudService.list<IPlayer>('player'),
-    })
-      .pipe(
-        map(({ points, players }) => {
-          this.pointsByPlayerId.clear();
-
-          const target = points.map((p) => {
-            this.pointsByPlayerId.set(p.playerId, p);
-            return <IPlayer>{
-              _id: p.playerId,
-              name: p.playerName,
-              horse: p.horse,
-              flag: p.flag,
-            };
-          });
-
-          const targetIds = new Set(target.map((t) => t._id));
-          const source = players.filter((pl) => !targetIds.has(pl._id!));
-
-          return { source, target };
-        })
-      )
-      .subscribe({
-        next: ({ source, target }) => {
-          this.sourceProducts = source;
-          this.targetProducts = target;
-        },
-        error: (err) => {
-          console.error('Błąd inicjalizacji picklisty', err);
-        },
-      });
+    this.loadPlayers();
   }
 
-  onMoveToTarget(event: any) {
+  onMoveToTarget(event: any): void {
     const items = event.items as IPlayer[];
-    items.forEach((player) => {
-      this.playerPointsService
-        .create({
-          tournamentId: this.tournamentId,
-          playerName: player.name,
-          horse: player.horse,
-          flag: player.flag,
-          playerId: player._id,
-        })
-        .subscribe({
-          next: (pp) => this.pointsByPlayerId.set(pp.playerId, pp),
-          error: (err) =>
-            console.error('Nie udało się dodać zawodnika do turnieju', err),
-        });
+    const requests = items.map((player) =>
+      this.playerPointsService.create({
+        tournamentId: this.tournamentId,
+        playerName: player.name,
+        horse: player.horse,
+        bannerId: player.bannerId,
+        flag: player.flag,
+        playerId: player._id
+      })
+    );
+
+    if (!requests.length) return;
+
+    forkJoin(requests).subscribe({
+      next: () => this.loadPlayers(),
+      error: (err) =>
+        console.error(this.transloco.translate('tournament.addParticipantError'), err)
     });
   }
 
-  onMoveToSource(event: any) {
+  onMoveToSource(event: any): void {
     const items = event.items as IPlayer[];
-    items.forEach((player) => {
-      const pp = this.pointsByPlayerId.get(player._id!);
-      if (pp?._id) {
-        this.playerPointsService.delete(pp._id).subscribe({
-          next: () => this.pointsByPlayerId.delete(player._id!),
-          error: (err) =>
-            console.error('Nie udało się usunąć zawodnika z turnieju', err),
-        });
-      }
+    const requests = items
+      .map((player) => this.pointsByPlayerId.get(player._id!)?._id)
+      .filter((id): id is string => !!id)
+      .map((id) => this.playerPointsService.delete(id));
+
+    if (!requests.length) return;
+
+    forkJoin(requests).subscribe({
+      next: () => this.loadPlayers(),
+      error: (err) =>
+        console.error(this.transloco.translate('tournament.removeParticipantError'), err)
     });
-  }
-
-  onMoveAllToTarget(event: any) {
-    const items = event.items as IPlayer[];
-    items.forEach((player) => this.onMoveToTarget({ items: [player] }));
-  }
-
-  onMoveAllToSource(event: any) {
-    const items = event.items as IPlayer[];
-    items.forEach((player) => this.onMoveToSource({ items: [player] }));
   }
 
   getInitials(name?: string): string {
@@ -129,20 +93,69 @@ export class TournamentPlayersComponent implements OnInit {
     return idx >= 0 ? idx + 1 : 0;
   }
 
-  onTargetReorder(event: any): void {
+  bannerLabel(player: IPlayer): string {
+    const name = player.bannerName || player.flag || '';
+    const city = player.bannerCity || '';
+    return city ? `${name} (${city})` : name || this.transloco.translate('common.dash');
+  }
+
+  onTargetReorder(_: any): void {
     this.persistTargetOrder();
   }
 
+  private loadPlayers(): void {
+    forkJoin({
+      points: this.playerPointsService.getPlayerPointsForTournament(this.tournamentId),
+      players: this.crudService.list<IPlayer>('player')
+    })
+      .pipe(
+        map(({ points, players }) => {
+          this.pointsByPlayerId.clear();
+
+          const target = points.map((p) => {
+            this.pointsByPlayerId.set(p.playerId, p);
+            return <IPlayer>{
+              _id: p.playerId,
+              name: p.playerName,
+              horse: p.horse,
+              bannerId: p.bannerId,
+              bannerName: p.bannerName,
+              bannerCity: p.bannerCity,
+              flag: p.flag
+            };
+          });
+
+          const targetIds = new Set(target.map((t) => t._id));
+          const source = players.filter((player) => !targetIds.has(player._id!));
+
+          return { source, target };
+        })
+      )
+      .subscribe({
+        next: ({ source, target }) => {
+          this.sourceProducts = source;
+          this.targetProducts = target;
+        },
+        error: (err) => {
+          console.error(this.transloco.translate('tournament.picklistInitError'), err);
+        }
+      });
+  }
+
   private persistTargetOrder(): void {
-    this.targetProducts.forEach((player, index) => {
+    const requests = this.targetProducts.reduce<ReturnType<PlayerPointsService['update']>[]>((acc, player, index) => {
       const pp = this.pointsByPlayerId.get(player._id!);
       if (pp && (pp as any).order !== index) {
-        this.playerPointsService
-          .update(pp._id!, { order: index } as any)
-          .subscribe({
-            error: (err) => console.error('Błąd zapisu kolejności', err),
-          });
+        acc.push(this.playerPointsService.update(pp._id!, { order: index } as any));
       }
+      return acc;
+    }, []);
+
+    if (!requests.length) return;
+
+    forkJoin(requests).subscribe({
+      next: () => this.loadPlayers(),
+      error: (err) => console.error(this.transloco.translate('tournament.saveOrderError'), err)
     });
   }
 }

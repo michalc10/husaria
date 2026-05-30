@@ -5,17 +5,24 @@ import { TournamentPlayersComponent } from './components/tournament-players/tour
 import { ResultsComponent } from './components/results/results.component';
 import { CompetitionComponent } from './components/competition/competition.component';
 import { BattleTableComponent } from './components/battle-table/battle-table.component';
+import { TournamentDefaultComponent } from './tournament-default/tournament-default.component';
 
 const routes: Routes = [
   {
     path: ':idTournament',
     component: TournamentLayoutComponent,
     children: [
-      { path: '', redirectTo: 'participant', pathMatch: 'full' },
-      { path: 'battle/:battleId', component: BattleTableComponent },
-      { path: 'participant', component: TournamentPlayersComponent },
-      { path: 'result', component: ResultsComponent },
-      { path: 'competition', component: CompetitionComponent }
+      { path: '', component: TournamentDefaultComponent, pathMatch: 'full' },
+      { path: 'planning', redirectTo: 'planning/participants', pathMatch: 'full' },
+      { path: 'planning/participants', component: TournamentPlayersComponent },
+      { path: 'planning/competitions', component: CompetitionComponent },
+      { path: 'live', component: TournamentDefaultComponent, pathMatch: 'full' },
+      { path: 'live/battle/:battleId', component: BattleTableComponent },
+      { path: 'results', component: ResultsComponent },
+      { path: 'participant', redirectTo: 'planning/participants', pathMatch: 'full' },
+      { path: 'competition', redirectTo: 'planning/competitions', pathMatch: 'full' },
+      { path: 'battle/:battleId', redirectTo: 'live/battle/:battleId', pathMatch: 'full' },
+      { path: 'result', redirectTo: 'results', pathMatch: 'full' }
     ]
   }
 ];

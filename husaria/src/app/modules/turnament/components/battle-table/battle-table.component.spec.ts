@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { BattleTableComponent } from './battle-table.component';
+import { TurnamentModule } from '../../turnament.module';
+import { TEST_IMPORTS, TEST_PROVIDERS } from 'src/app/testing/component-test-utils';
 
 describe('BattleTableComponent', () => {
   let component: BattleTableComponent;
@@ -8,7 +10,8 @@ describe('BattleTableComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ BattleTableComponent ]
+      imports: [...TEST_IMPORTS, TurnamentModule],
+      providers: TEST_PROVIDERS,
     })
     .compileComponents();
 

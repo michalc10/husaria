@@ -7,6 +7,7 @@ import { TurnamentComponent } from './components/turnament/turnament.component';
 
 import { FormsModule } from '@angular/forms';
 import { CrudService } from './service/crud.service';
+import { TranslocoModule } from '@jsverse/transloco';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,8 @@ import { CrudService } from './service/crud.service';
   imports: [
     CommonModule,
     SheredRoutingModule,
-    FormsModule
+    FormsModule,
+    TranslocoModule
   ],
   exports:[TurnamentComponent]
 })

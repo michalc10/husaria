@@ -12,6 +12,8 @@ import { ButtonModule } from 'primeng/button';
 import { PlayerDialogComponent } from './components/player-dialog/player-dialog.component';
 import { DialogModule } from 'primeng/dialog';
 import { ConfirmationService } from 'primeng/api';
+import { SelectModule } from 'primeng/select';
+import { TranslocoModule } from '@jsverse/transloco';
 @NgModule({
   declarations: [
     PlayerListComponent,
@@ -26,7 +28,9 @@ import { ConfirmationService } from 'primeng/api';
     FormsModule,
     ReactiveFormsModule,
     ConfirmPopupModule,
-    InputTextModule
+    InputTextModule,
+    SelectModule,
+    TranslocoModule
   ],
   providers: [ConfirmationService],
 })

@@ -27,6 +27,10 @@ export class CrudService {
     return this.http.put<TResp>(this.url(route, id), data);
   }
 
+  updatePath<TBody, TResp = TBody>(route: string, data: Partial<TBody>): Observable<TResp> {
+    return this.http.put<TResp>(this.url(route), data);
+  }
+
   // PATCH /:route/:id (opcjonalnie)
   patch<TBody, TResp = TBody>(route: string, id: string | number, data: Partial<TBody>): Observable<TResp> {
     return this.http.patch<TResp>(this.url(route, id), data);

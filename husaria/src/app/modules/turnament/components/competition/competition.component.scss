@@ -1,127 +1,272 @@
 .battles-container {
-    display: flex;
+  --line: var(--md-sys-color-outline-variant);
+  --soft: var(--md-sys-color-surface-container-low);
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.template-start,
+.competition-toolbar,
+.battle-column,
+.category-card,
+.penalties-card,
+.competition-legend {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .88);
+  box-shadow: var(--md-sys-elevation-1);
+}
+
+.template-start,
+.competition-toolbar,
+.battle-column,
+.competition-legend {
+  padding: 16px;
+}
+
+.template-start__header,
+.battle-column__header,
+.category-card__header,
+.penalties-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h2,
+h3 {
+  color: var(--md-sys-color-on-surface);
+}
+
+p,
+.battle-title span,
+.category-title span,
+.template-card small,
+.template-card__body > span {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: .84rem;
+}
+
+.template-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  margin-top: 16px;
+}
+
+.template-card {
+  display: flex;
+  gap: .75rem;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 16px;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.template-card:hover {
+  border-color: color-mix(in srgb, var(--md-sys-color-primary) 42%, var(--md-sys-color-outline-variant));
+  background: var(--soft);
+}
+
+.template-card__icon,
+.collapse-button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.template-card__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.template-card__body,
+.battle-title,
+.category-title,
+.battle-body,
+.category-card__body {
+  display: grid;
+  gap: .45rem;
+  min-width: 0;
+}
+
+.competition-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18rem;
+  gap: 16px;
+  align-items: start;
+}
+
+.competition-battles-list,
+.competition-legend,
+.legend-list {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.competition-legend {
+  position: sticky;
+  top: 16px;
+}
+
+.competition-legend__header,
+.legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+}
+
+.legend-item small,
+.legend-score span:last-child {
+  display: block;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: .82rem;
+  line-height: 1.35;
+}
+
+.legend-item,
+.legend-score {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.battle-column__header {
+  border-bottom: 1px solid var(--line);
+  margin: -16px -16px 0;
+  padding: 12px 16px;
+}
+
+.collapse-button {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+}
+
+.battle-body {
+  padding-top: 16px;
+}
+
+.categories-container {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.category-card,
+.penalties-card {
+  overflow: hidden;
+}
+
+.category-card__header,
+.penalties-card__header {
+  padding: 10px 12px;
+  background: var(--soft);
+}
+
+.category-card__body,
+.penalties-card {
+  padding: 12px;
+}
+
+.table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--line);
+  padding: 8px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+th {
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid transparent;
+  border-bottom-color: var(--md-sys-color-outline);
+  border-radius: 14px;
+  padding: 8px 12px;
+  background: var(--soft);
+  color: var(--md-sys-color-on-surface);
+}
+
+textarea {
+  resize: vertical;
+}
+
+.action-cell {
+  text-align: center;
+  width: 10rem;
+}
+
+.add-category {
+  justify-self: center;
+}
+
+@media (max-width: 720px) {
+  .template-start__header,
+  .battle-column__header,
+  .category-card__header,
+  .penalties-card__header {
+    align-items: stretch;
     flex-direction: column;
-    gap: 20px;
-    padding: 20px;
-  
-    .battle-column {
-      width: 100%;
-      padding: 20px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      background-color: #f9f9f9;
-  
-      h2 {
-        margin-bottom: 10px;
-        text-align: center;
-      }
-  
-      table {
-        width: 100%;
-        margin-bottom: 10px;
-        border-collapse: collapse;
-  
-        th, td {
-          padding: 10px;
-          border: 1px solid #ddd;
-          text-align: left;
-          font-size: 14px;
-        }
-  
-        .centered-cell {
-          text-align: center;
-          vertical-align: middle;
-        }
-  
-        .action-cell {
-          text-align: center;
-          vertical-align: middle;
-  
-          .btn-danger {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            cursor: pointer;
-          }
-  
-          .btn-warning {
-            background-color: #ffc107;
-            color: white;
-            border: none;
-            cursor: pointer;
-          }
-  
-          .btn-success {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            cursor: pointer;
-          }
-  
-  
-          .btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-          }
-        }
-      }
-  
-      .remove-battle-container {
-        text-align: center;
-        button {
-          padding: 8px 16px;
-          background-color: #dc3545;
-          color: white;
-          border: none;
-          cursor: pointer;
-          border-radius: 5px;
-        }
-      }
-    }
-  
-    .add-battle-container {
-      text-align: center;
-      button {
-        padding: 10px 20px;
-        background-color: #28a745;
-        color: white;
-        border: none;
-        cursor: pointer;
-        border-radius: 5px;
-      }
-    }
-  
-    .save-button-container {
-      text-align: center;
-      margin-top: 20px;
-      button {
-        padding: 12px 24px;
-        background-color: #28a745;
-        color: white;
-        border: none;
-        cursor: pointer;
-        border-radius: 5px;
-      }
-    }
   }
-  
-  
-  
-  .btn-small {
-    padding: 6px 12px;
-    font-size: 12px;
-    border-radius: 4px;
-  }
-  .btn {
-    padding: 10px 20px;
-    border-radius: 5px;
-    margin-top: 10px;
-    cursor: pointer;
+}
+
+@media (max-width: 1080px) {
+  .competition-editor-layout {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .btn-primary {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
+  .competition-legend {
+    position: static;
+    order: -1;
   }
+}

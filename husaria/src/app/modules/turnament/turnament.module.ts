@@ -2,9 +2,6 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { TurnamentRoutingModule } from './turnament-routing.module';
-// import { SabreComponent } from './components/sabre/sabre.component';
-// import { BroadswordComponent } from './components/broadsword/broadsword.component';
-// import { LanceComponent } from './components/lance/lance.component';
 import { SheredModule } from 'src/app/shered/shered.module';
 import { TournamentPlayersComponent } from './components/tournament-players/tournament-players.component';
 import { TournamentLayoutComponent } from './tournament-layout/tournament-layout.component';
@@ -15,24 +12,25 @@ import { PickListModule } from 'primeng/picklist';
 import { TableModule } from 'primeng/table';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ResultsComponent } from './components/results/results.component';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { PdfMakeDialogComponent } from './components/pdf-make-dialog/pdf-make-dialog.component';
 import { DialogModule } from 'primeng/dialog';
 import { CompetitionComponent } from './components/competition/competition.component';
 import { BattleTableComponent } from './components/battle-table/battle-table.component';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TranslocoModule } from '@jsverse/transloco';
+import { TooltipModule } from 'primeng/tooltip';
+import { TournamentDefaultComponent } from './tournament-default/tournament-default.component';
 
 @NgModule({
   declarations: [
-    // SabreComponent,
-    // BroadswordComponent,
-    // LanceComponent,
     TournamentPlayersComponent,
     TournamentLayoutComponent,
     ResultsComponent,
     PdfMakeDialogComponent,
     CompetitionComponent,
     BattleTableComponent,
+    TournamentDefaultComponent,
   ],
   imports: [
     CommonModule,
@@ -44,9 +42,11 @@ import { SkeletonModule } from 'primeng/skeleton';
     PickListModule,
     TableModule,
     InputNumberModule,
-    DropdownModule,
+    SelectModule,
     DialogModule,
-    SkeletonModule 
+    SkeletonModule,
+    TranslocoModule,
+    TooltipModule
   ]
 })
 export class TurnamentModule { }

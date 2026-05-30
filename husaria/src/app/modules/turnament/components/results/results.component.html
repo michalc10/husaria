@@ -1,60 +1,80 @@
-<div class="table-navigation">
-    <div class="">
-      <p-selectButton [options]="resultOptions" [(ngModel)]="valueResultOption" optionLabel="label" optionValue="valueResultOption"></p-selectButton>
-    </div>
+<div class="results-view view-stack">
+  <div class="table-navigation">
+    <p-selectButton [options]="resultOptions" [(ngModel)]="valueResultOption" optionLabel="label" optionValue="valueResultOption"></p-selectButton>
+
     <div class="print">
-      <p-dropdown [options]="orientationList" [(ngModel)]="chosenOrientationList" placeholder="wyniki"></p-dropdown>
-      <p-dropdown [options]="orientationPaper" [(ngModel)]="chosenOrientationPaper" placeholder="orientacja kartki"></p-dropdown>
-      <p-inputNumber [(ngModel)]="pdfTextSize" mode="decimal" [showButtons]="true" inputId="minmax-buttons" [min]="10" [max]="25"> </p-inputNumber>
-      <button type="button" pButton pRipple icon="pi pi-file-pdf" (click)="exportPdf()" class="p-button-warning mr-2" pTooltip="PDF" tooltipPosition="bottom"></button>
+      <p-select [options]="orientationList" [(ngModel)]="chosenOrientationList" optionLabel="label" optionValue="value" [placeholder]="'results.resultsPlaceholder' | transloco"></p-select>
+      <p-select [options]="orientationPaper" [(ngModel)]="chosenOrientationPaper" optionLabel="label" optionValue="value" [placeholder]="'results.paperOrientation' | transloco"></p-select>
+      <p-inputNumber [(ngModel)]="pdfTextSize" mode="decimal" [showButtons]="true" inputId="minmax-buttons" [min]="10" [max]="25" [ariaLabel]="'results.fontSize' | transloco"></p-inputNumber>
+      <button type="button" pButton pRipple icon="pi pi-file-pdf" (click)="exportPdf()" class="p-button-rounded p-button-warning" [pTooltip]="'results.pdf' | transloco" tooltipPosition="bottom"></button>
     </div>
   </div>
-  
-  <div *ngIf="valueResultOption === resultOptions[0].valueResultOption">
-    <p-table #dt [value]="participantList" [scrollable]="true" scrollHeight="70vh" [tableStyle]="{ 'min-width': '50rem', 'margin-bottom': '25px' }">
-      <ng-template pTemplate="header">
-        <tr>
-          <th>#</th>
-          <th>Imię</th>
-          <th>Koń</th>
-          <th>Chorągiew</th>
-          <th>Punkty</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-participant let-rowIndex="rowIndex">
-        <tr>
-          <td>{{ rowIndex + 1 }}</td>
-          <td>{{ participant.playerName }}</td>
-          <td>{{ participant.horse }}</td>
-          <td>{{ participant.flag }}</td>
-          <td>{{ participant.score.toFixed(3) }}</td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </div>
-  
-  <div *ngIf="valueResultOption === resultOptions[1].valueResultOption">
-    <p-table #dt2 [value]="getTop3Players()" [scrollable]="true" scrollHeight="70vh" [tableStyle]="{ 'min-width': '50rem', 'margin-bottom': '25px' }">
-      <ng-template pTemplate="header">
-        <tr>
-          <th>#</th>
-          <th>Chorągiew</th>
-          <th>Husarz</th>
-          <th>Koń</th>
-          <th>Punkty</th>
-          <th>Suma</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-top3Players let-rowIndex="rowIndex">
-        <tr>
-          <td>{{ rowIndex + 1 }}</td>
-          <td>{{ top3Players.flag }}</td>
-          <td><span *ngFor="let player of top3Players.players"><p>{{ player.playerName }}</p></span></td>
-          <td><span *ngFor="let player of top3Players.players"><p>{{ player.horse }}</p></span></td>
-          <td><span *ngFor="let player of top3Players.players"><p>{{ player.score.toFixed(3) }}</p></span></td>
-          <td>{{ top3Players.totalScore.toFixed(3) }}</td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </div>
-  
+
+  @if (valueResultOption === resultOptions[0].valueResultOption) {
+    <div class="data-card result-table-card">
+      <p-table #dt [value]="participantList" styleClass="results-table p-datatable-sm p-datatable-striped">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>{{ 'results.rank' | transloco }}</th>
+            <th>{{ 'results.name' | transloco }}</th>
+            <th>{{ 'results.horse' | transloco }}</th>
+            <th>{{ 'results.banner' | transloco }}</th>
+            <th>{{ 'results.city' | transloco }}</th>
+            <th>{{ 'results.points' | transloco }}</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-participant let-rowIndex="rowIndex">
+          <tr>
+            <td>{{ rowIndex + 1 }}</td>
+            <td>{{ participant.playerName }}</td>
+            <td>{{ participant.horse }}</td>
+            <td>{{ bannerName(participant) }}</td>
+            <td>{{ bannerCity(participant) || ('common.dash' | transloco) }}</td>
+            <td>{{ participant.score.toFixed(3) }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  }
+
+  @if (valueResultOption === resultOptions[1].valueResultOption) {
+    <div class="data-card result-table-card">
+      <p-table #dt2 [value]="getTop3Players()" styleClass="team-results-table p-datatable-sm p-datatable-striped">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>{{ 'results.rank' | transloco }}</th>
+            <th>{{ 'results.banner' | transloco }}</th>
+            <th>{{ 'results.city' | transloco }}</th>
+            <th>{{ 'results.player' | transloco }}</th>
+            <th>{{ 'results.horse' | transloco }}</th>
+            <th>{{ 'results.points' | transloco }}</th>
+            <th>{{ 'results.sum' | transloco }}</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-team let-rowIndex="rowIndex">
+          <tr>
+            <td>{{ rowIndex + 1 }}</td>
+            <td>{{ team.bannerName }}</td>
+            <td>{{ team.bannerCity || ('common.dash' | transloco) }}</td>
+            <td>
+              @for (player of team.players; track player) {
+                <p>{{ player.playerName }}</p>
+              }
+            </td>
+            <td>
+              @for (player of team.players; track player) {
+                <p>{{ player.horse }}</p>
+              }
+            </td>
+            <td>
+              @for (player of team.players; track player) {
+                <p>{{ player.score.toFixed(3) }}</p>
+              }
+            </td>
+            <td>{{ team.totalScore.toFixed(3) }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  }
+</div>

@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ResultsComponent } from './results.component';
+import { TurnamentModule } from '../../turnament.module';
+import { TEST_IMPORTS, TEST_PROVIDERS } from 'src/app/testing/component-test-utils';
 
 describe('ResultsComponent', () => {
   let component: ResultsComponent;
@@ -8,7 +10,8 @@ describe('ResultsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ResultsComponent ]
+      imports: [...TEST_IMPORTS, TurnamentModule],
+      providers: TEST_PROVIDERS,
     })
     .compileComponents();
 

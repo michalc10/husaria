@@ -2,32 +2,30 @@
   [source]="sourceProducts"
   [target]="targetProducts"
   styleClass="players-picklist"
-  sourceHeader="Husarze"
-  targetHeader="Husarze biorący udział w turnieju"
+  [sourceHeader]="'tournament.sourceHeader' | transloco"
+  [targetHeader]="'tournament.targetHeader' | transloco"
   [dragdrop]="true"
   [responsive]="true"
   [showSourceControls]="false"
   [showTargetControls]="false"
-  filterBy="name"
-  sourceFilterPlaceholder="Szukaj po imieniu"
-  targetFilterPlaceholder="Szukaj po imieniu"
+  filterBy="name,bannerName,bannerCity"
+  [sourceFilterPlaceholder]="'tournament.sourceFilter' | transloco"
+  [targetFilterPlaceholder]="'tournament.targetFilter' | transloco"
   breakpoint="1200px"
   (onMoveToTarget)="onMoveToTarget($event)"
   (onMoveToSource)="onMoveToSource($event)"
-  (onMoveAllToTarget)="onMoveAllToTarget($event)"
-  (onMoveAllToSource)="onMoveAllToSource($event)"
   (onTargetReorder)="onTargetReorder($event)"
 >
   <ng-template pTemplate="sourceheader">
     <div class="list-header">
-      <span>Husarze</span>
+      <span>{{ 'tournament.sourceHeader' | transloco }}</span>
       <span class="count">{{ sourceProducts.length }}</span>
     </div>
   </ng-template>
 
   <ng-template pTemplate="targetheader">
     <div class="list-header">
-      <span>Husarze biorący udział w turnieju</span>
+      <span>{{ 'tournament.targetHeader' | transloco }}</span>
       <span class="count">{{ targetProducts.length }}</span>
     </div>
   </ng-template>
@@ -45,15 +43,17 @@
           </span>
           <span class="chip chip-flag">
             <i class="pi pi-flag"></i>
-            {{ player.flag }}
+            {{ bannerLabel(player) }}
           </span>
         </div>
       </div>
 
-      <div class="right" *ngIf="isInTarget(player)">
-        <span class="order-badge">{{ getTargetIndex(player) }}</span>
-        <i class="pi pi-arrows-all" title="Przeciągnij, aby zmienić kolejność"></i>
-      </div>
+      @if (isInTarget(player)) {
+        <div class="right">
+          <span class="order-badge">{{ getTargetIndex(player) }}</span>
+          <i class="pi pi-arrows-all" [title]="'tournament.dragToReorder' | transloco"></i>
+        </div>
+      }
     </div>
   </ng-template>
 </p-pickList>

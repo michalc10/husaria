@@ -9,33 +9,39 @@
   styleClass="player-dialog"
 >
   <ng-template pTemplate="header">
-    <div class="pd-header">
-      <i class="pi pi-user pd-header__icon"></i>
-      <span class="pd-header__title">{{ header }}</span>
+    <div class="dialog-title">
+      <span class="dialog-title__icon">
+        <i class="pi pi-user"></i>
+      </span>
+      <span class="dialog-title__text">{{ header }}</span>
     </div>
   </ng-template>
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="pd-form">
-    <div class="pd-card">
-      <div class="field">
-        <label class="pd-label" for="name">Imię i nazwisko</label>
-        <span class="p-input-icon-left pd-input">
-          <i class="pi pi-user"></i>
-          <input
-            pInputText
-            id="name"
-            formControlName="name"
-            [ngClass]="{ 'p-invalid': isInvalid('name') }"
-            autocomplete="off"
-          />
-        </span>
-        <small class="p-error" *ngIf="isInvalid('name')">To pole jest wymagane.</small>
-      </div>
+    <div class="form-card">
+      <div class="form-grid form-grid--two">
+        <div class="form-field form-field--full">
+          <label class="field-label" for="name">{{ 'player.name' | transloco }}</label>
+          <span class="p-input-icon-left field-control">
+            <i class="pi pi-user"></i>
+            <input
+              pInputText
+              id="name"
+              formControlName="name"
+              [ngClass]="{ 'p-invalid': isInvalid('name') }"
+              autocomplete="off"
+            />
+          </span>
+          @if (isInvalid('name')) {
+            <small class="field-error">{{ 'common.required' | transloco }}</small>
+          } @else {
+            <small class="field-hint"></small>
+          }
+        </div>
 
-      <div class="pd-row">
-        <div class="field pd-col">
-          <label class="pd-label" for="horse">Koń</label>
-          <span class="p-input-icon-left pd-input">
+        <div class="form-field">
+          <label class="field-label" for="horse">{{ 'player.horse' | transloco }}</label>
+          <span class="p-input-icon-left field-control">
             <i class="pi pi-compass"></i>
             <input
               pInputText
@@ -45,24 +51,56 @@
               autocomplete="off"
             />
           </span>
-          <small class="p-error" *ngIf="isInvalid('horse')">To pole jest wymagane.</small>
+          @if (isInvalid('horse')) {
+            <small class="field-error">{{ 'common.required' | transloco }}</small>
+          } @else {
+            <small class="field-hint"></small>
+          }
         </div>
 
-        <div class="field pd-col">
-          <label class="pd-label" for="flag">Chorągiew</label>
-          <span class="p-input-icon-left pd-input">
-            <i class="pi pi-flag"></i>
-            <input pInputText id="flag" formControlName="flag" autocomplete="off" />
-          </span>
+        <div class="form-field">
+          <label class="field-label" for="bannerId">{{ 'player.banner' | transloco }}</label>
+          <p-select
+            inputId="bannerId"
+            formControlName="bannerId"
+            [options]="banners"
+            optionLabel="name"
+            optionValue="_id"
+            [placeholder]="'player.chooseBanner' | transloco"
+            [filter]="true"
+            filterBy="name,city"
+            appendTo="body"
+            styleClass="field-control pd-select"
+            [ngClass]="{ 'p-invalid': isInvalid('bannerId') }"
+          >
+            <ng-template pTemplate="selectedItem" let-banner>
+              {{ banner ? bannerLabel(banner) : ('player.chooseBanner' | transloco) }}
+            </ng-template>
+            <ng-template pTemplate="item" let-banner>
+              <div class="banner-option">
+                <span>{{ banner.name }}</span>
+                @if (banner.city) {
+                  <small>{{ banner.city }}</small>
+                }
+              </div>
+            </ng-template>
+          </p-select>
+          @if (isInvalid('bannerId')) {
+            <small class="field-error">{{ 'player.chooseBannerHint' | transloco }}</small>
+          } @else if (player?.flag && !player?.bannerId) {
+            <small class="field-hint">{{ 'player.archivedBanner' | transloco: { name: player?.flag } }}</small>
+          } @else {
+            <small class="field-hint"></small>
+          }
         </div>
       </div>
     </div>
   </form>
 
   <ng-template pTemplate="footer">
-    <div class="pd-actions">
-      <button type="button" pButton label="Anuluj" icon="pi pi-times" severity="secondary" (click)="closingWithoutSaving()"></button>
-      <button type="submit" pButton [label]="buttonText" icon="pi pi-save" [disabled]="form.invalid" (click)="onSubmit()"></button>
+    <div class="dialog-actions">
+      <button type="button" pButton [label]="'common.cancel' | transloco" icon="pi pi-times" severity="secondary" (click)="closingWithoutSaving()"></button>
+      <button type="submit" pButton [label]="buttonText" icon="pi pi-save" (click)="onSubmit()"></button>
     </div>
   </ng-template>
 </p-dialog>

@@ -1,52 +1,118 @@
-<div class="league-list">
-  <p-table [value]="leagueList" styleClass="league-table p-datatable-gridlines p-datatable-striped">
-    <ng-template pTemplate="header">
-      <tr>
-        <th class="col-name">Nazwa</th>
-        <th class="col-year">Rok</th>
-        <th class="col-actions">
-          <p-button
-            icon="pi pi-plus"
-            styleClass="p-button-rounded p-button-success"
-            (onClick)="createLeague()"
-            [ariaLabel]="'Dodaj ligę'"
-          ></p-button>
-        </th>
-      </tr>
-    </ng-template>
+<div class="league-list view-stack">
+  <section class="league-hero">
+    <div>
+      <p class="league-hero__eyebrow">{{ 'league.plural' | transloco }}</p>
+      <h1>{{ 'league.title' | transloco }}</h1>
+      <p>{{ 'league.selectHint' | transloco }}</p>
+    </div>
 
-    <ng-template pTemplate="body" let-league>
-      <tr (click)="chosedRow(league)">
-        <td><div class="items">{{ league.name }}</div></td>
-        <td>{{ league.year }}</td>
-        <td class="actions">
+    <p-button
+      icon="pi pi-plus"
+      styleClass="p-button-rounded"
+      (onClick)="createLeague()"
+      [label]="'league.add' | transloco"
+      [ariaLabel]="'league.add' | transloco"
+    ></p-button>
+  </section>
+
+  <section class="league-workspace">
+    <aside class="league-panel league-panel--list">
+      <div class="league-panel__header">
+        <div>
+          <h2>{{ 'league.plural' | transloco }}</h2>
+          <span>{{ 'common.records' | transloco: { count: leagueList.length } }}</span>
+        </div>
+      </div>
+
+      <span class="search-field league-search">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          [(ngModel)]="searchTerm"
+          [placeholder]="'league.search' | transloco"
+        />
+      </span>
+
+      <div class="league-cards" role="list">
+        @for (league of filteredLeagues; track trackLeague($index, league)) {
+          <button
+            type="button"
+            role="listitem"
+            class="league-card"
+            [class.league-card--active]="idchosenRaw === league._id"
+            (click)="chooseLeague(league)"
+          >
+            <span class="league-card__year">{{ league.year }}</span>
+            <span class="league-card__name">{{ league.name }}</span>
+            <i class="pi pi-chevron-right"></i>
+          </button>
+        } @empty {
+          <div class="empty-state">{{ 'league.empty' | transloco }}</div>
+        }
+      </div>
+    </aside>
+
+    <section class="league-panel league-panel--details">
+      @if (selectedLeague; as league) {
+        <div class="league-details__head">
+          <div>
+            <p>{{ 'league.details' | transloco }}</p>
+            <h2>{{ league.name }}</h2>
+            <span>{{ league.year }}</span>
+          </div>
+
           <p-button
             icon="pi pi-pencil"
-            styleClass="p-button-rounded p-button-info p-button-text p-button-raised"
+            styleClass="p-button-rounded p-button-text"
             (onClick)="changeLeague(league)"
-            [ariaLabel]="'Edytuj ' + league.name"
+            [ariaLabel]="'common.editItem' | transloco: { name: league.name }"
           ></p-button>
-        </td>
-      </tr>
+        </div>
 
-      <tr *ngIf="idchosenRaw === league._id">
-        <td colspan="3">
-          <div class="tournaments">
-            <div
-              class="tournament"
-              *ngFor="let tournament of tournamentList"
-              (click)="selectedTournament(tournament)"
-            >
-              <div class="tournament__content">
-                <div>{{ tournament.city }}</div>
-                <div>{{ tournament.date | date: 'dd.MM.yyyy' }}</div>
-              </div>
-            </div>
+        <div class="league-summary">
+          <div>
+            <span>{{ 'league.tournaments' | transloco }}</span>
+            <strong>{{ 'league.tournamentCount' | transloco: { count: tournamentList.length } }}</strong>
           </div>
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+          <i class="pi pi-calendar"></i>
+        </div>
+
+        <div class="tournament-timeline" [attr.aria-label]="'league.timeline' | transloco">
+          @if (tournamentList.length) {
+            @for (tournament of tournamentList; track trackTournament($index, tournament); let i = $index) {
+              <button
+                type="button"
+                class="tournament-card"
+                (click)="selectedTournament(tournament)"
+                [attr.aria-label]="openTournamentLabel(tournament)"
+              >
+                <span class="tournament-card__index">{{ i + 1 }}</span>
+                <span class="tournament-card__main">
+                  <span class="tournament-card__topline">
+                    <strong>{{ tournamentName(tournament) }}</strong>
+                    <span class="tournament-card__status" [ngClass]="tournamentStatusClass(tournament.status)">
+                      {{ tournamentStatusKey(tournament.status) | transloco }}
+                    </span>
+                  </span>
+                  <small>{{ tournament.date | date: 'dd.MM.yyyy' }}</small>
+                  <span class="tournament-card__action">{{ tournamentPrimaryAction(tournament) }}</span>
+                </span>
+                <i class="pi pi-arrow-right"></i>
+              </button>
+            }
+          } @else {
+            <div class="empty-state">{{ 'league.noTournaments' | transloco }}</div>
+          }
+        </div>
+      } @else {
+        <div class="league-empty">
+          <i class="pi pi-sitemap"></i>
+          <p>{{ 'league.selectHint' | transloco }}</p>
+        </div>
+      }
+    </section>
+  </section>
 </div>
 
 <app-league-dialog

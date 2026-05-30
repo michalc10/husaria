@@ -2,72 +2,120 @@
   [(visible)]="display"
   [modal]="true"
   [draggable]="false"
-  [resizable]="true"
+  [resizable]="false"
+  [closable]="true"
+  [dismissableMask]="true"
   (onHide)="closingWithoutSaving()"
   styleClass="league-dialog"
 >
   <ng-template pTemplate="header">
-    <div class="ld-header">
-      <i class="pi pi-sitemap ld-icon"></i>
-      <span class="ld-title">Liga Husarska</span>
+    <div class="dialog-title">
+      <span class="dialog-title__icon">
+        <i class="pi pi-sitemap"></i>
+      </span>
+      <span class="dialog-title__text">{{ headerKey | transloco }}</span>
     </div>
   </ng-template>
 
-  <form [formGroup]="leagueForm" (ngSubmit)="onSubmit()" class="ld-form p-fluid">
-    <div class="ld-card">
-      <div class="ld-row">
-        <div class="field">
-          <label for="name">Nazwa</label>
-          <input pInputText id="name" formControlName="name" />
+  <form [formGroup]="leagueForm" (ngSubmit)="onSubmit()" class="ld-form">
+    <div class="form-card">
+      <div class="form-grid form-grid--two">
+        <div class="form-field">
+          <label class="field-label" for="name">{{ 'league.name' | transloco }}</label>
+          <input
+            pInputText
+            id="name"
+            formControlName="name"
+            [ngClass]="{ 'p-invalid': isInvalid('name') }"
+          />
+          @if (isInvalid('name')) {
+            <small class="field-error">{{ 'common.required' | transloco }}</small>
+          } @else {
+            <small class="field-hint"></small>
+          }
         </div>
 
-        <div class="field">
-          <label for="year">Rok</label>
-          <input pInputText id="year" formControlName="year" />
+        <div class="form-field">
+          <label class="field-label" for="year">{{ 'league.year' | transloco }}</label>
+          <input
+            pInputText
+            id="year"
+            formControlName="year"
+            [ngClass]="{ 'p-invalid': isInvalid('year') }"
+          />
+          @if (isInvalid('year')) {
+            <small class="field-error">{{ 'common.required' | transloco }}</small>
+          } @else {
+            <small class="field-hint"></small>
+          }
         </div>
       </div>
 
-      <div class="ld-section">
+      <section class="ld-section">
         <div class="ld-section__head">
-          <h3>Turnieje</h3>
-          <!-- <button
+          <div>
+            <h3>{{ 'league.tournaments' | transloco }}</h3>
+            <span>{{ 'league.tournamentCount' | transloco: { count: tournamentList.length } }}</span>
+          </div>
+
+          <button
             type="button"
             pButton
             icon="pi pi-plus"
-            label="Dodaj turniej"
-            class="p-button-sm"
+            severity="secondary"
+            [label]="'league.addTournament' | transloco"
             (click)="addTournamentRow()"
-          ></button> -->
+          ></button>
         </div>
 
-        <div class="ld-tournaments" *ngIf="tournamentList.length; else emptyTournaments">
-          <div class="ld-tournament-row" *ngFor="let rowData of tournamentList; let i = index">
-            <span class="ld-number">{{ i + 1 }}.</span>
-            <input
-              pInputText
-              [(ngModel)]="rowData.city"
-              [ngModelOptions]="{ standalone: true }"
-              placeholder="Miasto"
-            />
-            <p-calendar
-              [(ngModel)]="rowData.date"
-              [ngModelOptions]="{ standalone: true }"
-              dateFormat="dd.mm.yy"
-              appendTo="body"
-            ></p-calendar>
+        @if (tournamentList.length) {
+          <div class="ld-tournaments">
+            @for (rowData of tournamentList; track trackTournament($index, rowData); let i = $index) {
+              <div class="ld-tournament-row">
+                <span class="ld-number">{{ i + 1 }}.</span>
+                <div class="ld-tournament-field">
+                  <label [for]="'tournament-city-' + i">{{ 'league.city' | transloco }}</label>
+                  <input
+                    pInputText
+                    [id]="'tournament-city-' + i"
+                    [(ngModel)]="rowData.city"
+                    [ngModelOptions]="{ standalone: true }"
+                    [placeholder]="'league.city' | transloco"
+                  />
+                </div>
+                <div class="ld-tournament-field">
+                  <label>{{ 'league.date' | transloco }}</label>
+                  <p-datepicker
+                    [(ngModel)]="rowData.date"
+                    [ngModelOptions]="{ standalone: true }"
+                    dateFormat="dd.mm.yy"
+                    appendTo="body"
+                  ></p-datepicker>
+                </div>
+
+                @if (canRemoveTournament(rowData)) {
+                  <button
+                    type="button"
+                    pButton
+                    icon="pi pi-trash"
+                    severity="danger"
+                    styleClass="p-button-rounded p-button-text"
+                    [ariaLabel]="'league.removeTournament' | transloco"
+                    (click)="removeTournamentRow(i)"
+                  ></button>
+                }
+              </div>
+            }
           </div>
-        </div>
-        <ng-template #emptyTournaments>
-          <div class="ld-empty">Brak turniejów. Dodaj pierwszy.</div>
-        </ng-template>
-      </div>
+        }
+      </section>
     </div>
   </form>
 
   <ng-template pTemplate="footer">
-    <div class="ld-actions">
-      <button type="button" pButton label="Anuluj" icon="pi pi-times" severity="secondary" (click)="closingWithoutSaving()"></button>
-      <button type="submit" pButton [label]="buttonText" icon="pi pi-save" [disabled]="leagueForm.invalid" (click)="onSubmit()"></button>
+    <div class="dialog-actions">
+      <button type="button" pButton [label]="'common.cancel' | transloco" icon="pi pi-times" severity="secondary" (click)="closingWithoutSaving()"></button>
+      <button type="submit" pButton [label]="buttonTextKey | transloco" icon="pi pi-save" (click)="onSubmit()"></button>
     </div>
   </ng-template>
 </p-dialog>

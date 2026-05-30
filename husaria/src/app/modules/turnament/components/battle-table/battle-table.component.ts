@@ -1,232 +1,386 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { TranslocoService } from '@jsverse/transloco';
+import { forkJoin } from 'rxjs';
+import { Subscription } from 'rxjs';
+import { toDataURL } from 'qrcode';
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+import { PageOrientation } from 'pdfmake/interfaces';
+import { IBattle, IBattleObstacle, IBattlePenalty, IBattleResult } from 'src/app/models/battle';
+import { IBattleLiveState, IJudgeStation, IJudgeStationCategory } from 'src/app/models/judgeStation';
+import { IPlayerPoints } from 'src/app/models/playerPoints';
+import { JudgeStationService } from '../../services/judge-station/judge-station.service';
+import { LiveScoreSocketService } from '../../services/live-score-socket/live-score-socket.service';
 import { PlayerPointsService } from '../../services/playerPoints/playerPoints.service';
 import { TournamentService } from '../../services/tournament/tournament.service';
-import { IPlayerPoints } from 'src/app/models/playerPoints';
-import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
-import { PageOrientation } from 'pdfmake/interfaces';
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
-interface Obstacle {
-  name: string;
-  score: string;  // Can be 'x-y-z-t'
-}
-
-interface Category {
-  name: string;
-  obstacles: Obstacle[];
-}
+(pdfMake as any).vfs = (pdfFonts as any)['pdfMake']?.vfs ?? (pdfFonts as any).vfs;
 
 @Component({
-  selector: 'app-battle-table',
-  templateUrl: './battle-table.component.html',
-  styleUrls: ['./battle-table.component.scss']
+    selector: 'app-battle-table',
+    templateUrl: './battle-table.component.html',
+    styleUrls: ['./battle-table.component.scss'],
+    standalone: false
 })
-export class BattleTableComponent implements OnInit {
+export class BattleTableComponent implements OnInit, OnDestroy {
   selectedPlayerId = '-1';
-  points: string[] = [];
-  categories: Category[] = [];
+  selectedColumnKey = '';
   participantList: IPlayerPoints[] = [];
-  battleId: string = '';
+  battles: IBattle[] = [];
+  battle?: IBattle;
+  battleId = '';
+  stationCategories: IJudgeStationCategory[] = [];
+  onlineStationIds = new Set<string>();
+  liveState: IBattleLiveState = {
+    battleId: '',
+    activeTournamentPlayerId: null,
+    version: 0,
+    activeParticipant: null
+  };
+  qrDialogVisible = false;
+  qrCodeDataUrl = '';
+  qrGuestUrl = '';
+  qrStationLabel = '';
 
-  // Brick options for select button
-  brickOptions = [
-    { label: '0', value: '10' },
-    { label: '1', value: '0' },
-    { label: '2', value: '6' },
-    { label: '3', value: '8' }
-  ];
+  private liveSubscription = new Subscription();
 
   constructor(
     private playerPointsService: PlayerPointsService,
     private route: ActivatedRoute,
-    private tournamentService: TournamentService
+    private tournamentService: TournamentService,
+    private transloco: TranslocoService,
+    private judgeStationService: JudgeStationService,
+    private liveScoreSocket: LiveScoreSocketService
   ) {}
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
       this.resetComponentState();
-      this.battleId = params.get('battleId')!;
-      
-      const tournamentId = localStorage.getItem("tournamentId");
-      if (tournamentId) {
-        this.loadTournament(tournamentId);
+      this.battleId = params.get('battleId') || '';
+
+      const tournamentId = this.getTournamentId();
+      if (tournamentId && this.battleId) {
+        this.loadBattleAndParticipants(tournamentId);
+      } else {
+        console.error(this.transloco.translate('battleTable.missingRoute'));
       }
-      this.loadParticipants();
     });
+  }
+
+  ngOnDestroy(): void {
+    this.liveSubscription.unsubscribe();
+    this.liveScoreSocket.disconnect();
   }
 
   resetComponentState() {
     this.selectedPlayerId = '-1';
-    this.points = [];
-    this.categories = [];
+    this.selectedColumnKey = '';
     this.participantList = [];
+    this.battles = [];
+    this.battle = undefined;
     this.battleId = '';
+    this.stationCategories = [];
+    this.onlineStationIds.clear();
+    this.liveState = {
+      battleId: '',
+      activeTournamentPlayerId: null,
+      version: 0,
+      activeParticipant: null
+    };
+    this.liveSubscription.unsubscribe();
+    this.liveSubscription = new Subscription();
   }
 
-  loadTournament(idTournament: string): void {
-    this.tournamentService.get(idTournament).subscribe((tournament: any) => {
-      const battleString = tournament[`battle_${this.battleId}`];
-      this.parseBattleData(battleString);
-    });
+  private getTournamentId(): string | null {
+    return this.route.parent?.snapshot.paramMap.get('idTournament') ?? null;
   }
 
-  loadParticipants() {
-    const tournamentId = localStorage.getItem('tournamentId')!;
-    
-    this.playerPointsService.getPlayerPointsForTournament(tournamentId).subscribe({
-      next: (value: IPlayerPoints[]) => {
-        const battleNumber = Number(this.battleId);
-        const currentBattlePointsKey = `battle_${this.battleId}_points`;
-  
-        const numberOfObstacles = this.points.length; 
-  
-        value.forEach(participant => {
-          const currentValue = participant[currentBattlePointsKey] || '';
-          const currentLength = currentValue.length;
-          if (currentLength < numberOfObstacles) {
-            const missingZeros = '0'.repeat(numberOfObstacles - currentLength);
-            participant[currentBattlePointsKey] = currentValue + missingZeros;
-          }
-        });
-  
-        this.participantList = value.sort((a, b) => {
-          let totalScoreA = 0;
-          let totalScoreB = 0;
-  
-          for (let i = 1; i < battleNumber; i++) {
-            const scoreKey = `battle_${i}_score`;
-            totalScoreA += a[scoreKey] || 0;
-            totalScoreB += b[scoreKey] || 0;
-          }
-  
-          return totalScoreB - totalScoreA; 
-        });
-  
-        this.participantList = [...this.participantList]; 
+  loadBattleAndParticipants(tournamentId: string): void {
+    forkJoin({
+      battles: this.tournamentService.getBattles(tournamentId),
+      participants: this.playerPointsService.getPlayerPointsForTournament(tournamentId),
+      stations: this.judgeStationService.listForBattle(this.battleId),
+      liveState: this.judgeStationService.getLiveState(this.battleId)
+    }).subscribe({
+      next: ({ battles, participants, stations, liveState }) => {
+        this.battles = battles;
+        this.battle = battles.find(item => item._id === this.battleId);
+        this.stationCategories = stations.categories;
+        this.liveState = liveState;
+        this.connectRealtime();
+
+        if (!this.battle) {
+          this.participantList = [];
+          return;
+        }
+
+        this.participantList = participants
+          .map(participant => ({
+            ...participant,
+            score: this.roundScore(participant.totalScore || this.sumBattleScores(participant))
+          }))
+          .sort((a, b) => this.scoreBeforeCurrentBattle(b) - this.scoreBeforeCurrentBattle(a));
+      },
+      error: error => {
+        console.error(this.transloco.translate('battleTable.loadError'), error);
       }
     });
   }
 
-  parseBattleData(battleString: string) {
-    const parts = battleString.split('/').filter(part => part.trim() !== '').slice(1);
-    
-    parts.forEach(part => {
-      const [categoryName, ...obstacles] = part.split(';');
-      const parsedObstacles = obstacles.map(obstacle => {
-        const [name, score] = obstacle.split(':');
-        return { name, score };
-      });
-  
-      this.categories.push({ name: categoryName, obstacles: parsedObstacles });
+  isActiveParticipant(player: IPlayerPoints): boolean {
+    return !!player._id && this.liveState.activeTournamentPlayerId === player._id;
+  }
+
+  setActiveParticipant(playerId: string | null): void {
+    if (!this.battleId) return;
+
+    this.judgeStationService.updateLiveState(this.battleId, playerId).subscribe({
+      next: state => {
+        this.liveState = state;
+      },
+      error: error => {
+        console.error(this.transloco.translate('judge.liveStateSaveError'), error);
+      }
     });
-  
-    this.points = this.categories.flatMap(category => category.obstacles.map(o => o.score));
+  }
+
+  setPreviousParticipant(): void {
+    const index = this.activeParticipantIndex();
+    if (index > 0) {
+      this.setActiveParticipant(this.participantList[index - 1]._id || null);
+    }
+  }
+
+  setNextParticipant(): void {
+    const index = this.activeParticipantIndex();
+    if (index >= 0 && index < this.participantList.length - 1) {
+      this.setActiveParticipant(this.participantList[index + 1]._id || null);
+    } else if (index === -1 && this.participantList[0]?._id) {
+      this.setActiveParticipant(this.participantList[0]._id);
+    }
+  }
+
+  activeParticipantIndex(): number {
+    return this.participantList.findIndex(player => player._id === this.liveState.activeTournamentPlayerId);
+  }
+
+  createOrShowStation(categoryItem: IJudgeStationCategory): void {
+    const categoryId = categoryItem.category._id;
+    if (!categoryId || !this.battleId) return;
+
+    this.judgeStationService.createOrRegenerate(this.battleId, categoryId).subscribe({
+      next: station => {
+        categoryItem.station = station;
+        this.openQr(station);
+      },
+      error: error => {
+        console.error(this.transloco.translate('judge.stationSaveError'), error);
+      }
+    });
+  }
+
+  revokeStation(categoryItem: IJudgeStationCategory): void {
+    const stationId = categoryItem.station?._id;
+    if (!stationId) return;
+
+    this.judgeStationService.revoke(stationId).subscribe({
+      next: station => {
+        categoryItem.station = station;
+        this.onlineStationIds.delete(station._id);
+      },
+      error: error => {
+        console.error(this.transloco.translate('judge.stationRevokeError'), error);
+      }
+    });
+  }
+
+  isStationOnline(station: IJudgeStation | null): boolean {
+    return !!station?._id && this.onlineStationIds.has(station._id);
+  }
+
+  stationLastSeen(station: IJudgeStation | null): string {
+    if (!station?.lastSeenAt) return this.transloco.translate('judge.neverSeen');
+    return new Date(station.lastSeenAt).toLocaleString();
+  }
+
+  private openQr(station: IJudgeStation): void {
+    if (!station.guestUrl) return;
+
+    this.qrStationLabel = station.label;
+    this.qrGuestUrl = station.guestUrl;
+    toDataURL(station.guestUrl, { width: 320, margin: 2 }).then(dataUrl => {
+      this.qrCodeDataUrl = dataUrl;
+      this.qrDialogVisible = true;
+    });
+  }
+
+  private connectRealtime(): void {
+    this.liveSubscription.unsubscribe();
+    this.liveSubscription = new Subscription();
+    this.liveScoreSocket.joinBattle(this.battleId);
+
+    this.liveSubscription.add(
+      this.liveScoreSocket.liveState$.subscribe(state => {
+        if (state.battleId === this.battleId) {
+          this.liveState = state;
+        }
+      })
+    );
+
+    this.liveSubscription.add(
+      this.liveScoreSocket.battleResult$.subscribe(result => {
+        if (result.battleId !== this.battleId) return;
+        const participant = this.participantList.find(item => item._id === result.tournamentPlayerId);
+        if (participant) {
+          this.replaceBattleResult(participant, result);
+        }
+      })
+    );
+
+    this.liveSubscription.add(
+      this.liveScoreSocket.stationPresence$.subscribe(presence => {
+        if (presence.online) {
+          this.onlineStationIds.add(presence.stationId);
+        } else {
+          this.onlineStationIds.delete(presence.stationId);
+        }
+
+        this.stationCategories = this.stationCategories.map(item => {
+          if (!item.station || item.station._id !== presence.stationId) return item;
+
+          return {
+            ...item,
+            station: {
+              ...item.station,
+              lastSeenAt: presence.lastSeenAt || item.station.lastSeenAt
+            }
+          };
+        });
+      })
+    );
+
+    this.liveSubscription.add(
+      this.liveScoreSocket.stationRevoked$.subscribe(payload => {
+        if (!payload?.stationId) return;
+        this.onlineStationIds.delete(payload.stationId);
+        this.stationCategories = this.stationCategories.map(item => {
+          if (!item.station || item.station._id !== payload.stationId) return item;
+
+          return {
+            ...item,
+            station: {
+              ...item.station,
+              revokedAt: new Date()
+            }
+          };
+        });
+      })
+    );
   }
 
   chosenRow(player: IPlayerPoints) {
     this.selectedPlayerId = player._id!;
   }
 
-  changedButton(player: IPlayerPoints, index: number, value: number) {
-    const participantIndex = this.participantList.findIndex(participant => participant._id === player._id);
-    const currentBattlePointsKey = `battle_${this.battleId}_points`;
-    const participant = this.participantList[participantIndex];
-    const points = participant[currentBattlePointsKey];
-    participant[currentBattlePointsKey] = points.substring(0, index) + value + points.substring(index + 1);
-    participant[`battle_${this.battleId}_score`] += value === 1 ? parseInt(this.points[index]) : -parseInt(this.points[index]);
-    this.updatePlayerPoints(participant, participantIndex);
+  chosenCell(player: IPlayerPoints, columnKey: string): void {
+    this.chosenRow(player);
+    this.selectedColumnKey = columnKey;
   }
 
-  setBrick(player: IPlayerPoints, index: number, event: any) {
-    const participantIndex = this.participantList.findIndex(participant => participant._id === player._id);
-    const participant = this.participantList[participantIndex];
-    const currentPoints = participant[`battle_${this.battleId}_points`];
-  
-    // Zaktualizuj label w stringu battle_x_points
-    participant[`battle_${this.battleId}_points`] = currentPoints.substring(0, index) + event.value + currentPoints.substring(index + 1);
-  
-    // Przelicz wynik na podstawie zaktualizowanej wartości
-    this.calculateScore(participant);
-    this.updatePlayerPoints(participant, participantIndex);
-  }
-  
-  
-  
-
-  setExtraPoints(id: string, extraPoints: number) {
-    const participantIndex = this.participantList.findIndex(participant => participant._id === id);
-    const participant = this.participantList[participantIndex];
-    participant[`battle_${this.battleId}_extraPoints`] = extraPoints;
-
-    this.calculateScore(participant);
-    this.updatePlayerPoints(participant, participantIndex);
+  obstacleColumnKey(obstacle: IBattleObstacle): string {
+    return `obstacle:${obstacle._id || obstacle.order || obstacle.name}`;
   }
 
-  setTime(player: IPlayerPoints, time: number) {
-    const participantIndex = this.participantList.findIndex(participant => participant._id === player._id);
-    const participant = this.participantList[participantIndex];
-    participant[`battle_${this.battleId}_time`] = time;
-
-    this.calculateScore(participant);
-    this.updatePlayerPoints(participant, participantIndex);
+  penaltyColumnKey(penalty: IBattlePenalty): string {
+    return `penalty:${penalty._id || penalty.order || penalty.name}`;
   }
 
-  calculateScore(participant: IPlayerPoints) {
-    const baseScore = this.points.reduce((total, point, index) => {
-      const currentPointChar = participant[`battle_${this.battleId}_points`].charAt(index);
-      
-      // Sprawdź, czy punkt zawiera "-" (czyli używamy brickOptions)
-      if (point.includes('-')) {
-        // Zwróć wartość `value` z brickOptions, jeśli `point` zawiera '-'
-        const optionValue = this.brickOptions.find(option => option.label === currentPointChar)?.value || '0';
-        return total + parseInt(optionValue, 10);
-      } else {
-        // W przeciwnym razie użyj normalnej logiki (0/1)
-        return currentPointChar === '1' ? total + parseInt(point, 10) : total;
-      }
-    }, 0);
-  
-    // Aktualizujemy `score` na podstawie wartości `extraPoints` i `time`
-    participant[`battle_${this.battleId}_score`] = baseScore +
-      (participant[`battle_${this.battleId}_extraPoints`] || 0) +
-      (participant[`battle_${this.battleId}_time`] || 0);
-  
-    // Wymuszenie przeliczenia wyników
-    this.participantList = [...this.participantList];
+  isColumnSelected(columnKey: string): boolean {
+    return this.selectedColumnKey === columnKey;
   }
-  
-  
-  
 
-  updatePlayerPoints(participant: IPlayerPoints, participantIndex: number) {
-    this.playerPointsService.update(participant._id!, participant).subscribe({
-      next: (updatedParticipant) => {
-        this.participantList[participantIndex] = updatedParticipant;
-        this.participantList = [...this.participantList]; // Trigger change detection
-      },
+  toggleObstacle(player: IPlayerPoints, obstacle: IBattleObstacle): void {
+    this.chosenCell(player, this.obstacleColumnKey(obstacle));
+    const current = this.getObstacleValue(player, obstacle);
+    this.setObstacleValue(player, obstacle, current === '1' ? '0' : '1');
+  }
+
+  setSelectObstacle(player: IPlayerPoints, obstacle: IBattleObstacle, event: { value?: string | null }): void {
+    this.chosenCell(player, this.obstacleColumnKey(obstacle));
+    this.setObstacleValue(player, obstacle, String(event.value ?? '0'));
+  }
+
+  togglePenalty(player: IPlayerPoints, penalty: IBattlePenalty): void {
+    this.chosenCell(player, this.penaltyColumnKey(penalty));
+    const current = this.isPenaltySelected(player, penalty);
+    this.setPenaltyValue(player, penalty, !current);
+  }
+
+  setExtraPoints(player: IPlayerPoints, extraPoints: number | null | undefined): void {
+    this.chosenCell(player, 'extraPoints');
+    this.updateBattleResult(player, {
+      extraPoints: Number(extraPoints || 0)
+    });
+  }
+
+  setTime(player: IPlayerPoints, time: number | null | undefined): void {
+    this.chosenCell(player, 'time');
+    this.updateBattleResult(player, {
+      time: Number(time || 0)
     });
   }
 
   allowOnlyNumbers(event: KeyboardEvent): void {
-    const allowedChars = /[0-9-]/;
+    const allowedChars = /[0-9.,-]/;
     const inputChar = String.fromCharCode(event.charCode);
     if (!allowedChars.test(inputChar) && event.charCode !== 0) {
       event.preventDefault();
     }
   }
 
-  isSelectButtonRequired(index: number): boolean {
-    return this.points[index].includes('-');
+  isSelectObstacle(obstacle: IBattleObstacle): boolean {
+    return obstacle.inputType === 'select';
   }
 
-  getSelectButtonValue(rowData: IPlayerPoints, index: number): string {
-    return rowData[`battle_${this.battleId}_points`].charAt(index);
+  selectOptions(obstacle: IBattleObstacle) {
+    return (obstacle.scoreOptions || []).map(option => ({
+      label: option.label || option.code,
+      value: option.code
+    }));
   }
-  
+
+  getObstacleValue(player: IPlayerPoints, obstacle: IBattleObstacle): string {
+    const obstacleId = obstacle._id;
+    if (!obstacleId) return '0';
+    return this.getBattleResult(player)?.obstacleResults.find(result => result.obstacleId === obstacleId)?.value || '0';
+  }
+
+  isObstacleSelected(player: IPlayerPoints, obstacle: IBattleObstacle): boolean {
+    return this.getObstacleValue(player, obstacle) === '1';
+  }
+
+  isPenaltySelected(player: IPlayerPoints, penalty: IBattlePenalty): boolean {
+    const penaltyId = penalty._id;
+    if (!penaltyId) return false;
+    return !!this.getBattleResult(player)?.penaltyResults.find(result => result.penaltyId === penaltyId)?.selected;
+  }
+
+  getExtraPoints(player: IPlayerPoints): number {
+    return this.getBattleResult(player)?.extraPoints || 0;
+  }
+
+  getTime(player: IPlayerPoints): number {
+    return this.getBattleResult(player)?.time || 0;
+  }
+
+  getBattleScore(player: IPlayerPoints): number {
+    return this.getBattleResult(player)?.score || 0;
+  }
 
   generatePDF() {
+    if (!this.battle) return;
+
     const tableBody = this.buildTableBody();
     const documentDefinition = {
       pageOrientation: 'landscape' as PageOrientation,
@@ -236,11 +390,15 @@ export class BattleTableComponent implements OnInit {
             headerRows: 1,
             body: [
               [
-                { text: 'Start', bold: true },
-                { text: 'Imię', bold: true },
-                ...this.categories.flatMap(category => category.obstacles.map(obstacle => ({ text: obstacle.name, bold: true }))),
-                { text: 'Czas [s]', bold: true },
-                { text: 'Wynik', bold: true },
+                { text: this.transloco.translate('battleTable.startOrder'), bold: true },
+                { text: this.transloco.translate('battleTable.player'), bold: true },
+                ...this.battle.categories.flatMap(category =>
+                  category.obstacles.map(obstacle => ({ text: obstacle.name, bold: true }))
+                ),
+                ...this.battle.penalties.map(penalty => ({ text: penalty.name, bold: true })),
+                { text: this.transloco.translate('battleTable.extraPoints'), bold: true },
+                { text: this.transloco.translate('battleTable.time'), bold: true },
+                { text: this.transloco.translate('battleTable.battleScore'), bold: true }
               ],
               ...tableBody
             ]
@@ -253,29 +411,140 @@ export class BattleTableComponent implements OnInit {
   }
 
   buildTableBody() {
-    const body: any[] = [];
-    let i = 1;
-    this.participantList.forEach(row => {
-      const participantPoints = this.categories.flatMap(category => 
-        category.obstacles.map((_, index) => row[`battle_${this.battleId}_points`]?.charAt(index) === '1' ? 'X' : '')
+    if (!this.battle) return [];
+
+    return this.participantList.map((row, index) => {
+      const obstaclePoints = this.battle!.categories.flatMap(category =>
+        category.obstacles.map(obstacle => this.printObstacleValue(row, obstacle))
       );
-      body.push([
-        i,
+      const penalties = this.battle!.penalties.map(penalty =>
+        this.isPenaltySelected(row, penalty) ? String(penalty.score) : ''
+      );
+
+      return [
+        index + 1,
         row.playerName,
-        ...participantPoints,
-        row[`battle_${this.battleId}_time`],
-        row[`battle_${this.battleId}_score`].toFixed(3)
-      ]);
-      i++;
+        ...obstaclePoints,
+        ...penalties,
+        this.getExtraPoints(row),
+        this.getTime(row),
+        this.getBattleScore(row).toFixed(3)
+      ];
     });
-    return body;
   }
 
-  getPointIndex(categoryIndex: number, obstacleIndex: number): number {
-    let index = 0;
-    for (let i = 0; i < categoryIndex; i++) {
-      index += this.categories[i].obstacles.length;
+  private setObstacleValue(player: IPlayerPoints, obstacle: IBattleObstacle, value: string): void {
+    this.updateBattleResult(player, {
+      obstacleResults: this.buildObstacleResults(player).map(result =>
+        result.obstacleId === obstacle._id ? { ...result, value } : result
+      )
+    });
+  }
+
+  private setPenaltyValue(player: IPlayerPoints, penalty: IBattlePenalty, selected: boolean): void {
+    this.updateBattleResult(player, {
+      penaltyResults: this.buildPenaltyResults(player).map(result =>
+        result.penaltyId === penalty._id ? { ...result, selected } : result
+      )
+    });
+  }
+
+  private updateBattleResult(player: IPlayerPoints, patch: Partial<IBattleResult>): void {
+    if (!player._id || !this.battle?._id) return;
+
+    const payload: Partial<IBattleResult> = {
+      extraPoints: patch.extraPoints ?? this.getExtraPoints(player),
+      time: patch.time ?? this.getTime(player),
+      obstacleResults: patch.obstacleResults ?? this.buildObstacleResults(player),
+      penaltyResults: patch.penaltyResults ?? this.buildPenaltyResults(player)
+    };
+
+    this.playerPointsService.updateBattleResult(player._id, this.battle._id, payload).subscribe({
+      next: updatedResult => {
+        this.replaceBattleResult(player, updatedResult);
+      },
+      error: error => {
+        console.error(this.transloco.translate('battleTable.saveError'), error);
+      }
+    });
+  }
+
+  private buildObstacleResults(player: IPlayerPoints): Array<{ obstacleId: string; value: string }> {
+    if (!this.battle) return [];
+
+    return this.battle.categories.flatMap(category =>
+      category.obstacles
+        .filter(obstacle => !!obstacle._id)
+        .map(obstacle => ({
+          obstacleId: obstacle._id!,
+          value: this.getObstacleValue(player, obstacle)
+        }))
+    );
+  }
+
+  private buildPenaltyResults(player: IPlayerPoints): Array<{ penaltyId: string; selected: boolean }> {
+    if (!this.battle) return [];
+
+    return this.battle.penalties
+      .filter(penalty => !!penalty._id)
+      .map(penalty => ({
+        penaltyId: penalty._id!,
+        selected: this.isPenaltySelected(player, penalty)
+      }));
+  }
+
+  private getBattleResult(player: IPlayerPoints): IBattleResult | undefined {
+    return player.battleResults?.find(result => result.battleId === this.battleId);
+  }
+
+  private replaceBattleResult(player: IPlayerPoints, result: IBattleResult): void {
+    const participantIndex = this.participantList.findIndex(participant => participant._id === player._id);
+    if (participantIndex === -1) return;
+
+    const participant = this.participantList[participantIndex];
+    const battleResults = [...(participant.battleResults || [])];
+    const resultIndex = battleResults.findIndex(item => item.battleId === result.battleId);
+
+    if (resultIndex >= 0) {
+      battleResults[resultIndex] = result;
+    } else {
+      battleResults.push(result);
     }
-    return index + obstacleIndex;
+
+    const totalScore = this.roundScore(battleResults.reduce((total, battleResult) => total + (battleResult.score || 0), 0));
+    this.participantList[participantIndex] = {
+      ...participant,
+      battleResults,
+      totalScore,
+      score: totalScore
+    };
+    this.participantList = [...this.participantList];
+  }
+
+  private scoreBeforeCurrentBattle(player: IPlayerPoints): number {
+    const currentOrder = this.battle?.order || 0;
+    const orderByBattleId = new Map(this.battles.map(battle => [battle._id, battle.order]));
+
+    return (player.battleResults || []).reduce((total, result) => {
+      const order = orderByBattleId.get(result.battleId);
+      return order && order < currentOrder ? total + (result.score || 0) : total;
+    }, 0);
+  }
+
+  private sumBattleScores(player: IPlayerPoints): number {
+    return this.roundScore((player.battleResults || []).reduce((total, result) => total + (result.score || 0), 0));
+  }
+
+  private roundScore(value: number): number {
+    return Number((value || 0).toFixed(3));
+  }
+
+  private printObstacleValue(player: IPlayerPoints, obstacle: IBattleObstacle): string {
+    const value = this.getObstacleValue(player, obstacle);
+    if (this.isSelectObstacle(obstacle)) {
+      return obstacle.scoreOptions?.find(option => option.code === value)?.label || value;
+    }
+
+    return value === '1' ? 'X' : '';
   }
 }

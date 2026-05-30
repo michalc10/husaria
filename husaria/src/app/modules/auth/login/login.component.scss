@@ -1,0 +1,114 @@
+.login-page {
+  align-items: center;
+  display: grid;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.login-panel {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 20px;
+  box-shadow: var(--md-sys-elevation-2);
+  display: grid;
+  gap: 1rem;
+  margin: 0 auto;
+  max-width: 28rem;
+  padding: 1.25rem;
+  width: 100%;
+}
+
+.login-panel__brand {
+  align-items: center;
+  display: flex;
+  gap: .9rem;
+}
+
+.login-panel__brand h1 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.login-panel__brand p {
+  color: var(--md-sys-color-on-surface-variant);
+  margin: .2rem 0 0;
+}
+
+.login-panel__icon {
+  background: var(--md-sys-color-primary-container);
+  border-radius: 999px;
+  color: var(--md-sys-color-on-primary-container);
+  display: grid;
+  flex: 0 0 auto;
+  height: 3rem;
+  place-items: center;
+  width: 3rem;
+}
+
+.login-form {
+  display: grid;
+  gap: .9rem;
+}
+
+.login-form input {
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 1rem;
+  min-height: 3rem;
+  padding: .75rem 1rem;
+  width: 100%;
+}
+
+.password-input {
+  display: grid;
+  position: relative;
+}
+
+.password-input input {
+  padding-right: 3.25rem;
+}
+
+.password-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.5rem;
+  justify-content: center;
+  position: absolute;
+  right: .3rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.5rem;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  outline: 0;
+}
+
+.login-submit {
+  justify-content: center;
+  min-height: 3rem;
+}
+
+.change-password-note {
+  background: var(--md-sys-color-primary-container);
+  border-radius: 14px;
+  color: var(--md-sys-color-on-primary-container);
+  display: grid;
+  gap: .25rem;
+  padding: .85rem;
+}
+
+.error-banner {
+  background: var(--md-sys-color-error-container);
+  border-radius: 14px;
+  color: var(--md-sys-color-error);
+  padding: .85rem;
+}

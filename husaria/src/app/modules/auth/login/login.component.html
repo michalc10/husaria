@@ -1,0 +1,76 @@
+<main class="login-page">
+  <section class="login-panel">
+    <div class="login-panel__brand">
+      <span class="login-panel__icon"><i class="pi pi-shield"></i></span>
+      <div>
+        <h1>{{ 'auth.loginTitle' | transloco }}</h1>
+        <p>{{ 'auth.loginSubtitle' | transloco }}</p>
+      </div>
+    </div>
+
+    @if (errorMessage) {
+      <div class="error-banner">{{ errorMessage }}</div>
+    }
+
+    @if (!changePasswordMode) {
+      <form class="login-form" (ngSubmit)="login()">
+        <label class="form-field">
+          <span class="field-label">{{ 'auth.email' | transloco }}</span>
+          <input name="email" type="email" [(ngModel)]="email" autocomplete="email" />
+        </label>
+
+        <label class="form-field">
+          <span class="field-label">{{ 'auth.password' | transloco }}</span>
+          <span class="password-input">
+            <input
+              name="password"
+              [type]="showPassword ? 'text' : 'password'"
+              [(ngModel)]="password"
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="showPassword = !showPassword"
+              [attr.aria-label]="(showPassword ? 'auth.hidePassword' : 'auth.showPassword') | transloco"
+            >
+              <i [class]="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+            </button>
+          </span>
+        </label>
+
+        <button class="btn btn-primary login-submit" type="submit" [disabled]="loading">
+          <i class="pi pi-sign-in"></i>
+          {{ 'auth.login' | transloco }}
+        </button>
+      </form>
+    } @else {
+      <form class="login-form" (ngSubmit)="changePassword()">
+        <div class="change-password-note">
+          <strong>{{ 'auth.changeRequiredTitle' | transloco }}</strong>
+          <span>{{ 'auth.changeRequiredHint' | transloco }}</span>
+        </div>
+
+        <label class="form-field">
+          <span class="field-label">{{ 'auth.currentPassword' | transloco }}</span>
+          <input name="currentPassword" type="password" [(ngModel)]="currentPassword" autocomplete="current-password" />
+        </label>
+
+        <label class="form-field">
+          <span class="field-label">{{ 'auth.newPassword' | transloco }}</span>
+          <input name="newPassword" type="password" [(ngModel)]="newPassword" autocomplete="new-password" />
+        </label>
+
+        <label class="form-field">
+          <span class="field-label">{{ 'auth.repeatPassword' | transloco }}</span>
+          <input name="repeatedPassword" type="password" [(ngModel)]="repeatedPassword" autocomplete="new-password" />
+        </label>
+
+        <button class="btn btn-primary login-submit" type="submit" [disabled]="loading">
+          <i class="pi pi-key"></i>
+          {{ 'auth.savePassword' | transloco }}
+        </button>
+      </form>
+    }
+  </section>
+</main>

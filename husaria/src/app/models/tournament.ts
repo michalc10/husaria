@@ -1,13 +1,11 @@
+export type TournamentStatus = 'PLANNING' | 'LIVE' | 'FINISHED';
+
 export interface ITournament{
     _id?:string;
     leagueId:string;
     city:string;
     date:Date;
-    battle_1: string;
-    battle_2: string;
-    battle_3: string;
-    battle_4: string;
-    battle_5: string;
+    status:TournamentStatus;
 
   [key: string]: any;
 }

@@ -1,0 +1,85 @@
+<main class="judge-mobile">
+  @if (loading) {
+    <section class="judge-card judge-card--center">
+      <span class="status-dot"></span>
+      <p>Ładowanie stanowiska...</p>
+    </section>
+  } @else if (revoked || !session) {
+    <section class="judge-card judge-card--center">
+      <i class="pi pi-ban"></i>
+      <h1>Brak dostępu</h1>
+      <p>{{ statusMessage }}</p>
+    </section>
+  } @else {
+    <header class="judge-mobile__header">
+      <div>
+        <span>{{ connected ? 'Połączono' : 'Brak połączenia' }}</span>
+        <h1>{{ session.battle.name }}</h1>
+        <p>{{ session.category.name }}</p>
+      </div>
+      <div class="connection-pill" [class.is-online]="connected">
+        {{ connected ? 'online' : 'offline' }}
+      </div>
+    </header>
+
+    @if (!session.liveState.activeParticipant) {
+      <section class="judge-card judge-card--center">
+        <i class="pi pi-clock"></i>
+        <h2>Czekam na zawodnika</h2>
+        <p>Sędzia główny wybierze aktualnie startującego husarza.</p>
+      </section>
+    } @else {
+      <section class="judge-card active-player-card">
+        <span>Aktualnie startuje</span>
+        <h2>{{ session.liveState.activeParticipant.playerName }}</h2>
+        <p>{{ session.liveState.activeParticipant.horse }}</p>
+      </section>
+
+      <section class="obstacle-list">
+        @for (obstacle of session.category.obstacles; track obstacle._id) {
+          <article class="obstacle-card">
+            <div>
+              <strong>{{ obstacle.name }}</strong>
+              <span>{{ obstacle.scoreRaw }}</span>
+            </div>
+
+            @if (!isSelectObstacle(obstacle)) {
+              <button
+                type="button"
+                class="mobile-score-button"
+                [class.is-selected]="getObstacleValue(obstacle) === '1'"
+                [disabled]="saving"
+                (click)="setToggleObstacle(obstacle)"
+              >
+                <i class="pi" [ngClass]="getObstacleValue(obstacle) === '1' ? 'pi-check' : 'pi-times'"></i>
+                {{ getObstacleValue(obstacle) === '1' ? 'Zaliczone' : 'Niezaliczone' }}
+              </button>
+            } @else {
+              <div class="select-options">
+                @for (option of obstacle.scoreOptions || []; track option.code) {
+                  <button
+                    type="button"
+                    class="mobile-score-button"
+                    [class.is-selected]="getObstacleValue(obstacle) === option.code"
+                    [disabled]="saving"
+                    (click)="setSelectObstacle(obstacle, option.code)"
+                  >
+                    {{ option.label }}
+                  </button>
+                }
+              </div>
+            }
+          </article>
+        }
+      </section>
+
+      <footer class="judge-mobile__footer">
+        <span>{{ saving ? 'Zapisywanie...' : statusMessage }}</span>
+        <button type="button" class="refresh-button" (click)="loadSession(false)">
+          <i class="pi pi-refresh"></i>
+          Odśwież
+        </button>
+      </footer>
+    }
+  }
+</main>
