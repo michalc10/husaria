@@ -1,85 +1,50 @@
-import { NextFunction, Request, Response, request } from "express";
-import { League } from "../models/LeagueModel";
-import mongoose from "mongoose";
-import { Tournament } from "../models/TournamentModel";
-
-
+import { Request, Response } from "express";
+import { leagueRepository } from "../repositories/leagueRepository";
+import { notFound, serverError } from "./helpers";
 
 const createLeague = async (req: Request, res: Response) => {
   try {
-    const { name, year } = req.body;
-
-    const league = new League({
-      _id: new mongoose.Types.ObjectId(),
-      name,
-      year
-    });
-
-    await league.save();
-
-    const tournament = new Tournament({
-      _id: new mongoose.Types.ObjectId(),
-      leagueId: league._id,
-      city: 'Miasto 1',
-      date: new Date()
-    });
-    await tournament.save();
-
+    const league = await leagueRepository.create(req.body);
     return res.status(201).json(league);
-  } catch (err) {
-    return res.status(500).json({ err });
+  } catch (error) {
+    return serverError(res, error);
   }
 };
 
-
-const readLeague = (req: Request, res: Response, next: NextFunction) => {
-    const leagueId = req.params.leagueId;
-
-    return League.findById(leagueId)
-        .then((league) =>
-            league
-                ? res.status(200).json(league)
-                : res.status(404).json({ message: "Not found" })
-        )
-        .catch((err) => res.status(500).json({ err }));
+const readLeague = async (req: Request, res: Response) => {
+    try {
+        const league = await leagueRepository.findById(req.params.leagueId);
+        return league ? res.status(200).json(league) : notFound(res);
+    } catch (error) {
+        return serverError(res, error);
+    }
 };
 
-const readAll = (req: Request, res: Response, next: NextFunction) => {
-    return League.find()
-        .then((leagues) => res.status(200).json(leagues))
-        .catch((error) => res.status(500).json({ error }));
+const readAll = async (req: Request, res: Response) => {
+    try {
+        const leagues = await leagueRepository.findAll();
+        return res.status(200).json(leagues);
+    } catch (error) {
+        return serverError(res, error);
+    }
 };
 
-const updateLeague = (req: Request, res: Response, next: NextFunction) => {
-    const leagueId = req.params.leagueId;
-    return League.findById(leagueId)
-        .then((league) => {
-            if (league) {
-                league.set(req.body);
-                return league
-                    .save()
-                    .then((league) => res.status(201).json(league))
-                    .catch((err) => res.status(500).json({ err }));
-            } else {
-                res.status(404).json({ message: "Not found" });
-            }
-        })
-        .catch((err) => res.status(500).json({ err }));
+const updateLeague = async (req: Request, res: Response) => {
+    try {
+        const league = await leagueRepository.update(req.params.leagueId, req.body);
+        return league ? res.status(200).json(league) : notFound(res);
+    } catch (error) {
+        return serverError(res, error);
+    }
 };
 
-const deleteLeague = (req: Request, res: Response, next: NextFunction) => {
-    const leagueId = req.params.leagueId;
-
-    return League.findByIdAndDelete(leagueId)
-        .then((league) => {
-            league
-                ? res.status(200).json({ message: "deleted" })
-                : res.status(404).json({ message: "Not found" })
-        }
-
-
-        )
-        .catch((err) => res.status(500).json({ err }));
+const deleteLeague = async (req: Request, res: Response) => {
+    try {
+        const league = await leagueRepository.delete(req.params.leagueId);
+        return league ? res.status(200).json({ message: "usunięto" }) : notFound(res);
+    } catch (error) {
+        return serverError(res, error);
+    }
 };
 
 

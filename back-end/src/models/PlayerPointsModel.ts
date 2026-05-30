@@ -34,6 +34,7 @@ export interface IPlayerPoints {
 
     penalty: number;
     score: number;
+    order?: number;
 }
 
 export interface IPlayerPointsModel extends IPlayerPoints, Document { }
@@ -72,7 +73,8 @@ const playerPointsSchema = new Schema(
         battle_5_score: { type: Number, default: 0, required: false },
 
         penalty: { type: Number, default: 0 },
-        score: { type: Number, default: 0 }
+        score: { type: Number, default: 0 },
+        order: { type: Number, default: 0, required: false }
     }
 );
 

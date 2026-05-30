@@ -1,0 +1,323 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  JUDGE
+}
+
+enum TournamentStatus {
+  PLANNING
+  LIVE
+  FINISHED
+}
+
+model User {
+  id                 String        @id
+  email              String        @unique
+  name               String
+  role               UserRole      @default(JUDGE)
+  passwordHash       String        @map("password_hash")
+  active             Boolean       @default(true)
+  mustChangePassword Boolean       @default(true) @map("must_change_password")
+  lastLoginAt        DateTime?     @map("last_login_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  sessions           UserSession[]
+
+  @@index([role], map: "idx_users_role")
+  @@index([active], map: "idx_users_active")
+  @@map("users")
+}
+
+model UserSession {
+  id          String    @id
+  userId      String    @map("user_id")
+  tokenHash   String    @unique @map("token_hash")
+  expiresAt   DateTime  @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  lastSeenAt  DateTime? @map("last_seen_at")
+  userAgent   String    @default("") @map("user_agent")
+  ipAddress   String    @default("") @map("ip_address")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_user_sessions_user_id")
+  @@index([expiresAt], map: "idx_user_sessions_expires_at")
+  @@map("user_sessions")
+}
+
+model League {
+  id          String       @id
+  name        String
+  year        String
+  tournaments Tournament[]
+
+  @@map("leagues")
+}
+
+model Player {
+  id                 String             @id
+  name               String
+  horse              String
+  flag               String
+  bannerId           String?            @map("banner_id")
+  banner             Banner?            @relation(fields: [bannerId], references: [id], onDelete: SetNull)
+  tournamentPlayers  TournamentPlayer[]
+
+  @@index([bannerId], map: "idx_players_banner_id")
+  @@map("players")
+}
+
+model Banner {
+  id                String             @id
+  name              String
+  city              String             @default("")
+  players           Player[]
+  tournamentPlayers TournamentPlayer[]
+
+  @@unique([name, city], map: "banners_name_city_key")
+  @@map("banners")
+}
+
+model Tournament {
+  id                String             @id
+  leagueId          String             @map("league_id")
+  city              String             @default("")
+  date              DateTime
+  status            TournamentStatus   @default(PLANNING)
+  legacyBattle1     String             @default("") @map("battle_1")
+  legacyBattle2     String             @default("") @map("battle_2")
+  legacyBattle3     String             @default("") @map("battle_3")
+  legacyBattle4     String             @default("") @map("battle_4")
+  legacyBattle5     String             @default("") @map("battle_5")
+  league            League             @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  battles           Battle[]
+  tournamentPlayers TournamentPlayer[]
+  judgeStations     JudgeStation[]
+
+  @@index([leagueId], map: "idx_tournaments_league_id")
+  @@map("tournaments")
+}
+
+model CompetitionTemplate {
+  id          String   @id
+  name        String
+  description String   @default("")
+  battles     Json
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("competition_templates")
+}
+
+model TournamentPlayer {
+  id                 String         @id
+  tournamentId       String         @map("tournament_id")
+  playerId           String         @map("player_id")
+  playerName         String         @map("player_name")
+  horse              String
+  flag               String
+  bannerId           String?        @map("banner_id")
+  legacyBattle1Points      String  @default("0") @map("battle_1_points")
+  legacyBattle1ExtraPoints Decimal @default(0) @map("battle_1_extra_points") @db.Decimal
+  legacyBattle1Time        Decimal @default(0) @map("battle_1_time") @db.Decimal
+  legacyBattle1Score       Decimal @default(0) @map("battle_1_score") @db.Decimal
+  legacyBattle2Points      String  @default("0") @map("battle_2_points")
+  legacyBattle2ExtraPoints Decimal @default(0) @map("battle_2_extra_points") @db.Decimal
+  legacyBattle2Time        Decimal @default(0) @map("battle_2_time") @db.Decimal
+  legacyBattle2Score       Decimal @default(0) @map("battle_2_score") @db.Decimal
+  legacyBattle3Points      String  @default("0") @map("battle_3_points")
+  legacyBattle3ExtraPoints Decimal @default(0) @map("battle_3_extra_points") @db.Decimal
+  legacyBattle3Time        Decimal @default(0) @map("battle_3_time") @db.Decimal
+  legacyBattle3Score       Decimal @default(0) @map("battle_3_score") @db.Decimal
+  legacyBattle4Points      String  @default("0") @map("battle_4_points")
+  legacyBattle4ExtraPoints Decimal @default(0) @map("battle_4_extra_points") @db.Decimal
+  legacyBattle4Time        Decimal @default(0) @map("battle_4_time") @db.Decimal
+  legacyBattle4Score       Decimal @default(0) @map("battle_4_score") @db.Decimal
+  legacyBattle5Points      String  @default("0") @map("battle_5_points")
+  legacyBattle5ExtraPoints Decimal @default(0) @map("battle_5_extra_points") @db.Decimal
+  legacyBattle5Time        Decimal @default(0) @map("battle_5_time") @db.Decimal
+  legacyBattle5Score       Decimal @default(0) @map("battle_5_score") @db.Decimal
+  penalty           Decimal        @default(0) @db.Decimal
+  score             Decimal        @default(0) @db.Decimal
+  order             Int            @default(0) @map("start_order")
+  tournament        Tournament     @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  player            Player         @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  banner            Banner?        @relation(fields: [bannerId], references: [id], onDelete: SetNull)
+  battleResults     BattleResult[]
+  activeLiveStates  BattleLiveState[]
+  scoreChangeLogs   ScoreChangeLog[]
+
+  @@unique([tournamentId, playerId])
+  @@index([tournamentId], map: "idx_tournament_players_tournament_id")
+  @@index([playerId], map: "idx_tournament_players_player_id")
+  @@index([bannerId], map: "idx_tournament_players_banner_id")
+  @@map("tournament_players")
+}
+
+model Battle {
+  id           String           @id
+  tournamentId String           @map("tournament_id")
+  name         String
+  order        Int              @map("sort_order")
+  legacyKey    String?          @map("legacy_key")
+  tournament   Tournament       @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  categories   BattleCategory[]
+  penalties    BattlePenalty[]
+  results      BattleResult[]
+  judgeStations JudgeStation[]
+  liveState    BattleLiveState?
+  scoreChangeLogs ScoreChangeLog[]
+
+  @@unique([tournamentId, order])
+  @@index([tournamentId])
+  @@map("battles")
+}
+
+model BattleCategory {
+  id        String           @id
+  battleId  String           @map("battle_id")
+  name      String
+  order     Int              @map("sort_order")
+  battle    Battle           @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  obstacles BattleObstacle[]
+  judgeStations JudgeStation[]
+
+  @@unique([battleId, order])
+  @@index([battleId])
+  @@map("battle_categories")
+}
+
+model BattleObstacle {
+  id          String           @id
+  categoryId  String           @map("category_id")
+  name        String
+  order       Int              @map("sort_order")
+  inputType   String           @default("toggle") @map("input_type")
+  score       Float            @default(0)
+  scoreRaw    String           @default("") @map("score_raw")
+  scoreOptions Json?           @map("score_options")
+  category    BattleCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  results     ObstacleResult[]
+
+  @@unique([categoryId, order])
+  @@index([categoryId])
+  @@map("battle_obstacles")
+}
+
+model BattlePenalty {
+  id       String          @id
+  battleId String          @map("battle_id")
+  name     String
+  order    Int             @map("sort_order")
+  score    Float           @default(0)
+  battle   Battle          @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  results  PenaltyResult[]
+
+  @@unique([battleId, order])
+  @@index([battleId])
+  @@map("battle_penalties")
+}
+
+model BattleResult {
+  id                 String             @id
+  tournamentPlayerId String             @map("tournament_player_id")
+  battleId           String             @map("battle_id")
+  extraPoints        Float              @default(0) @map("extra_points")
+  time               Float              @default(0)
+  score              Float              @default(0)
+  tournamentPlayer   TournamentPlayer   @relation(fields: [tournamentPlayerId], references: [id], onDelete: Cascade)
+  battle             Battle             @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  obstacleResults    ObstacleResult[]
+  penaltyResults     PenaltyResult[]
+
+  @@unique([tournamentPlayerId, battleId])
+  @@index([battleId])
+  @@map("battle_results")
+}
+
+model JudgeStation {
+  id           String         @id
+  tournamentId String         @map("tournament_id")
+  battleId     String         @map("battle_id")
+  categoryId   String         @map("category_id")
+  label        String
+  tokenHash    String         @unique @map("token_hash")
+  revokedAt    DateTime?      @map("revoked_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  lastSeenAt   DateTime?      @map("last_seen_at")
+  tournament   Tournament     @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  battle       Battle         @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  category     BattleCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  changeLogs   ScoreChangeLog[]
+
+  @@unique([battleId, categoryId])
+  @@index([tournamentId])
+  @@index([battleId])
+  @@index([categoryId])
+  @@map("judge_stations")
+}
+
+model BattleLiveState {
+  battleId                  String            @id @map("battle_id")
+  activeTournamentPlayerId  String?           @map("active_tournament_player_id")
+  version                   Int               @default(0)
+  updatedAt                 DateTime          @updatedAt @map("updated_at")
+  battle                    Battle            @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  activeTournamentPlayer    TournamentPlayer? @relation(fields: [activeTournamentPlayerId], references: [id], onDelete: SetNull)
+
+  @@index([activeTournamentPlayerId])
+  @@map("battle_live_states")
+}
+
+model ScoreChangeLog {
+  id                 String            @id
+  battleId           String            @map("battle_id")
+  tournamentPlayerId String            @map("tournament_player_id")
+  judgeStationId     String?           @map("judge_station_id")
+  source             String
+  payload            Json
+  createdAt          DateTime          @default(now()) @map("created_at")
+  battle             Battle            @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  tournamentPlayer   TournamentPlayer  @relation(fields: [tournamentPlayerId], references: [id], onDelete: Cascade)
+  judgeStation       JudgeStation?     @relation(fields: [judgeStationId], references: [id], onDelete: SetNull)
+
+  @@index([battleId])
+  @@index([tournamentPlayerId])
+  @@index([judgeStationId])
+  @@map("score_change_logs")
+}
+
+model ObstacleResult {
+  id             String         @id
+  battleResultId String         @map("battle_result_id")
+  obstacleId     String         @map("obstacle_id")
+  value          String         @default("0")
+  score          Float          @default(0)
+  battleResult   BattleResult   @relation(fields: [battleResultId], references: [id], onDelete: Cascade)
+  obstacle       BattleObstacle @relation(fields: [obstacleId], references: [id], onDelete: Cascade)
+
+  @@unique([battleResultId, obstacleId])
+  @@index([obstacleId])
+  @@map("obstacle_results")
+}
+
+model PenaltyResult {
+  id             String        @id
+  battleResultId String        @map("battle_result_id")
+  penaltyId      String        @map("penalty_id")
+  selected       Boolean       @default(false)
+  score          Float         @default(0)
+  battleResult   BattleResult  @relation(fields: [battleResultId], references: [id], onDelete: Cascade)
+  penalty        BattlePenalty @relation(fields: [penaltyId], references: [id], onDelete: Cascade)
+
+  @@unique([battleResultId, penaltyId])
+  @@index([penaltyId])
+  @@map("penalty_results")
+}

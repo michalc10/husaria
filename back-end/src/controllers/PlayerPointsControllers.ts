@@ -1,78 +1,75 @@
-import { NextFunction, Request, Response, request } from "express";
-import { PlayerPoints } from "../models/PlayerPointsModel";
-import mongoose from "mongoose";
+import { Request, Response } from "express";
+import { playerPointsRepository } from "../repositories/playerPointsRepository";
+import { scoreChangeLogRepository } from "../repositories/scoreChangeLogRepository";
+import { emitBattleResultUpdated } from "../realtime/liveScoreSocket";
+import { notFound, serverError } from "./helpers";
 
+const createPlayerPoints = async (req: Request, res: Response) => {
+    try {
+        const playerPoints = await playerPointsRepository.create(req.body);
+        return playerPoints ? res.status(201).json(playerPoints) : notFound(res);
+    } catch (error) {
+        return serverError(res, error);
+    }
+};
 
+const readPlayerPoints = async (req: Request, res: Response) => {
+    try {
+        const playerPoints = await playerPointsRepository.findById(req.params.playerPointsId);
+        return playerPoints ? res.status(200).json(playerPoints) : notFound(res);
+    } catch (error) {
+        return serverError(res, error);
+    }
+};
 
-const createPlayerPoints = (req: Request, res: Response, next: NextFunction) => {
-    const { tournamentId, playerName, horse, flag, playerId } = req.body;
-    const playerPoints = new PlayerPoints({
-        _id: new mongoose.Types.ObjectId(),
-        tournamentId: tournamentId,
-        playerName: playerName,
-        horse: horse,
-        flag: flag,
-        playerId: playerId,
+const readAll = async (req: Request, res: Response) => {
+    try {
+        const playerPoints = await playerPointsRepository.findAllForTournament(req.params.tournamentId);
+        return res.status(200).json(playerPoints);
+    } catch (error) {
+        return serverError(res, error);
+    }
+};
 
-    });
-    return playerPoints
-        .save()
-        .then((playerPoints) =>{console.log(playerPoints)
-            res.status(201).json(playerPoints)} )
-        .catch((err) => res.status(500).json({ err }));
+const updatePlayerPoints = async (req: Request, res: Response) => {
+    try {
+        const playerPoints = await playerPointsRepository.update(req.params.playerPointsId, req.body);
+        return playerPoints ? res.status(200).json(playerPoints) : notFound(res);
+    } catch (error) {
+        return serverError(res, error);
+    }
+};
+
+const updateBattleResult = async (req: Request, res: Response) => {
+    try {
+        const battleResult = await playerPointsRepository.updateBattleResult(
+            req.params.playerPointsId,
+            req.params.battleId,
+            req.body
+        );
+        if (!battleResult) return notFound(res);
+
+        await scoreChangeLogRepository.create({
+            battleId: req.params.battleId,
+            tournamentPlayerId: req.params.playerPointsId,
+            source: 'main',
+            payload: req.body
+        });
+        emitBattleResultUpdated(req.params.battleId, battleResult);
+        return res.status(200).json(battleResult);
+    } catch (error) {
+        return serverError(res, error);
+    }
+};
+
+const deletePlayerPoints = async (req: Request, res: Response) => {
+    try {
+        const playerPoints = await playerPointsRepository.delete(req.params.playerPointsId);
+        return playerPoints ? res.status(200).json({ message: "usunięto" }) : notFound(res);
+    } catch (error) {
+        return serverError(res, error);
+    }
 };
 
 
-const readPlayerPoints = (req: Request, res: Response, next: NextFunction) => {
-    const playerPointsId = req.params.playerPointsId;
-
-    return PlayerPoints.findById(playerPointsId)
-        .then((playerPoints) =>
-            playerPoints
-                ? res.status(200).json(playerPoints)
-                : res.status(404).json({ message: "Not found" })
-        )
-        .catch((err) => res.status(500).json({ err }));
-};
-
-const readAll = (req: Request, res: Response, next: NextFunction) => {
-    const tournamentId = req.params.tournamentId;
-    return PlayerPoints.find({tournamentId:tournamentId})
-        .then((playerPointss) => res.status(200).json(playerPointss))
-        .catch((error) => res.status(500).json({ error }));
-};
-
-const updatePlayerPoints = (req: Request, res: Response, next: NextFunction) => {
-    const playerPointsId = req.params.playerPointsId;
-    return PlayerPoints.findById(playerPointsId)
-        .then((playerPoints) => {
-            if (playerPoints) {
-                playerPoints.set(req.body);
-                return playerPoints
-                    .save()
-                    .then((playerPoints) => res.status(201).json(playerPoints))
-                    .catch((err) => res.status(500).json({ err }));
-            } else {
-                res.status(404).json({ message: "Not found" });
-            }
-        })
-        .catch((err) => res.status(500).json({ err }));
-};
-
-const deletePlayerPoints = (req: Request, res: Response, next: NextFunction) => {
-    const playerPointsId = req.params.playerPointsId;
-
-    return PlayerPoints.findByIdAndDelete(playerPointsId)
-        .then((playerPoints) => {
-            playerPoints
-                ? res.status(200).json({ message: "deleted" })
-                : res.status(404).json({ message: "Not found" })
-        }
-
-
-        )
-        .catch((err) => res.status(500).json({ err }));
-};
-
-
-export default { createPlayerPoints, readAll, readPlayerPoints, updatePlayerPoints, deletePlayerPoints };
+export default { createPlayerPoints, readAll, readPlayerPoints, updatePlayerPoints, updateBattleResult, deletePlayerPoints };

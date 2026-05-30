@@ -1,0 +1,12 @@
+# Environment
+.env
+**/.env
+!.env.example
+!**/.env.example
+
+# Local data exports and database volumes
+backups/
+
+# Local smoke-test artifacts
+docs/*.log
+docs/*.png
