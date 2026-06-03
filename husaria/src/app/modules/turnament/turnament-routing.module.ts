@@ -6,6 +6,7 @@ import { ResultsComponent } from './components/results/results.component';
 import { CompetitionComponent } from './components/competition/competition.component';
 import { BattleTableComponent } from './components/battle-table/battle-table.component';
 import { TournamentDefaultComponent } from './tournament-default/tournament-default.component';
+import { JudgeStationsComponent } from './components/judge-stations/judge-stations.component';
 
 const routes: Routes = [
   {
@@ -17,6 +18,7 @@ const routes: Routes = [
       { path: 'planning/participants', component: TournamentPlayersComponent },
       { path: 'planning/competitions', component: CompetitionComponent },
       { path: 'live', component: TournamentDefaultComponent, pathMatch: 'full' },
+      { path: 'live/stations', component: JudgeStationsComponent },
       { path: 'live/battle/:battleId', component: BattleTableComponent },
       { path: 'results', component: ResultsComponent },
       { path: 'participant', redirectTo: 'planning/participants', pathMatch: 'full' },

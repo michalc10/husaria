@@ -1,86 +1,12 @@
-@if (battle; as currentBattle) {
+@if (loading) {
+  <div class="empty-state">{{ 'common.loading' | transloco }}</div>
+} @else if (errorMessage) {
+  <div class="empty-state">{{ errorMessage }}</div>
+} @else if (battle; as currentBattle) {
+  @if (syncStatusMessage) {
+    <p class="battle-sync-message">{{ syncStatusMessage }}</p>
+  }
   <div class="table-container">
-    <section class="judge-control-panel">
-      <div class="judge-control-panel__active">
-        <div>
-          <span class="eyebrow">{{ 'judge.activePlayer' | transloco }}</span>
-          <h2>
-            @if (liveState.activeParticipant) {
-              {{ liveState.activeParticipant.playerName }}
-              <small>{{ liveState.activeParticipant.horse }}</small>
-            } @else {
-              {{ 'judge.noActivePlayer' | transloco }}
-            }
-          </h2>
-        </div>
-
-        <div class="judge-active-actions">
-          <button class="btn btn-tonal" type="button" (click)="setPreviousParticipant()" [disabled]="activeParticipantIndex() <= 0">
-            <i class="pi pi-chevron-left"></i>
-            {{ 'judge.previousPlayer' | transloco }}
-          </button>
-
-          <select
-            [ngModel]="liveState.activeTournamentPlayerId"
-            (ngModelChange)="setActiveParticipant($event || null)"
-            [attr.aria-label]="'judge.chooseActivePlayer' | transloco"
-          >
-            <option [ngValue]="null">{{ 'judge.noActivePlayer' | transloco }}</option>
-            @for (participant of participantList; track participant._id) {
-              <option [ngValue]="participant._id">{{ participant.playerName }} · {{ participant.horse }}</option>
-            }
-          </select>
-
-          <button class="btn btn-primary" type="button" (click)="setNextParticipant()" [disabled]="activeParticipantIndex() >= participantList.length - 1 && activeParticipantIndex() !== -1">
-            {{ 'judge.nextPlayer' | transloco }}
-            <i class="pi pi-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-
-      <div class="judge-stations">
-        <div class="judge-stations__header">
-          <div>
-            <span class="eyebrow">{{ 'judge.stations' | transloco }}</span>
-            <h3>{{ 'judge.mobileStations' | transloco }}</h3>
-          </div>
-          <p>{{ 'judge.stationHint' | transloco }}</p>
-        </div>
-
-        <div class="judge-station-grid">
-          @for (item of stationCategories; track item.category._id) {
-            <article class="judge-station-card" [class.is-online]="isStationOnline(item.station)" [class.is-revoked]="item.station?.revokedAt">
-              <div>
-                <strong>{{ item.category.name }}</strong>
-                <span>
-                  @if (item.station?.revokedAt) {
-                    {{ 'judge.revoked' | transloco }}
-                  } @else if (isStationOnline(item.station)) {
-                    {{ 'judge.online' | transloco }}
-                  } @else {
-                    {{ 'judge.offline' | transloco }} · {{ stationLastSeen(item.station) }}
-                  }
-                </span>
-              </div>
-
-              <div class="judge-station-card__actions">
-                <button class="btn-small btn-primary" type="button" (click)="createOrShowStation(item)">
-                  <i class="pi pi-qrcode"></i>
-                  {{ item.station ? ('judge.showQr' | transloco) : ('judge.createQr' | transloco) }}
-                </button>
-                @if (item.station && !item.station.revokedAt) {
-                  <button class="btn-small btn-danger" type="button" (click)="revokeStation(item)">
-                    <i class="pi pi-ban"></i>
-                    {{ 'judge.revoke' | transloco }}
-                  </button>
-                }
-              </div>
-            </article>
-          }
-        </div>
-      </div>
-    </section>
-
     <p-table
       styleClass="battle-score-table p-datatable-gridlines center-text"
       [scrollable]="true"
@@ -206,8 +132,32 @@
           [ngClass]="{ chosenRow: rowData._id === selectedPlayerId, 'active-participant-row': isActiveParticipant(rowData) }"
         >
           <td class="line-left line-right center-text">{{ rowIndex + 1 }}</td>
-          <td class="line-left line-right center-text">
-            {{ rowData.playerName }}
+          <td class="line-left line-right battle-player-cell">
+            <div class="battle-player-cell__content">
+              <div class="battle-player-cell__identity">
+                <strong>{{ rowData.playerName }}</strong>
+                @if (rowData.horse) {
+                  <small>{{ rowData.horse }}</small>
+                }
+              </div>
+              <div class="battle-player-cell__action">
+                @if (isActiveParticipant(rowData)) {
+                  <span class="active-player-badge">{{ 'judge.activePlayerBadge' | transloco }}</span>
+                } @else {
+                  <button
+                    pButton
+                    pRipple
+                    type="button"
+                    icon="pi pi-bullseye"
+                    class="p-button-rounded p-button-text set-active-player-button"
+                    [pTooltip]="'judge.setActivePlayer' | transloco"
+                    tooltipPosition="right"
+                    [attr.aria-label]="'judge.setActivePlayer' | transloco"
+                    (click)="setActiveParticipant(rowData, $event)"
+                  ></button>
+                }
+              </div>
+            </div>
           </td>
           @for (category of currentBattle.categories; track category) {
             @for (obstacle of category.obstacles; track obstacle; let first = $first; let last = $last) {
@@ -315,27 +265,6 @@
       </ng-template>
     </p-table>
   </div>
-
-  <p-dialog
-    [(visible)]="qrDialogVisible"
-    [modal]="true"
-    [draggable]="false"
-    [resizable]="false"
-    styleClass="judge-qr-dialog"
-  >
-    <ng-template pTemplate="header">
-      <div class="dialog-title">
-        <span class="dialog-title__icon"><i class="pi pi-qrcode"></i></span>
-        <span class="dialog-title__text">{{ qrStationLabel }}</span>
-      </div>
-    </ng-template>
-
-    <div class="judge-qr">
-      @if (qrCodeDataUrl) {
-        <img [src]="qrCodeDataUrl" [alt]="'judge.qrAlt' | transloco" />
-      }
-      <p>{{ 'judge.qrHint' | transloco }}</p>
-      <a [href]="qrGuestUrl" target="_blank" rel="noopener">{{ qrGuestUrl }}</a>
-    </div>
-  </p-dialog>
+} @else {
+  <div class="empty-state">{{ 'battleTable.noBattle' | transloco }}</div>
 }

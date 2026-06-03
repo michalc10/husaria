@@ -1,0 +1,167 @@
+<section class="qr-shell">
+  <header class="qr-header">
+    <div>
+      <span class="eyebrow">{{ 'judge.stations' | transloco }}</span>
+      <h2>{{ 'judge.qrStationsTitle' | transloco }}</h2>
+      <p>{{ 'judge.qrStationsHint' | transloco }}</p>
+    </div>
+    <button class="btn btn-primary" type="button" (click)="startCreate()">
+      <i class="pi pi-plus"></i>
+      {{ 'judge.newStation' | transloco }}
+    </button>
+  </header>
+
+  <section class="station-form">
+    <div>
+      <span class="eyebrow">
+        {{ editingStationId ? ('judge.editStation' | transloco) : ('judge.createStation' | transloco) }}
+      </span>
+      <label>
+        {{ 'judge.stationName' | transloco }}
+        <input type="text" [(ngModel)]="formLabel" [placeholder]="'judge.stationNamePlaceholder' | transloco" />
+      </label>
+    </div>
+
+    <div class="assignment-builder">
+      <span class="eyebrow">{{ 'judge.assignedCategories' | transloco }}</span>
+      <div class="assignment-picker">
+        <label>
+          {{ 'judge.chooseBattle' | transloco }}
+          <select [(ngModel)]="selectedBattleId" (ngModelChange)="onBattleChange()">
+            @for (battle of battles; track battle._id) {
+              <option [ngValue]="battle._id">{{ battle.order }}. {{ battle.name }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          {{ 'judge.chooseCategory' | transloco }}
+          <select [(ngModel)]="selectedCategoryId">
+            @for (category of availableCategoriesForSelectedBattle(); track category._id) {
+              <option [ngValue]="category._id">{{ category.name }}</option>
+            }
+          </select>
+        </label>
+
+        <button class="btn btn-tonal" type="button" (click)="addAssignment()" [disabled]="!selectedBattleId || !selectedCategoryId">
+          <i class="pi pi-plus"></i>
+          {{ 'judge.addAssignment' | transloco }}
+        </button>
+      </div>
+
+      <div class="assignment-list">
+        @if (!selectedAssignments.length) {
+          <span class="assignment-empty">{{ 'judge.noAssignments' | transloco }}</span>
+        }
+        @for (assignment of selectedAssignments; track assignment.categoryId) {
+          <span class="assignment-chip">
+            {{ assignmentLabel(assignment) }}
+            <button
+              type="button"
+              class="assignment-chip__remove"
+              (click)="removeAssignment(assignment.categoryId)"
+              [attr.aria-label]="'judge.removeAssignment' | transloco"
+            >
+              <i class="pi pi-times"></i>
+            </button>
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="button" (click)="saveStation()" [disabled]="saving || !selectedAssignments.length">
+        <i class="pi pi-save"></i>
+        {{ editingStationId ? ('judge.saveStation' | transloco) : ('judge.createQr' | transloco) }}
+      </button>
+      @if (editingStationId) {
+        <button class="btn btn-tonal" type="button" (click)="cancelEdit()">
+          <i class="pi pi-times"></i>
+          {{ 'common.cancel' | transloco }}
+        </button>
+      }
+    </div>
+  </section>
+
+  @if (statusMessage) {
+    <p class="status-message">{{ statusMessage }}</p>
+  }
+
+  @if (loading) {
+    <div class="empty-state">{{ 'common.loading' | transloco }}</div>
+  } @else if (!stations.length) {
+    <div class="empty-state">{{ 'judge.noStations' | transloco }}</div>
+  } @else {
+    <div class="station-grid">
+      @for (station of stations; track station._id) {
+        <article class="station-card" [class.is-online]="isStationOnline(station)" [class.is-revoked]="station.revokedAt">
+          <div class="station-card__main">
+            <div>
+              <strong>{{ station.label }}</strong>
+              <span>{{ stationAssignmentNames(station) }}</span>
+            </div>
+            <span class="station-status">
+              @if (station.revokedAt) {
+                {{ 'judge.revoked' | transloco }}
+              } @else if (isStationOnline(station)) {
+                {{ 'judge.online' | transloco }}
+              } @else {
+                {{ 'judge.offline' | transloco }} - {{ stationLastSeen(station) }}
+              }
+            </span>
+            <span class="station-last-save">
+              {{ 'judge.lastSave' | transloco }}: {{ stationLastSaved(station) }}
+              @if (stationLastSavedBattle(station)) {
+                - {{ stationLastSavedBattle(station) }}
+              }
+            </span>
+          </div>
+
+          <div class="station-card__actions">
+            <button class="btn-small btn-tonal" type="button" (click)="startEdit(station)">
+              <i class="pi pi-pencil"></i>
+              {{ 'common.edit' | transloco }}
+            </button>
+            <button class="btn-small btn-primary" type="button" (click)="openQr(station)" [disabled]="!station.guestUrl">
+              <i class="pi pi-qrcode"></i>
+              {{ 'judge.showQr' | transloco }}
+            </button>
+            <button class="btn-small btn-primary" type="button" (click)="regenerateStation(station)">
+              <i class="pi pi-refresh"></i>
+              {{ 'judge.regenerate' | transloco }}
+            </button>
+            @if (!station.revokedAt) {
+              <button class="btn-small btn-danger" type="button" (click)="revokeStation(station)">
+                <i class="pi pi-ban"></i>
+                {{ 'judge.revoke' | transloco }}
+              </button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>
+
+<p-dialog
+  [(visible)]="qrDialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="judge-qr-dialog"
+>
+  <ng-template pTemplate="header">
+    <div class="dialog-title">
+      <span class="dialog-title__icon"><i class="pi pi-qrcode"></i></span>
+      <span class="dialog-title__text">{{ qrStationLabel }}</span>
+    </div>
+  </ng-template>
+
+  <div class="judge-qr">
+    @if (qrCodeDataUrl) {
+      <img [src]="qrCodeDataUrl" [alt]="'judge.qrAlt' | transloco" />
+    }
+    <p>{{ 'judge.qrHint' | transloco }}</p>
+    <a [href]="qrGuestUrl" target="_blank" rel="noopener">{{ qrGuestUrl }}</a>
+  </div>
+</p-dialog>

@@ -1,0 +1,20 @@
+<aside class="offline-status" [class.is-offline]="(online$ | async) === false">
+  <span class="offline-status__dot"></span>
+  <span>{{ (online$ | async) ? ('offline.online' | transloco) : ('offline.offline' | transloco) }}</span>
+
+  @if ((pendingCount$ | async) || 0; as pendingCount) {
+    @if (pendingCount > 0) {
+      <button type="button" class="offline-status__button" (click)="syncNow()">
+        {{ 'offline.pending' | transloco }}: {{ pendingCount }}
+      </button>
+    }
+  }
+
+  @if ((conflictCount$ | async) || 0; as conflictCount) {
+    @if (conflictCount > 0) {
+      <button type="button" class="offline-status__button offline-status__button--danger" (click)="openConflicts()">
+        {{ 'offline.conflicts' | transloco }}: {{ conflictCount }}
+      </button>
+    }
+  }
+</aside>

@@ -1,84 +1,107 @@
 <div class="tl">
-  @if (tournament$ | async; as tournament) {
-    <div class="tl-header">
-      <div class="tl-title">
-        <p class="tl-eyebrow">{{ 'tournament.title' | transloco }}</p>
-        <h1 class="tl-city">{{ tournament.city }}</h1>
-        <h2 class="tl-date">{{ tournament.date | date: 'dd.MM.yyyy' }}</h2>
-      </div>
-
-      <div class="tl-status-panel">
-        <span class="tl-status" [ngClass]="statusClass(tournament.status)">
-          {{ statusKey(tournament.status) | transloco }}
-        </span>
-
-        <div class="tl-status-actions">
-          @if (tournament.status === 'PLANNING') {
-            <p-button
-              icon="pi pi-play"
-              [label]="'tournament.start' | transloco"
-              [disabled]="statusSaving"
-              (onClick)="updateStatus('LIVE')"
-            ></p-button>
-          } @else if (tournament.status === 'LIVE') {
-            <p-button
-              icon="pi pi-arrow-left"
-              severity="secondary"
-              [label]="'tournament.backToPlanning' | transloco"
-              [disabled]="statusSaving"
-              (onClick)="updateStatus('PLANNING')"
-            ></p-button>
-            <p-button
-              icon="pi pi-flag-fill"
-              [label]="'tournament.finish' | transloco"
-              [disabled]="statusSaving"
-              (onClick)="updateStatus('FINISHED')"
-            ></p-button>
-          } @else {
-            <p-button
-              icon="pi pi-arrow-left"
-              severity="secondary"
-              [label]="'tournament.backToPlanning' | transloco"
-              [disabled]="statusSaving"
-              (onClick)="updateStatus('PLANNING')"
-            ></p-button>
-          }
+  <header class="tl-control-bar">
+    <div class="tl-top-row">
+      @if (tournament$ | async; as tournament) {
+        <div class="tl-title">
+          <p class="tl-eyebrow">{{ 'tournament.title' | transloco }}</p>
+          <h1>
+            <span>{{ tournament.city }}</span>
+            <time>{{ tournament.date | date: 'dd.MM.yyyy' }}</time>
+          </h1>
         </div>
+      } @else {
+        <div class="tl-title tl-title--loading">
+          <p-skeleton width="12rem" height="1.35rem"></p-skeleton>
+          <p-skeleton width="7rem" height="1rem"></p-skeleton>
+        </div>
+      }
+
+      <div class="tl-stage-controls">
+        <button class="tl-offline-button" type="button" (click)="prepareOffline()" [disabled]="offlinePreparing">
+          <i class="pi pi-cloud-download"></i>
+          {{ 'offline.prepare' | transloco }}
+        </button>
+        <p-selectButton
+          [options]="(stageOptions$ | async) ?? []"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="(selectedStage$ | async) ?? 'planning'"
+          (ngModelChange)="onStageChange($event)"
+        ></p-selectButton>
       </div>
     </div>
 
-    @if ((selectedStage$ | async) === 'planning' && tournament.status === 'LIVE') {
-      <div class="tl-warning">
-        <i class="pi pi-info-circle"></i>
-        <span>{{ 'tournament.livePlanningWarning' | transloco }}</span>
+    <section class="tl-active-panel">
+      <div class="tl-active-summary">
+        <span class="tl-eyebrow">{{ 'judge.activePlayer' | transloco }}</span>
+        <h2>
+          @if (liveState.activeParticipant) {
+            {{ liveState.activeParticipant.playerName }}
+            <small>{{ liveState.activeParticipant.horse }}</small>
+          } @else if (activePanelLoading) {
+            {{ 'common.loading' | transloco }}
+          } @else {
+            {{ 'judge.noActivePlayer' | transloco }}
+          }
+        </h2>
       </div>
+
+      <div class="tl-active-actions">
+        <label class="tl-active-field">
+          <span>{{ 'judge.activeBattle' | transloco }}</span>
+          <select
+            [ngModel]="liveState.activeBattleId"
+            (ngModelChange)="setActiveBattle($event || null)"
+            [disabled]="activePanelLoading || !((battles$ | async)?.length)"
+            [attr.aria-label]="'judge.chooseActiveBattle' | transloco"
+          >
+            @for (battle of (battles$ | async) ?? []; track battle._id) {
+              <option [ngValue]="battle._id">{{ battle.order }}. {{ battle.name }}</option>
+            }
+          </select>
+        </label>
+
+        <button class="btn btn-tonal" type="button" (click)="setPreviousParticipant()" [disabled]="activeParticipantIndex() <= 0">
+          <i class="pi pi-chevron-left"></i>
+          {{ 'judge.previousPlayer' | transloco }}
+        </button>
+
+        <label class="tl-active-field">
+          <span>{{ 'judge.activePlayer' | transloco }}</span>
+          <select
+            [ngModel]="liveState.activeTournamentPlayerId"
+            (ngModelChange)="setActiveParticipant($event || null)"
+            [disabled]="activePanelLoading || !participantList.length"
+            [attr.aria-label]="'judge.chooseActivePlayer' | transloco"
+          >
+            <option [ngValue]="null">{{ 'judge.noActivePlayer' | transloco }}</option>
+            @for (participant of participantList; track participant._id) {
+              <option [ngValue]="participant._id">{{ participant.playerName }} - {{ participant.horse }}</option>
+            }
+          </select>
+        </label>
+
+        <button class="btn btn-primary" type="button" (click)="setNextParticipant()" [disabled]="activeParticipantIndex() >= participantList.length - 1 && activeParticipantIndex() !== -1">
+          {{ 'judge.nextPlayer' | transloco }}
+          <i class="pi pi-chevron-right"></i>
+        </button>
+      </div>
+    </section>
+
+    <div class="tl-section-controls">
+      <p-selectButton
+        [options]="(options$ | async) ?? []"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="(selectedOption$ | async) ?? 'planning/participants'"
+        (ngModelChange)="onOptionChange($event)"
+      ></p-selectButton>
+    </div>
+
+    @if (offlinePrepareMessage) {
+      <p class="tl-sync-message">{{ offlinePrepareMessage }}</p>
     }
-  } @else {
-    <div class="tl-header">
-      <p-skeleton width="12rem" height="2rem"></p-skeleton>
-      <p-skeleton width="8rem" height="1.5rem"></p-skeleton>
-    </div>
-  }
-
-  <div class="tl-stage-controls">
-    <p-selectButton
-      [options]="(stageOptions$ | async) ?? []"
-      optionLabel="label"
-      optionValue="value"
-      [ngModel]="(selectedStage$ | async) ?? 'planning'"
-      (ngModelChange)="onStageChange($event)"
-    ></p-selectButton>
-  </div>
-
-  <div class="tl-section-controls">
-    <p-selectButton
-      [options]="(options$ | async) ?? []"
-      optionLabel="label"
-      optionValue="value"
-      [ngModel]="(selectedOption$ | async) ?? 'planning/participants'"
-      (ngModelChange)="onOptionChange($event)"
-    ></p-selectButton>
-  </div>
+  </header>
 
   <router-outlet></router-outlet>
 </div>

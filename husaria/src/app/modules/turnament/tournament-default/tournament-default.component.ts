@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
+import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { TournamentStatus } from 'src/app/models/tournament';
 import { TournamentService } from '../services/tournament/tournament.service';
 
 @Component({
@@ -25,12 +24,17 @@ export class TournamentDefaultComponent implements OnInit {
       return;
     }
 
-    forkJoin({
-      tournament: this.tournamentService.get(tournamentId),
-      battles: this.tournamentService.getBattles(tournamentId).pipe(catchError(() => of([])))
-    }).subscribe({
-      next: ({ tournament, battles }) => {
-        this.router.navigate([this.defaultPath(tournament.status || 'PLANNING', battles[0]?._id)], {
+    if (this.route.snapshot.routeConfig?.path !== 'live') {
+      this.router.navigate(['planning/participants'], {
+        relativeTo: this.route.parent || this.route,
+        replaceUrl: true
+      });
+      return;
+    }
+
+    this.tournamentService.getBattles(tournamentId).pipe(catchError(() => of([]))).subscribe({
+      next: battles => {
+        this.router.navigate([battles.length ? 'live/stations' : 'planning/competitions'], {
           relativeTo: this.route.parent || this.route,
           replaceUrl: true
         });
@@ -42,17 +46,5 @@ export class TournamentDefaultComponent implements OnInit {
         });
       }
     });
-  }
-
-  private defaultPath(status: TournamentStatus, firstBattleId?: string): string {
-    if (status === 'LIVE') {
-      return firstBattleId ? `live/battle/${firstBattleId}` : 'planning/competitions';
-    }
-
-    if (status === 'FINISHED') {
-      return 'results';
-    }
-
-    return 'planning/participants';
   }
 }

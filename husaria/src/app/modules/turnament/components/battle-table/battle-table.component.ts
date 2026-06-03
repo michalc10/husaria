@@ -1,19 +1,20 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoService } from '@jsverse/transloco';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import { Subscription } from 'rxjs';
-import { toDataURL } from 'qrcode';
+import { catchError } from 'rxjs/operators';
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { PageOrientation } from 'pdfmake/interfaces';
 import { IBattle, IBattleObstacle, IBattlePenalty, IBattleResult } from 'src/app/models/battle';
-import { IBattleLiveState, IJudgeStation, IJudgeStationCategory } from 'src/app/models/judgeStation';
+import { ITournamentLiveState } from 'src/app/models/judgeStation';
 import { IPlayerPoints } from 'src/app/models/playerPoints';
 import { JudgeStationService } from '../../services/judge-station/judge-station.service';
 import { LiveScoreSocketService } from '../../services/live-score-socket/live-score-socket.service';
 import { PlayerPointsService } from '../../services/playerPoints/playerPoints.service';
 import { TournamentService } from '../../services/tournament/tournament.service';
+import { OfflineSyncService } from '../../../offline/offline-sync.service';
 
 (pdfMake as any).vfs = (pdfFonts as any)['pdfMake']?.vfs ?? (pdfFonts as any).vfs;
 
@@ -30,18 +31,18 @@ export class BattleTableComponent implements OnInit, OnDestroy {
   battles: IBattle[] = [];
   battle?: IBattle;
   battleId = '';
-  stationCategories: IJudgeStationCategory[] = [];
-  onlineStationIds = new Set<string>();
-  liveState: IBattleLiveState = {
-    battleId: '',
+  tournamentId = '';
+  loading = true;
+  errorMessage = '';
+  syncStatusMessage = '';
+  liveState: ITournamentLiveState = {
+    tournamentId: '',
     activeTournamentPlayerId: null,
+    activeBattleId: null,
     version: 0,
-    activeParticipant: null
+    activeParticipant: null,
+    activeBattle: null
   };
-  qrDialogVisible = false;
-  qrCodeDataUrl = '';
-  qrGuestUrl = '';
-  qrStationLabel = '';
 
   private liveSubscription = new Subscription();
 
@@ -51,7 +52,8 @@ export class BattleTableComponent implements OnInit, OnDestroy {
     private tournamentService: TournamentService,
     private transloco: TranslocoService,
     private judgeStationService: JudgeStationService,
-    private liveScoreSocket: LiveScoreSocketService
+    private liveScoreSocket: LiveScoreSocketService,
+    private offlineSync: OfflineSyncService
   ) {}
 
   ngOnInit() {
@@ -61,6 +63,7 @@ export class BattleTableComponent implements OnInit, OnDestroy {
 
       const tournamentId = this.getTournamentId();
       if (tournamentId && this.battleId) {
+        this.tournamentId = tournamentId;
         this.loadBattleAndParticipants(tournamentId);
       } else {
         console.error(this.transloco.translate('battleTable.missingRoute'));
@@ -70,7 +73,6 @@ export class BattleTableComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.liveSubscription.unsubscribe();
-    this.liveScoreSocket.disconnect();
   }
 
   resetComponentState() {
@@ -80,50 +82,66 @@ export class BattleTableComponent implements OnInit, OnDestroy {
     this.battles = [];
     this.battle = undefined;
     this.battleId = '';
-    this.stationCategories = [];
-    this.onlineStationIds.clear();
+    this.tournamentId = '';
+    this.loading = true;
+    this.errorMessage = '';
+    this.syncStatusMessage = '';
     this.liveState = {
-      battleId: '',
+      tournamentId: '',
       activeTournamentPlayerId: null,
+      activeBattleId: null,
       version: 0,
-      activeParticipant: null
+      activeParticipant: null,
+      activeBattle: null
     };
     this.liveSubscription.unsubscribe();
     this.liveSubscription = new Subscription();
   }
 
   private getTournamentId(): string | null {
-    return this.route.parent?.snapshot.paramMap.get('idTournament') ?? null;
+    let current: ActivatedRoute | null = this.route;
+
+    while (current) {
+      const tournamentId = current.snapshot.paramMap.get('idTournament') ?? current.snapshot.paramMap.get('id');
+      if (tournamentId) return tournamentId;
+      current = current.parent;
+    }
+
+    return null;
   }
 
   loadBattleAndParticipants(tournamentId: string): void {
+    this.loading = true;
+    this.errorMessage = '';
+
     forkJoin({
       battles: this.tournamentService.getBattles(tournamentId),
-      participants: this.playerPointsService.getPlayerPointsForTournament(tournamentId),
-      stations: this.judgeStationService.listForBattle(this.battleId),
-      liveState: this.judgeStationService.getLiveState(this.battleId)
+      participants: this.playerPointsService.getPlayerPointsForTournament(tournamentId).pipe(
+        catchError(error => {
+          console.error(this.transloco.translate('battleTable.loadParticipantsError'), error);
+          return of([] as IPlayerPoints[]);
+        })
+      ),
+      liveState: this.judgeStationService.getTournamentLiveState(tournamentId).pipe(
+        catchError(error => {
+          console.error(this.transloco.translate('judge.liveStateLoadError'), error);
+          return of({
+            tournamentId,
+            activeTournamentPlayerId: null,
+            activeBattleId: null,
+            version: 0,
+            activeParticipant: null,
+            activeBattle: null
+          } as ITournamentLiveState);
+        })
+      )
     }).subscribe({
-      next: ({ battles, participants, stations, liveState }) => {
-        this.battles = battles;
-        this.battle = battles.find(item => item._id === this.battleId);
-        this.stationCategories = stations.categories;
-        this.liveState = liveState;
-        this.connectRealtime();
-
-        if (!this.battle) {
-          this.participantList = [];
-          return;
-        }
-
-        this.participantList = participants
-          .map(participant => ({
-            ...participant,
-            score: this.roundScore(participant.totalScore || this.sumBattleScores(participant))
-          }))
-          .sort((a, b) => this.scoreBeforeCurrentBattle(b) - this.scoreBeforeCurrentBattle(a));
+      next: ({ battles, participants, liveState }) => {
+        this.applyLoadedData(battles, participants, liveState);
       },
       error: error => {
         console.error(this.transloco.translate('battleTable.loadError'), error);
+        this.loadCachedTournament(tournamentId);
       }
     });
   }
@@ -132,10 +150,15 @@ export class BattleTableComponent implements OnInit, OnDestroy {
     return !!player._id && this.liveState.activeTournamentPlayerId === player._id;
   }
 
-  setActiveParticipant(playerId: string | null): void {
-    if (!this.battleId) return;
+  setActiveParticipant(player: IPlayerPoints, event?: Event): void {
+    event?.stopPropagation();
+    if (!player._id || !this.tournamentId || this.isActiveParticipant(player)) return;
 
-    this.judgeStationService.updateLiveState(this.battleId, playerId).subscribe({
+    this.chosenRow(player);
+    this.judgeStationService.updateTournamentLiveState(this.tournamentId, {
+      activeTournamentPlayerId: player._id,
+      activeBattleId: this.battleId
+    }).subscribe({
       next: state => {
         this.liveState = state;
       },
@@ -145,84 +168,15 @@ export class BattleTableComponent implements OnInit, OnDestroy {
     });
   }
 
-  setPreviousParticipant(): void {
-    const index = this.activeParticipantIndex();
-    if (index > 0) {
-      this.setActiveParticipant(this.participantList[index - 1]._id || null);
-    }
-  }
-
-  setNextParticipant(): void {
-    const index = this.activeParticipantIndex();
-    if (index >= 0 && index < this.participantList.length - 1) {
-      this.setActiveParticipant(this.participantList[index + 1]._id || null);
-    } else if (index === -1 && this.participantList[0]?._id) {
-      this.setActiveParticipant(this.participantList[0]._id);
-    }
-  }
-
-  activeParticipantIndex(): number {
-    return this.participantList.findIndex(player => player._id === this.liveState.activeTournamentPlayerId);
-  }
-
-  createOrShowStation(categoryItem: IJudgeStationCategory): void {
-    const categoryId = categoryItem.category._id;
-    if (!categoryId || !this.battleId) return;
-
-    this.judgeStationService.createOrRegenerate(this.battleId, categoryId).subscribe({
-      next: station => {
-        categoryItem.station = station;
-        this.openQr(station);
-      },
-      error: error => {
-        console.error(this.transloco.translate('judge.stationSaveError'), error);
-      }
-    });
-  }
-
-  revokeStation(categoryItem: IJudgeStationCategory): void {
-    const stationId = categoryItem.station?._id;
-    if (!stationId) return;
-
-    this.judgeStationService.revoke(stationId).subscribe({
-      next: station => {
-        categoryItem.station = station;
-        this.onlineStationIds.delete(station._id);
-      },
-      error: error => {
-        console.error(this.transloco.translate('judge.stationRevokeError'), error);
-      }
-    });
-  }
-
-  isStationOnline(station: IJudgeStation | null): boolean {
-    return !!station?._id && this.onlineStationIds.has(station._id);
-  }
-
-  stationLastSeen(station: IJudgeStation | null): string {
-    if (!station?.lastSeenAt) return this.transloco.translate('judge.neverSeen');
-    return new Date(station.lastSeenAt).toLocaleString();
-  }
-
-  private openQr(station: IJudgeStation): void {
-    if (!station.guestUrl) return;
-
-    this.qrStationLabel = station.label;
-    this.qrGuestUrl = station.guestUrl;
-    toDataURL(station.guestUrl, { width: 320, margin: 2 }).then(dataUrl => {
-      this.qrCodeDataUrl = dataUrl;
-      this.qrDialogVisible = true;
-    });
-  }
-
   private connectRealtime(): void {
     this.liveSubscription.unsubscribe();
     this.liveSubscription = new Subscription();
     this.liveScoreSocket.joinBattle(this.battleId);
+    this.liveScoreSocket.joinTournament(this.tournamentId);
 
     this.liveSubscription.add(
-      this.liveScoreSocket.liveState$.subscribe(state => {
-        if (state.battleId === this.battleId) {
+      this.liveScoreSocket.tournamentLiveState$.subscribe(state => {
+        if (state.tournamentId === this.tournamentId) {
           this.liveState = state;
         }
       })
@@ -238,45 +192,6 @@ export class BattleTableComponent implements OnInit, OnDestroy {
       })
     );
 
-    this.liveSubscription.add(
-      this.liveScoreSocket.stationPresence$.subscribe(presence => {
-        if (presence.online) {
-          this.onlineStationIds.add(presence.stationId);
-        } else {
-          this.onlineStationIds.delete(presence.stationId);
-        }
-
-        this.stationCategories = this.stationCategories.map(item => {
-          if (!item.station || item.station._id !== presence.stationId) return item;
-
-          return {
-            ...item,
-            station: {
-              ...item.station,
-              lastSeenAt: presence.lastSeenAt || item.station.lastSeenAt
-            }
-          };
-        });
-      })
-    );
-
-    this.liveSubscription.add(
-      this.liveScoreSocket.stationRevoked$.subscribe(payload => {
-        if (!payload?.stationId) return;
-        this.onlineStationIds.delete(payload.stationId);
-        this.stationCategories = this.stationCategories.map(item => {
-          if (!item.station || item.station._id !== payload.stationId) return item;
-
-          return {
-            ...item,
-            station: {
-              ...item.station,
-              revokedAt: new Date()
-            }
-          };
-        });
-      })
-    );
   }
 
   chosenRow(player: IPlayerPoints) {
@@ -459,11 +374,32 @@ export class BattleTableComponent implements OnInit, OnDestroy {
       penaltyResults: patch.penaltyResults ?? this.buildPenaltyResults(player)
     };
 
-    this.playerPointsService.updateBattleResult(player._id, this.battle._id, payload).subscribe({
-      next: updatedResult => {
-        this.replaceBattleResult(player, updatedResult);
+    const optimisticResult = this.optimisticBattleResult(player, payload);
+    this.replaceBattleResult(player, optimisticResult);
+
+    this.offlineSync.mutate<IBattleResult>({
+      type: 'battleResult.update',
+      entityId: `${player._id}:${this.battle._id}`,
+      tournamentId: this.tournamentId,
+      baseRevision: this.getBattleResult(player)?.revision || 0,
+      payload: {
+        playerPointsId: player._id,
+        battleId: this.battle._id,
+        body: payload
+      }
+    }, optimisticResult).subscribe({
+      next: outcome => {
+        if (outcome.result) {
+          this.replaceBattleResult(player, outcome.result);
+        }
+        this.syncStatusMessage = outcome.status === 'queued'
+          ? this.transloco.translate('offline.queued')
+          : outcome.status === 'conflict'
+            ? this.transloco.translate('offline.syncError')
+            : '';
       },
       error: error => {
+        this.syncStatusMessage = this.transloco.translate('battleTable.saveError');
         console.error(this.transloco.translate('battleTable.saveError'), error);
       }
     });
@@ -519,6 +455,108 @@ export class BattleTableComponent implements OnInit, OnDestroy {
       score: totalScore
     };
     this.participantList = [...this.participantList];
+  }
+
+  private loadCachedTournament(tournamentId: string): void {
+    this.offlineSync.cachedTournament<any>(tournamentId).subscribe(snapshot => {
+      if (!snapshot) {
+        this.loading = false;
+        this.errorMessage = this.transloco.translate('battleTable.loadError');
+        return;
+      }
+
+      this.syncStatusMessage = this.transloco.translate('offline.pendingShort');
+      this.applyLoadedData(snapshot.battles || [], snapshot.participants || [], snapshot.liveState || this.liveState);
+    });
+  }
+
+  private applyLoadedData(battles: IBattle[], participants: IPlayerPoints[], liveState: ITournamentLiveState): void {
+    this.loading = false;
+    this.battles = battles;
+    this.battle = battles.find(item => item._id === this.battleId);
+    this.liveState = liveState;
+    this.connectRealtime();
+
+    if (!this.battle) {
+      this.participantList = [];
+      this.errorMessage = this.transloco.translate('battleTable.noBattle');
+      return;
+    }
+
+    this.participantList = participants
+      .map(participant => ({
+        ...participant,
+        score: this.roundScore(participant.totalScore || this.sumBattleScores(participant))
+      }))
+      .sort((a, b) => this.scoreBeforeCurrentBattle(b) - this.scoreBeforeCurrentBattle(a));
+
+    this.ensureCurrentTabIsActiveBattle();
+  }
+
+  private ensureCurrentTabIsActiveBattle(): void {
+    if (!this.tournamentId || !this.battleId || this.liveState.activeBattleId === this.battleId) return;
+
+    this.judgeStationService.updateTournamentLiveState(this.tournamentId, {
+      activeBattleId: this.battleId
+    }).subscribe({
+      next: state => {
+        this.liveState = state;
+      },
+      error: error => {
+        console.error(this.transloco.translate('judge.liveStateSaveError'), error);
+      }
+    });
+  }
+
+  private optimisticBattleResult(player: IPlayerPoints, payload: Partial<IBattleResult>): IBattleResult {
+    const current = this.getBattleResult(player);
+    const obstacleResults = payload.obstacleResults ?? this.buildObstacleResults(player);
+    const penaltyResults = payload.penaltyResults ?? this.buildPenaltyResults(player);
+    const extraPoints = Number(payload.extraPoints ?? this.getExtraPoints(player));
+    const time = Number(payload.time ?? this.getTime(player));
+    const scoredObstacleResults = obstacleResults.map(result => ({
+      ...result,
+      score: this.optimisticObstacleScore(result.obstacleId, result.value)
+    }));
+    const scoredPenaltyResults = penaltyResults.map(result => ({
+      ...result,
+      score: this.optimisticPenaltyScore(result.penaltyId, result.selected)
+    }));
+    const score =
+      scoredObstacleResults.reduce((total, result) => total + (result.score || 0), 0) +
+      scoredPenaltyResults.reduce((total, result) => total + (result.score || 0), 0) +
+      extraPoints +
+      time;
+
+    return {
+      _id: current?._id,
+      battleId: this.battleId,
+      tournamentPlayerId: player._id,
+      extraPoints,
+      time,
+      score: this.roundScore(score),
+      revision: current?.revision || 0,
+      obstacleResults: scoredObstacleResults,
+      penaltyResults: scoredPenaltyResults
+    };
+  }
+
+  private optimisticObstacleScore(obstacleId: string, value: string): number {
+    const obstacle = this.battle?.categories
+      .flatMap(category => category.obstacles)
+      .find(item => item._id === obstacleId);
+    if (!obstacle) return 0;
+
+    if (this.isSelectObstacle(obstacle)) {
+      return obstacle.scoreOptions?.find(option => option.code === value)?.score || 0;
+    }
+
+    return value === '1' ? Number(obstacle.score || 0) : 0;
+  }
+
+  private optimisticPenaltyScore(penaltyId: string, selected: boolean): number {
+    const penalty = this.battle?.penalties.find(item => item._id === penaltyId);
+    return selected ? Number(penalty?.score || 0) : 0;
   }
 
   private scoreBeforeCurrentBattle(player: IPlayerPoints): number {

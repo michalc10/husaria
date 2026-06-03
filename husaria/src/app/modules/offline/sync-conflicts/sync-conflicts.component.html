@@ -1,0 +1,45 @@
+<section class="conflict-shell">
+  <header class="view-header">
+    <div>
+      <span class="eyebrow">{{ 'offline.conflicts' | transloco }}</span>
+      <h1>{{ 'offline.conflictsTitle' | transloco }}</h1>
+      <p>{{ 'offline.conflictsHint' | transloco }}</p>
+    </div>
+  </header>
+
+  @if (loading) {
+    <div class="empty-state">{{ 'common.loading' | transloco }}</div>
+  } @else if (!conflicts.length) {
+    <div class="empty-state">{{ 'offline.noConflicts' | transloco }}</div>
+  } @else {
+    <div class="conflict-list">
+      @for (conflict of conflicts; track conflict.clientMutationId) {
+        <article class="conflict-card">
+          <div class="conflict-card__main">
+            <strong>{{ entityLabel(conflict) }}</strong>
+            <small>{{ reason(conflict) }} · {{ conflict.createdAt | date: 'dd.MM.yyyy HH:mm:ss' }}</small>
+            <span>{{ message(conflict) }}</span>
+            <div class="conflict-card__diff">
+              <section>
+                <h2>{{ 'offline.localChange' | transloco }}</h2>
+                <pre>{{ localValue(conflict) }}</pre>
+              </section>
+              <section>
+                <h2>{{ 'offline.serverChange' | transloco }}</h2>
+                <pre>{{ serverValue(conflict) }}</pre>
+              </section>
+            </div>
+          </div>
+          <div class="conflict-card__actions">
+            <button type="button" class="btn btn-primary" (click)="retry(conflict)">
+              {{ 'offline.applyLocal' | transloco }}
+            </button>
+            <button type="button" class="btn btn-tonal" (click)="discard(conflict)">
+              {{ 'offline.keepServer' | transloco }}
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

@@ -5,11 +5,13 @@ import { MainLayoutComponent } from './layout/main-layout/main-layout.component'
 import { JudgeMobileComponent } from './modules/judge-mobile/judge-mobile.component';
 import { LoginComponent } from './modules/auth/login/login.component';
 import { adminGuard, authChildGuard, authGuard } from './modules/auth/auth.guard';
+import { SyncConflictsComponent } from './modules/offline/sync-conflicts/sync-conflicts.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'league', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'judge/:token', component: JudgeMobileComponent },
+  { path: 'sync/conflicts', component: SyncConflictsComponent },
   {
     path: '',
     component: MainLayoutComponent,
@@ -40,6 +42,10 @@ const routes: Routes = [
         path: 'users',
         canActivate: [adminGuard],
         loadChildren: () => import('./modules/users/users.module').then(m => m.UsersModule)
+      },
+      {
+        path: 'sync/conflicts',
+        component: SyncConflictsComponent
       }
     ]
   },

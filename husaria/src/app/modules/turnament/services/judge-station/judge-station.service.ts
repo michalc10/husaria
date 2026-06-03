@@ -6,11 +6,25 @@ import {
   IBattleLiveState,
   IJudgeCategoryResultPayload,
   IJudgeSession,
+  IJudgeStationAssignment,
   IJudgeStation,
-  IJudgeStationList
+  IJudgeStationList,
+  IJudgeStationTournamentList,
+  ITournamentLiveState
 } from 'src/app/models/judgeStation';
 import { API_BASE_URL } from 'src/app/globals';
 import { CrudService } from 'src/app/shered/service/crud.service';
+
+export interface IJudgeStationPayload {
+  label?: string;
+  assignments: IJudgeStationAssignment[];
+  battleIds?: string[];
+}
+
+export interface ITournamentLiveStatePayload {
+  activeTournamentPlayerId?: string | null;
+  activeBattleId?: string | null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class JudgeStationService {
@@ -34,6 +48,28 @@ export class JudgeStationService {
     return this.http.delete<IJudgeStation>(`${API_BASE_URL}/judge-station/${encodeURIComponent(stationId)}`);
   }
 
+  listForTournament(tournamentId: string): Observable<IJudgeStationTournamentList> {
+    return this.http.get<IJudgeStationTournamentList>(`${API_BASE_URL}/judge-station/tournament/${encodeURIComponent(tournamentId)}`);
+  }
+
+  create(tournamentId: string, payload: IJudgeStationPayload): Observable<IJudgeStation> {
+    return this.http.post<IJudgeStation>(
+      `${API_BASE_URL}/judge-station/tournament/${encodeURIComponent(tournamentId)}`,
+      payload
+    );
+  }
+
+  update(stationId: string, payload: Partial<IJudgeStationPayload>): Observable<IJudgeStation> {
+    return this.http.put<IJudgeStation>(`${API_BASE_URL}/judge-station/${encodeURIComponent(stationId)}`, payload);
+  }
+
+  regenerateToken(stationId: string): Observable<IJudgeStation> {
+    return this.http.post<IJudgeStation>(
+      `${API_BASE_URL}/judge-station/${encodeURIComponent(stationId)}/regenerate-token`,
+      {}
+    );
+  }
+
   getLiveState(battleId: string): Observable<IBattleLiveState> {
     return this.http.get<IBattleLiveState>(`${API_BASE_URL}/battle/${encodeURIComponent(battleId)}/live-state`);
   }
@@ -42,6 +78,20 @@ export class JudgeStationService {
     return this.http.put<IBattleLiveState>(`${API_BASE_URL}/battle/${encodeURIComponent(battleId)}/live-state`, {
       activeTournamentPlayerId
     });
+  }
+
+  getTournamentLiveState(tournamentId: string): Observable<ITournamentLiveState> {
+    return this.http.get<ITournamentLiveState>(`${API_BASE_URL}/tournament/${encodeURIComponent(tournamentId)}/live-state`);
+  }
+
+  updateTournamentLiveState(
+    tournamentId: string,
+    payload: ITournamentLiveStatePayload
+  ): Observable<ITournamentLiveState> {
+    return this.http.put<ITournamentLiveState>(
+      `${API_BASE_URL}/tournament/${encodeURIComponent(tournamentId)}/live-state`,
+      payload
+    );
   }
 
   getSession(token: string): Observable<IJudgeSession> {

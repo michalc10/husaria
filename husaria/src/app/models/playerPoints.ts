@@ -15,6 +15,8 @@ export interface IPlayerPoints {
     totalScore: number;
     score?: number; 
     order?: number;
+    revision?: number;
+    updatedAt?: string | Date;
 
     [key: string]: any; 
 }

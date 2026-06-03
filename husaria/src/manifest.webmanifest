@@ -1,0 +1,9 @@
+{
+  "name": "Husaria",
+  "short_name": "Husaria",
+  "theme_color": "#6750A4",
+  "background_color": "#FFFBFE",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/"
+}

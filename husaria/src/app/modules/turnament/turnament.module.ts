@@ -21,6 +21,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TranslocoModule } from '@jsverse/transloco';
 import { TooltipModule } from 'primeng/tooltip';
 import { TournamentDefaultComponent } from './tournament-default/tournament-default.component';
+import { JudgeStationsComponent } from './components/judge-stations/judge-stations.component';
 
 @NgModule({
   declarations: [
@@ -31,6 +32,7 @@ import { TournamentDefaultComponent } from './tournament-default/tournament-defa
     CompetitionComponent,
     BattleTableComponent,
     TournamentDefaultComponent,
+    JudgeStationsComponent,
   ],
   imports: [
     CommonModule,

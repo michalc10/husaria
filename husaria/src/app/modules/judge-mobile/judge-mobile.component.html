@@ -2,84 +2,113 @@
   @if (loading) {
     <section class="judge-card judge-card--center">
       <span class="status-dot"></span>
-      <p>Ładowanie stanowiska...</p>
+      <p>{{ 'judgeMobile.loading' | transloco }}</p>
     </section>
   } @else if (revoked || !session) {
     <section class="judge-card judge-card--center">
       <i class="pi pi-ban"></i>
-      <h1>Brak dostępu</h1>
+      <h1>{{ 'judgeMobile.noAccess' | transloco }}</h1>
       <p>{{ statusMessage }}</p>
     </section>
   } @else {
     <header class="judge-mobile__header">
       <div>
-        <span>{{ connected ? 'Połączono' : 'Brak połączenia' }}</span>
-        <h1>{{ session.battle.name }}</h1>
-        <p>{{ session.category.name }}</p>
+        <span>{{ connected ? ('judgeMobile.connected' | transloco) : ('judgeMobile.disconnected' | transloco) }}</span>
+        <h1>{{ session.station.label }}</h1>
+        <p>{{ 'judgeMobile.activeBattleCount' | transloco: { count: session.battles.length } }}</p>
       </div>
       <div class="connection-pill" [class.is-online]="connected">
-        {{ connected ? 'online' : 'offline' }}
+        {{ connected ? ('judge.online' | transloco) : ('judge.offline' | transloco) }}
       </div>
     </header>
 
     @if (!session.liveState.activeParticipant) {
       <section class="judge-card judge-card--center">
         <i class="pi pi-clock"></i>
-        <h2>Czekam na zawodnika</h2>
-        <p>Sędzia główny wybierze aktualnie startującego husarza.</p>
+        <h2>{{ 'judgeMobile.waitingForPlayer' | transloco }}</h2>
+        <p>{{ 'judgeMobile.waitingForPlayerHint' | transloco }}</p>
+      </section>
+    } @else if (!session.battles.length) {
+      <section class="judge-card judge-card--center">
+        <i class="pi pi-clock"></i>
+        <h2>{{ 'judgeMobile.waitingForBattle' | transloco }}</h2>
+        <p>{{ 'judgeMobile.waitingForBattleHint' | transloco }}</p>
       </section>
     } @else {
       <section class="judge-card active-player-card">
-        <span>Aktualnie startuje</span>
+        <span>{{ 'judgeMobile.activePlayer' | transloco }}</span>
         <h2>{{ session.liveState.activeParticipant.playerName }}</h2>
         <p>{{ session.liveState.activeParticipant.horse }}</p>
       </section>
 
-      <section class="obstacle-list">
-        @for (obstacle of session.category.obstacles; track obstacle._id) {
-          <article class="obstacle-card">
-            <div>
-              <strong>{{ obstacle.name }}</strong>
-              <span>{{ obstacle.scoreRaw }}</span>
-            </div>
-
-            @if (!isSelectObstacle(obstacle)) {
-              <button
-                type="button"
-                class="mobile-score-button"
-                [class.is-selected]="getObstacleValue(obstacle) === '1'"
-                [disabled]="saving"
-                (click)="setToggleObstacle(obstacle)"
-              >
-                <i class="pi" [ngClass]="getObstacleValue(obstacle) === '1' ? 'pi-check' : 'pi-times'"></i>
-                {{ getObstacleValue(obstacle) === '1' ? 'Zaliczone' : 'Niezaliczone' }}
-              </button>
-            } @else {
-              <div class="select-options">
-                @for (option of obstacle.scoreOptions || []; track option.code) {
-                  <button
-                    type="button"
-                    class="mobile-score-button"
-                    [class.is-selected]="getObstacleValue(obstacle) === option.code"
-                    [disabled]="saving"
-                    (click)="setSelectObstacle(obstacle, option.code)"
-                  >
-                    {{ option.label }}
-                  </button>
-                }
+      <section class="battle-list">
+        @for (battle of session.battles; track battle._id) {
+          <article class="battle-card">
+            <header>
+              <div>
+                <span>{{ 'competition.legend.battleTitle' | transloco }}</span>
+                <h2>{{ battle.order }}. {{ battle.name }}</h2>
               </div>
+              @if (isSavingBattle(battle)) {
+                <span class="saving-pill">{{ 'judgeMobile.saving' | transloco }}</span>
+              }
+            </header>
+
+            @for (category of battle.categories; track category._id) {
+              <section class="category-block">
+                <h3>{{ category.name }}</h3>
+
+                <div class="obstacle-list">
+                  @for (obstacle of category.obstacles; track obstacle._id) {
+                    <article class="obstacle-card">
+                      <div>
+                        <strong>{{ obstacle.name }}</strong>
+                        <span>{{ obstacle.scoreRaw }}</span>
+                      </div>
+
+                      @if (!isSelectObstacle(obstacle)) {
+                        <button
+                          type="button"
+                          class="mobile-score-button"
+                          [class.is-selected]="getObstacleValue(battle, obstacle) === '1'"
+                          [disabled]="isSavingBattle(battle)"
+                          (click)="setToggleObstacle(battle, obstacle)"
+                        >
+                          <i class="pi" [ngClass]="getObstacleValue(battle, obstacle) === '1' ? 'pi-check' : 'pi-times'"></i>
+                          {{ getObstacleValue(battle, obstacle) === '1' ? ('judgeMobile.passed' | transloco) : ('judgeMobile.failed' | transloco) }}
+                        </button>
+                      } @else {
+                        <div class="select-options">
+                          @for (option of obstacle.scoreOptions || []; track option.code) {
+                            <button
+                              type="button"
+                              class="mobile-score-button"
+                              [class.is-selected]="getObstacleValue(battle, obstacle) === option.code"
+                              [disabled]="isSavingBattle(battle)"
+                              (click)="setSelectObstacle(battle, obstacle, option.code)"
+                            >
+                              {{ option.label }}
+                            </button>
+                          }
+                        </div>
+                      }
+                    </article>
+                  }
+                </div>
+              </section>
             }
           </article>
         }
       </section>
 
       <footer class="judge-mobile__footer">
-        <span>{{ saving ? 'Zapisywanie...' : statusMessage }}</span>
+        <span>{{ statusMessage }}</span>
         <button type="button" class="refresh-button" (click)="loadSession(false)">
           <i class="pi pi-refresh"></i>
-          Odśwież
+          {{ 'common.refresh' | transloco }}
         </button>
       </footer>
     }
   }
 </main>
+<app-offline-status></app-offline-status>

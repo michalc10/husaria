@@ -14,6 +14,7 @@
 
 .judge-mobile__header,
 .judge-card,
+.battle-card,
 .obstacle-card,
 .judge-mobile__footer {
   border: 1px solid var(--md-sys-color-outline-variant);
@@ -79,9 +80,47 @@
   line-height: 1;
 }
 
+.battle-list,
 .obstacle-list {
   display: grid;
   gap: 12px;
+}
+
+.battle-card {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.battle-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.battle-card h2,
+.battle-card h3 {
+  margin: 0;
+}
+
+.battle-card header span,
+.category-block h3 {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.category-block {
+  display: grid;
+  gap: 10px;
+}
+
+.saving-pill {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  font-size: .8rem;
+  font-weight: 800;
 }
 
 .obstacle-card {
@@ -144,6 +183,7 @@
 
 @media (max-width: 560px) {
   .judge-mobile__header,
+  .battle-card > header,
   .judge-mobile__footer {
     align-items: stretch;
     flex-direction: column;

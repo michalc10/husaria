@@ -31,7 +31,6 @@ export class NavbarComponent {
   }
 
   navigate(path: string): void {
-    localStorage.clear();
     this.router.navigate([path]);
   }
 

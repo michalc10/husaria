@@ -1,4 +1,4 @@
-import { IBattleCategory, IBattleResult } from './battle';
+import { IBattle, IBattleCategory, IBattleResult } from './battle';
 
 export interface IBattleLiveState {
   battleId: string;
@@ -13,16 +13,47 @@ export interface IBattleLiveState {
   } | null;
 }
 
+export interface ITournamentLiveState {
+  tournamentId: string;
+  activeTournamentPlayerId: string | null;
+  activeBattleId: string | null;
+  version: number;
+  updatedAt?: string | Date | null;
+  activeParticipant?: {
+    _id: string;
+    playerName: string;
+    horse: string;
+    order: number;
+  } | null;
+  activeBattle?: {
+    _id: string;
+    name: string;
+    order: number;
+  } | null;
+}
+
 export interface IJudgeStation {
   _id: string;
   tournamentId: string;
-  battleId: string;
-  categoryId: string;
+  battleId?: string;
+  categoryId?: string;
+  assignments?: IJudgeStationAssignment[];
+  battleIds?: string[];
+  battles?: Array<Pick<IBattle, '_id' | 'tournamentId' | 'name' | 'order'>>;
   label: string;
   revokedAt?: string | Date | null;
   createdAt?: string | Date;
   lastSeenAt?: string | Date | null;
   guestUrl?: string;
+}
+
+export interface IJudgeStationAssignment {
+  battleId: string;
+  categoryId: string;
+  battleName?: string;
+  battleOrder?: number;
+  categoryName?: string;
+  categoryOrder?: number;
 }
 
 export interface IJudgeStationCategory {
@@ -35,20 +66,29 @@ export interface IJudgeStationList {
   categories: IJudgeStationCategory[];
 }
 
+export interface IJudgeStationTournamentList {
+  tournamentId: string;
+  battles: IBattle[];
+  stations: IJudgeStation[];
+}
+
 export interface IJudgeSession {
   station: IJudgeStation;
-  battle: {
+  battles: IBattle[];
+  liveState: ITournamentLiveState;
+  results: IBattleResult[];
+  battle?: {
     _id: string;
     tournamentId: string;
     name: string;
     order: number;
   };
-  category: IBattleCategory;
-  liveState: IBattleLiveState;
-  result: IBattleResult | null;
+  category?: IBattleCategory;
+  result?: IBattleResult | null;
 }
 
 export interface IJudgeCategoryResultPayload {
+  battleId: string;
   liveStateVersion: number;
   obstacleResults: Array<{
     obstacleId: string;

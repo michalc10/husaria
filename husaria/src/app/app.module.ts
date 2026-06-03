@@ -2,8 +2,10 @@ import { NgModule } from '@angular/core';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ServiceWorkerModule } from '@angular/service-worker';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { isDevMode } from '@angular/core';
 import { definePreset } from '@primeuix/themes';
 import Lara from '@primeuix/themes/lara';
 import { SharedModule } from 'primeng/api';
@@ -17,6 +19,8 @@ import { TranslocoRootModule } from './transloco-root.module';
 import { JudgeMobileComponent } from './modules/judge-mobile/judge-mobile.component';
 import { LoginComponent } from './modules/auth/login/login.component';
 import { SessionInterceptor } from './modules/auth/session.interceptor';
+import { OfflineStatusComponent } from './modules/offline/offline-status/offline-status.component';
+import { SyncConflictsComponent } from './modules/offline/sync-conflicts/sync-conflicts.component';
 
 const HusariaPreset = definePreset(Lara, {
   primitive: {
@@ -114,7 +118,9 @@ const HusariaPreset = definePreset(Lara, {
     NavbarComponent,
     MainLayoutComponent,
     JudgeMobileComponent,
-    LoginComponent
+    LoginComponent,
+    OfflineStatusComponent,
+    SyncConflictsComponent
   ],
   imports: [
     BrowserModule,
@@ -123,7 +129,11 @@ const HusariaPreset = definePreset(Lara, {
     RouterModule,
     FormsModule,
     BrowserAnimationsModule,
-    TranslocoRootModule
+    TranslocoRootModule,
+    ServiceWorkerModule.register('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000'
+    })
   ],
   providers: [
     provideHttpClient(withInterceptorsFromDi()),

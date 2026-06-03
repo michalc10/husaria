@@ -1,8 +1,10 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { TranslocoService } from '@jsverse/transloco';
 import { Subscription } from 'rxjs';
-import { IBattleObstacle, IBattleResult } from 'src/app/models/battle';
+import { IBattle, IBattleObstacle, IBattleResult } from 'src/app/models/battle';
 import { IJudgeSession } from 'src/app/models/judgeStation';
+import { OfflineSyncService } from '../offline/offline-sync.service';
 import { JudgeStationService } from '../turnament/services/judge-station/judge-station.service';
 import { LiveScoreSocketService } from '../turnament/services/live-score-socket/live-score-socket.service';
 
@@ -18,7 +20,7 @@ export class JudgeMobileComponent implements OnInit, OnDestroy {
   connected = false;
   revoked = false;
   loading = true;
-  saving = false;
+  savingBattleId = '';
   statusMessage = '';
 
   private subscription = new Subscription();
@@ -26,7 +28,9 @@ export class JudgeMobileComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private judgeStationService: JudgeStationService,
-    private liveScoreSocket: LiveScoreSocketService
+    private liveScoreSocket: LiveScoreSocketService,
+    private offlineSync: OfflineSyncService,
+    private transloco: TranslocoService
   ) {}
 
   ngOnInit(): void {
@@ -36,12 +40,12 @@ export class JudgeMobileComponent implements OnInit, OnDestroy {
 
     this.subscription.add(this.liveScoreSocket.connected$.subscribe(connected => (this.connected = connected)));
     this.subscription.add(
-      this.liveScoreSocket.liveState$.subscribe(state => {
-        if (this.session && state.battleId === this.session.battle._id) {
+      this.liveScoreSocket.tournamentLiveState$.subscribe(state => {
+        if (this.session && state.tournamentId === this.session.station.tournamentId) {
           this.session = {
             ...this.session,
             liveState: state,
-            result: null
+            results: []
           };
           this.loadSession(false);
         }
@@ -51,20 +55,17 @@ export class JudgeMobileComponent implements OnInit, OnDestroy {
       this.liveScoreSocket.battleResult$.subscribe(result => {
         if (
           this.session &&
-          result.battleId === this.session.battle._id &&
+          this.session.battles.some(battle => battle._id === result.battleId) &&
           result.tournamentPlayerId === this.session.liveState.activeTournamentPlayerId
         ) {
-          this.session = {
-            ...this.session,
-            result
-          };
+          this.applyResult(result);
         }
       })
     );
     this.subscription.add(
       this.liveScoreSocket.stationRevoked$.subscribe(() => {
         this.revoked = true;
-        this.statusMessage = 'Link stanowiska został unieważniony.';
+        this.statusMessage = this.transloco.translate('judgeMobile.revoked');
       })
     );
   }
@@ -82,28 +83,49 @@ export class JudgeMobileComponent implements OnInit, OnDestroy {
         this.session = session;
         this.revoked = false;
         this.loading = false;
+        this.offlineSync.cacheJudgeSession(this.token, session).subscribe(() => this.offlineSync.syncPending());
       },
-      error: () => {
+      error: error => {
+        if (error?.status === 0) {
+          this.offlineSync.cachedJudgeSession<IJudgeSession>(this.token).subscribe(cachedSession => {
+            this.loading = false;
+            if (cachedSession) {
+              this.session = cachedSession;
+              this.revoked = false;
+              this.statusMessage = this.transloco.translate('judgeMobile.offlineCached');
+              return;
+            }
+
+            this.revoked = true;
+            this.statusMessage = this.transloco.translate('judgeMobile.offlineNoCache');
+          });
+          return;
+        }
+
         this.loading = false;
         this.revoked = true;
-        this.statusMessage = 'Nieprawidłowy albo wygasły link stanowiska.';
+        this.statusMessage = this.transloco.translate('judgeMobile.invalidLink');
       }
     });
   }
 
-  getObstacleValue(obstacle: IBattleObstacle): string {
+  getBattleResult(battle: IBattle): IBattleResult | undefined {
+    return this.session?.results.find(result => result.battleId === battle._id);
+  }
+
+  getObstacleValue(battle: IBattle, obstacle: IBattleObstacle): string {
     const obstacleId = obstacle._id;
     if (!obstacleId) return '0';
-    return this.session?.result?.obstacleResults.find(result => result.obstacleId === obstacleId)?.value || '0';
+    return this.getBattleResult(battle)?.obstacleResults.find(result => result.obstacleId === obstacleId)?.value || '0';
   }
 
-  setToggleObstacle(obstacle: IBattleObstacle): void {
-    const nextValue = this.getObstacleValue(obstacle) === '1' ? '0' : '1';
-    this.saveObstacle(obstacle, nextValue);
+  setToggleObstacle(battle: IBattle, obstacle: IBattleObstacle): void {
+    const nextValue = this.getObstacleValue(battle, obstacle) === '1' ? '0' : '1';
+    this.saveObstacle(battle, obstacle, nextValue);
   }
 
-  setSelectObstacle(obstacle: IBattleObstacle, value: string): void {
-    this.saveObstacle(obstacle, value || '0');
+  setSelectObstacle(battle: IBattle, obstacle: IBattleObstacle, value: string): void {
+    this.saveObstacle(battle, obstacle, value || '0');
   }
 
   isSelectObstacle(obstacle: IBattleObstacle): boolean {
@@ -114,44 +136,118 @@ export class JudgeMobileComponent implements OnInit, OnDestroy {
     return obstacle.scoreOptions?.find(option => option.code === value)?.label || value;
   }
 
-  private saveObstacle(obstacle: IBattleObstacle, value: string): void {
-    if (!this.session?.liveState.activeTournamentPlayerId || !obstacle._id) return;
+  isSavingBattle(battle: IBattle): boolean {
+    return !!battle._id && this.savingBattleId === battle._id;
+  }
 
-    this.saving = true;
-    const values = new Map(
-      (this.session.result?.obstacleResults || []).map(result => [result.obstacleId, result.value])
-    );
+  private saveObstacle(battle: IBattle, obstacle: IBattleObstacle, value: string): void {
+    if (!this.session?.liveState.activeTournamentPlayerId || !battle._id || !obstacle._id) return;
+
+    this.savingBattleId = battle._id;
+    const currentResult = this.getBattleResult(battle);
+    const values = new Map((currentResult?.obstacleResults || []).map(result => [result.obstacleId, result.value]));
     values.set(obstacle._id, value);
-
-    this.judgeStationService.updateSessionResult(this.token, {
+    const body = {
+      battleId: battle._id,
       liveStateVersion: this.session.liveState.version,
-      obstacleResults: this.session.category.obstacles
-        .filter(item => !!item._id)
-        .map(item => ({
-          obstacleId: item._id!,
-          value: values.get(item._id!) || '0'
-        }))
-    }).subscribe({
-      next: result => {
-        this.applyResult(result);
-        this.saving = false;
-        this.statusMessage = 'Zapisano.';
+      obstacleResults: battle.categories.flatMap(category =>
+        category.obstacles
+          .filter(item => !!item._id)
+          .map(item => ({
+            obstacleId: item._id!,
+            value: values.get(item._id!) || '0'
+          }))
+      )
+    };
+    const optimisticResult = this.optimisticResult(battle, body.obstacleResults);
+    this.applyResult(optimisticResult);
+
+    this.offlineSync.mutate<IBattleResult>({
+      type: 'judgeSessionResult.update',
+      entityId: `${this.session.station._id}:${battle._id}`,
+      tournamentId: this.session.station.tournamentId,
+      baseRevision: currentResult?.revision || 0,
+      authMode: 'judge',
+      token: this.token,
+      payload: {
+        stationId: this.session.station._id,
+        body,
+        activeTournamentPlayerId: this.session.liveState.activeTournamentPlayerId,
+        activeBattleId: this.session.liveState.activeBattleId
+      }
+    }, optimisticResult).subscribe({
+      next: outcome => {
+        if (outcome.result) {
+          this.applyResult(outcome.result);
+        }
+        this.savingBattleId = '';
+        this.statusMessage = outcome.status === 'queued'
+          ? this.transloco.translate('offline.queued')
+          : outcome.status === 'conflict'
+            ? this.transloco.translate('judgeMobile.conflict')
+            : this.transloco.translate('offline.saved');
       },
       error: error => {
-        this.saving = false;
+        this.savingBattleId = '';
         this.statusMessage = error?.status === 409
-          ? 'Zawodnik zmienił się w trakcie zapisu. Odświeżam stanowisko.'
-          : 'Nie udało się zapisać wyniku.';
+          ? this.transloco.translate('judgeMobile.staleLiveState')
+          : this.transloco.translate('judgeMobile.saveError');
         this.loadSession(false);
       }
     });
   }
 
+  private optimisticResult(
+    battle: IBattle,
+    obstacleResults: Array<{ obstacleId: string; value: string }>
+  ): IBattleResult {
+    const currentResult = this.getBattleResult(battle);
+    const scoredObstacleResults = obstacleResults.map(result => ({
+      ...result,
+      score: this.optimisticObstacleScore(battle, result.obstacleId, result.value)
+    }));
+
+    return {
+      _id: currentResult?._id,
+      battleId: battle._id!,
+      tournamentPlayerId: this.session?.liveState.activeTournamentPlayerId || undefined,
+      extraPoints: currentResult?.extraPoints || 0,
+      time: currentResult?.time || 0,
+      score: scoredObstacleResults.reduce((total, result) => total + (result.score || 0), 0) +
+        (currentResult?.extraPoints || 0) +
+        (currentResult?.time || 0) +
+        (currentResult?.penaltyResults || []).reduce((total, result) => total + (result.score || 0), 0),
+      revision: currentResult?.revision || 0,
+      obstacleResults: scoredObstacleResults,
+      penaltyResults: currentResult?.penaltyResults || []
+    };
+  }
+
+  private optimisticObstacleScore(battle: IBattle, obstacleId: string, value: string): number {
+    const obstacle = battle.categories.flatMap(category => category.obstacles).find(item => item._id === obstacleId);
+    if (!obstacle) return 0;
+
+    if (this.isSelectObstacle(obstacle)) {
+      return obstacle.scoreOptions?.find(option => option.code === value)?.score || 0;
+    }
+
+    return value === '1' ? Number(obstacle.score || 0) : 0;
+  }
+
   private applyResult(result: IBattleResult): void {
     if (!this.session) return;
+
+    const results = [...(this.session.results || [])];
+    const index = results.findIndex(item => item.battleId === result.battleId);
+    if (index >= 0) {
+      results[index] = result;
+    } else {
+      results.push(result);
+    }
+
     this.session = {
       ...this.session,
-      result
+      results
     };
   }
 }

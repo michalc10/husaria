@@ -36,6 +36,8 @@ export interface IBattle {
   tournamentId?: string;
   name: string;
   order: number;
+  revision?: number;
+  updatedAt?: string | Date;
   categories: IBattleCategory[];
   penalties: IBattlePenalty[];
 }
@@ -61,6 +63,8 @@ export interface IBattleResult {
   extraPoints: number;
   time: number;
   score: number;
+  revision?: number;
+  updatedAt?: string | Date;
   obstacleResults: IObstacleResult[];
   penaltyResults: IPenaltyResult[];
 }

@@ -34,6 +34,7 @@ export class SessionInterceptor implements HttpInterceptor {
 
     return !url.includes('/auth/login')
       && !url.includes('/auth/me')
-      && !url.includes('/judge-station/session');
+      && !url.includes('/judge-station/session')
+      && !url.includes('/sync/mutations');
   }
 }
