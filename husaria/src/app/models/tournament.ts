@@ -6,6 +6,7 @@ export interface ITournament{
     city:string;
     date:Date;
     status:TournamentStatus;
+    countsInLeagueStandings:boolean;
 
   [key: string]: any;
 }

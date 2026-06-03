@@ -92,6 +92,19 @@
                     appendTo="body"
                   ></p-datepicker>
                 </div>
+                <label class="ld-tournament-check">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="rowData.countsInLeagueStandings"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                  <span>{{ 'league.countsInStandings' | transloco }}</span>
+                  @if (rowData.countsInLeagueStandings) {
+                    <small>{{ 'league.countsInStandingsWarning' | transloco }}</small>
+                  } @else {
+                    <small>{{ 'league.excludedFromStandingsHint' | transloco }}</small>
+                  }
+                </label>
 
                 @if (canRemoveTournament(rowData)) {
                   <button

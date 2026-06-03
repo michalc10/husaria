@@ -58,7 +58,7 @@ export class LeagueDialogComponent {
 
     this.tournamentList = [
       ...this.tournamentList,
-      { leagueId, city: '', date: new Date() }
+      { leagueId, city: '', date: new Date(), countsInLeagueStandings: true }
     ];
   }
 
@@ -122,7 +122,8 @@ export class LeagueDialogComponent {
       city: tournament.city || '',
       date: tournament.date instanceof Date
         ? tournament.date
-        : new Date((tournament as any).date || Date.now())
+        : new Date((tournament as any).date || Date.now()),
+      countsInLeagueStandings: tournament.countsInLeagueStandings ?? true
     };
   }
 

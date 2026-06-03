@@ -46,13 +46,38 @@
 
 .ld-tournament-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(12rem, .8fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) minmax(12rem, .8fr) minmax(12rem, .8fr) auto;
   gap: .65rem;
   align-items: end;
   background: #ffffff;
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: 16px;
   padding: .75rem;
+}
+
+.ld-tournament-check {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .15rem .45rem;
+  align-items: start;
+  padding: .65rem .75rem;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 14px;
+  background: var(--md-sys-color-surface-container-low);
+
+  input {
+    margin-top: .2rem;
+  }
+
+  span {
+    font-weight: 700;
+  }
+
+  small {
+    grid-column: 2;
+    color: var(--md-sys-color-on-surface-variant);
+    line-height: 1.25;
+  }
 }
 
 .ld-number {
@@ -84,6 +109,10 @@
   }
 
   .ld-tournament-field {
+    grid-column: 2 / -1;
+  }
+
+  .ld-tournament-check {
     grid-column: 2 / -1;
   }
 }

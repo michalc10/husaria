@@ -62,12 +62,24 @@
             <span>{{ league.year }}</span>
           </div>
 
-          <p-button
-            icon="pi pi-pencil"
-            styleClass="p-button-rounded p-button-text"
-            (onClick)="changeLeague(league)"
-            [ariaLabel]="'common.editItem' | transloco: { name: league.name }"
-          ></p-button>
+          <div class="league-details__actions">
+            <p-button
+              icon="pi pi-pencil"
+              styleClass="p-button-rounded p-button-text"
+              (onClick)="changeLeague(league)"
+              [ariaLabel]="'common.editItem' | transloco: { name: league.name }"
+            ></p-button>
+
+            @if (isAdmin$ | async) {
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                styleClass="p-button-rounded p-button-text"
+                (onClick)="deleteLeague(league)"
+                [ariaLabel]="'league.deleteLeague' | transloco: { name: league.name }"
+              ></p-button>
+            }
+          </div>
         </div>
 
         <div class="league-summary">
@@ -78,33 +90,318 @@
           <i class="pi pi-calendar"></i>
         </div>
 
-        <div class="tournament-timeline" [attr.aria-label]="'league.timeline' | transloco">
-          @if (tournamentList.length) {
-            @for (tournament of tournamentList; track trackTournament($index, tournament); let i = $index) {
-              <button
-                type="button"
-                class="tournament-card"
-                (click)="selectedTournament(tournament)"
-                [attr.aria-label]="openTournamentLabel(tournament)"
-              >
-                <span class="tournament-card__index">{{ i + 1 }}</span>
-                <span class="tournament-card__main">
-                  <span class="tournament-card__topline">
-                    <strong>{{ tournamentName(tournament) }}</strong>
-                    <span class="tournament-card__status" [ngClass]="tournamentStatusClass(tournament.status)">
-                      {{ tournamentStatusKey(tournament.status) | transloco }}
-                    </span>
-                  </span>
-                  <small>{{ tournament.date | date: 'dd.MM.yyyy' }}</small>
-                  <span class="tournament-card__action">{{ tournamentPrimaryAction(tournament) }}</span>
-                </span>
-                <i class="pi pi-arrow-right"></i>
-              </button>
-            }
-          } @else {
-            <div class="empty-state">{{ 'league.noTournaments' | transloco }}</div>
-          }
+        <div class="league-details-tabs" role="tablist" [attr.aria-label]="'league.detailsTabs' | transloco">
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="activeDetailsTab === 'tournaments'"
+            [class.league-details-tabs__item--active]="activeDetailsTab === 'tournaments'"
+            class="league-details-tabs__item"
+            (click)="showTournaments()"
+          >
+            <i class="pi pi-calendar"></i>
+            {{ 'league.tournaments' | transloco }}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="activeDetailsTab === 'standings'"
+            [class.league-details-tabs__item--active]="activeDetailsTab === 'standings'"
+            class="league-details-tabs__item"
+            (click)="showStandings()"
+          >
+            <i class="pi pi-trophy"></i>
+            {{ 'league.standings' | transloco }}
+          </button>
         </div>
+
+        @if (activeDetailsTab === 'tournaments') {
+          <div class="tournament-timeline" [attr.aria-label]="'league.timeline' | transloco">
+            @if (tournamentList.length) {
+              @for (tournament of tournamentList; track trackTournament($index, tournament); let i = $index) {
+                <div class="tournament-row">
+                  <button
+                    type="button"
+                    class="tournament-card"
+                    (click)="selectedTournament(tournament)"
+                    [attr.aria-label]="openTournamentLabel(tournament)"
+                  >
+                    <span class="tournament-card__index">{{ i + 1 }}</span>
+                    <span class="tournament-card__main">
+                      <span class="tournament-card__topline">
+                        <strong>{{ tournamentName(tournament) }}</strong>
+                        <span class="tournament-card__status" [ngClass]="tournamentStatusClass(tournament.status)">
+                          {{ tournamentStatusKey(tournament.status) | transloco }}
+                        </span>
+                        <span class="tournament-card__standings" [class.tournament-card__standings--excluded]="tournament.countsInLeagueStandings === false">
+                          {{ tournamentCountsLabel(tournament) }}
+                        </span>
+                      </span>
+                      <small>{{ tournament.date | date: 'dd.MM.yyyy' }}</small>
+                      <span class="tournament-card__action">{{ tournamentPrimaryAction(tournament) }}</span>
+                    </span>
+                    <i class="pi pi-arrow-right"></i>
+                  </button>
+
+                  @if (isAdmin$ | async) {
+                    <p-button
+                      icon="pi pi-trash"
+                      severity="danger"
+                      styleClass="p-button-rounded p-button-text tournament-row__delete"
+                      (onClick)="deleteTournament(tournament)"
+                      [ariaLabel]="'league.deleteTournament' | transloco: { city: tournamentName(tournament) }"
+                    ></p-button>
+                  }
+                </div>
+              }
+            } @else {
+              <div class="empty-state">{{ 'league.noTournaments' | transloco }}</div>
+            }
+          </div>
+        }
+
+        @if (activeDetailsTab === 'standings') {
+          <section class="league-standings">
+            <div class="league-standings__header">
+              <div>
+                <h3>{{ 'league.standings' | transloco }}</h3>
+                <p>{{ 'league.standingsHint' | transloco }}</p>
+              </div>
+              <div class="league-standings__mode" role="tablist" [attr.aria-label]="'league.standingsMode' | transloco">
+                <button
+                  type="button"
+                  role="tab"
+                  class="league-details-tabs__item"
+                  [class.league-details-tabs__item--active]="standingMode === 'individual'"
+                  [attr.aria-selected]="standingMode === 'individual'"
+                  (click)="showIndividualStandings()"
+                >
+                  <i class="pi pi-user"></i>
+                  {{ 'league.individualStandings' | transloco }}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  class="league-details-tabs__item"
+                  [class.league-details-tabs__item--active]="standingMode === 'team'"
+                  [attr.aria-selected]="standingMode === 'team'"
+                  (click)="showTeamStandings()"
+                >
+                  <i class="pi pi-shield"></i>
+                  {{ 'league.teamStandings' | transloco }}
+                </button>
+              </div>
+
+              @if (standingMode === 'individual') {
+                <div class="league-standings__actions">
+                  <label class="league-count-input">
+                    <span>{{ 'league.countedTournaments' | transloco }}</span>
+                    <input
+                      pInputText
+                      type="number"
+                      inputmode="numeric"
+                      [min]="standingsMaxTournaments ? 1 : 0"
+                      [max]="standingsMaxTournaments"
+                      [disabled]="!standingsMaxTournaments"
+                      [ngModel]="displayedCountedTournaments"
+                      (change)="updateCountedTournaments($any($event.target).value)"
+                    />
+                    <small>{{ 'league.countedTournamentsHelp' | transloco: { max: standingsMaxTournaments } }}</small>
+                  </label>
+                  <p-button
+                    icon="pi pi-star"
+                    styleClass="p-button-rounded"
+                    (onClick)="openFinalTournamentDialog()"
+                    [disabled]="!canCreateFinalTournament"
+                    [label]="'league.createFinalTournament' | transloco"
+                    [ariaLabel]="'league.createFinalTournament' | transloco"
+                  ></p-button>
+                  <p-button
+                    icon="pi pi-refresh"
+                    styleClass="p-button-rounded p-button-text"
+                    (onClick)="refreshStandings()"
+                    [ariaLabel]="'league.refreshStandings' | transloco"
+                  ></p-button>
+                </div>
+              } @else {
+                <div class="league-standings__actions league-standings__actions--team">
+                  <label class="league-count-input">
+                    <span>{{ 'league.teamSize' | transloco }}</span>
+                    <input
+                      pInputText
+                      type="number"
+                      inputmode="numeric"
+                      min="1"
+                      max="30"
+                      [ngModel]="teamSize"
+                      (change)="updateTeamSize($any($event.target).value)"
+                    />
+                    <small>{{ 'league.teamSizeHelp' | transloco }}</small>
+                  </label>
+                  <label class="league-count-input">
+                    <span>{{ 'league.countedTournaments' | transloco }}</span>
+                    <input
+                      pInputText
+                      type="number"
+                      inputmode="numeric"
+                      [min]="standingsMaxTournaments ? 1 : 0"
+                      [max]="standingsMaxTournaments"
+                      [disabled]="!standingsMaxTournaments"
+                      [ngModel]="teamCountedTournaments || standingsMaxTournaments"
+                      (change)="updateTeamCountedTournaments($any($event.target).value)"
+                    />
+                    <small>{{ 'league.countedTournamentsHelp' | transloco: { max: standingsMaxTournaments } }}</small>
+                  </label>
+                  <p-button
+                    icon="pi pi-refresh"
+                    styleClass="p-button-rounded p-button-text"
+                    (onClick)="refreshStandings()"
+                    [ariaLabel]="'league.refreshStandings' | transloco"
+                  ></p-button>
+                </div>
+              }
+            </div>
+
+            @if (standingMode === 'individual') {
+              @if (loadingStandings) {
+                <div class="empty-state">{{ 'common.loading' | transloco }}</div>
+              } @else if (standingsLoadFailed) {
+                <div class="empty-state empty-state--error">
+                  <p>{{ 'league.standingsLoadError' | transloco }}</p>
+                  <p-button
+                    icon="pi pi-refresh"
+                    styleClass="p-button-rounded p-button-text"
+                    (onClick)="refreshStandings()"
+                    [label]="'league.refreshStandings' | transloco"
+                  ></p-button>
+                </div>
+              } @else if (leagueStandings.length) {
+                <p-table [value]="leagueStandings" styleClass="league-standings-table p-datatable-sm" [tableStyle]="{ 'min-width': '46rem' }">
+                  <ng-template pTemplate="header">
+                    <tr>
+                      <th>{{ 'league.rank' | transloco }}</th>
+                      <th>{{ 'league.player' | transloco }}</th>
+                      <th>{{ 'league.horse' | transloco }}</th>
+                      <th>{{ 'league.banner' | transloco }}</th>
+                      <th>{{ 'league.countedStarts' | transloco }}</th>
+                      <th>{{ 'league.leaguePoints' | transloco }}</th>
+                      <th>{{ 'league.bestPlace' | transloco }}</th>
+                      <th>{{ 'league.breakdown' | transloco }}</th>
+                    </tr>
+                  </ng-template>
+                  <ng-template pTemplate="body" let-standing>
+                    <tr>
+                      <td class="league-standings-table__rank">{{ standing.rank }}</td>
+                      <td><strong>{{ standing.playerName }}</strong></td>
+                      <td>{{ standing.horse }}</td>
+                      <td>
+                        <span>{{ standingBanner(standing) }}</span>
+                      </td>
+                      <td>{{ standing.countedStarts }}/{{ standing.starts }}</td>
+                      <td><strong>{{ standing.totalLeaguePoints }}</strong></td>
+                      <td>{{ standing.bestPlace || ('common.dash' | transloco) }}</td>
+                      <td>
+                        <button type="button" class="standing-expand" (click)="toggleStanding(standing)" [attr.aria-expanded]="expandedStandingId === standing.playerId">
+                          <i [class]="expandedStandingId === standing.playerId ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+                          {{ 'league.showBreakdown' | transloco }}
+                        </button>
+                      </td>
+                    </tr>
+                    @if (expandedStandingId === standing.playerId) {
+                      <tr class="league-standings-table__details">
+                        <td colspan="8">
+                          <div class="standing-breakdown">
+                            @for (item of standing.tournaments; track trackStandingTournament($index, item)) {
+                              <div class="standing-breakdown__item" [class.standing-breakdown__item--excluded]="!item.includedInLeagueScore">
+                                <strong>{{ tournamentStandingName(item) }}</strong>
+                                <span>{{ item.date | date: 'dd.MM.yyyy' }}</span>
+                                <span>{{ 'league.tournamentPlace' | transloco: { place: item.place } }}</span>
+                                <span>{{ 'league.tournamentScore' | transloco: { score: formatScore(item.tournamentScore) } }}</span>
+                                <span>{{ 'league.tournamentLeaguePoints' | transloco: { points: item.leaguePoints } }}</span>
+                                <span>{{ (item.includedInLeagueScore ? 'league.includedInScore' : 'league.notIncludedInScore') | transloco }}</span>
+                              </div>
+                            }
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </ng-template>
+                </p-table>
+              } @else {
+                <div class="empty-state">{{ 'league.noStandings' | transloco }}</div>
+              }
+            } @else {
+              @if (loadingTeamStandings) {
+                <div class="empty-state">{{ 'common.loading' | transloco }}</div>
+              } @else if (teamStandingsLoadFailed) {
+                <div class="empty-state empty-state--error">
+                  <p>{{ 'league.teamStandingsLoadError' | transloco }}</p>
+                  <p-button
+                    icon="pi pi-refresh"
+                    styleClass="p-button-rounded p-button-text"
+                    (onClick)="refreshStandings()"
+                    [label]="'league.refreshStandings' | transloco"
+                  ></p-button>
+                </div>
+              } @else if (leagueTeamStandings.length) {
+                <p-table [value]="leagueTeamStandings" styleClass="league-standings-table p-datatable-sm" [tableStyle]="{ 'min-width': '46rem' }">
+                  <ng-template pTemplate="header">
+                    <tr>
+                      <th>{{ 'league.rank' | transloco }}</th>
+                      <th>{{ 'league.banner' | transloco }}</th>
+                      <th>{{ 'league.countedStarts' | transloco }}</th>
+                      <th>{{ 'league.teamSize' | transloco }}</th>
+                      <th>{{ 'league.leaguePoints' | transloco }}</th>
+                      <th>{{ 'league.bestPlace' | transloco }}</th>
+                      <th>{{ 'league.breakdown' | transloco }}</th>
+                    </tr>
+                  </ng-template>
+                  <ng-template pTemplate="body" let-standing>
+                    <tr>
+                      <td class="league-standings-table__rank">{{ standing.rank }}</td>
+                      <td><strong>{{ standing.bannerName || ('banner.none' | transloco) }}</strong></td>
+                      <td>{{ standing.countedStarts }}/{{ standing.starts }}</td>
+                      <td>{{ standing.teamSize }}</td>
+                      <td><strong>{{ standing.totalLeaguePoints }}</strong></td>
+                      <td>{{ standing.bestPlace || ('common.dash' | transloco) }}</td>
+                      <td>
+                        <button type="button" class="standing-expand" (click)="toggleTeamStanding(standing)" [attr.aria-expanded]="expandedTeamStandingId === standing.bannerKey">
+                          <i [class]="expandedTeamStandingId === standing.bannerKey ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+                          {{ 'league.showBreakdown' | transloco }}
+                        </button>
+                      </td>
+                    </tr>
+                    @if (expandedTeamStandingId === standing.bannerKey) {
+                      <tr class="league-standings-table__details">
+                        <td colspan="7">
+                          <div class="standing-breakdown">
+                            @for (item of standing.tournaments; track trackTeamStandingTournament($index, item)) {
+                              <div class="standing-breakdown__item standing-breakdown__item--team" [class.standing-breakdown__item--excluded]="!item.includedInLeagueScore">
+                                <strong>{{ tournamentTeamStandingName(item) }}</strong>
+                                <span>{{ item.date | date: 'dd.MM.yyyy' }}</span>
+                                <span>{{ 'league.tournamentPlace' | transloco: { place: item.place } }}</span>
+                                <span>{{ 'league.teamScore' | transloco: { score: formatScore(item.teamScore) } }}</span>
+                                <span>{{ 'league.tournamentLeaguePoints' | transloco: { points: item.leaguePoints } }}</span>
+                                <span>{{ (item.includedInLeagueScore ? 'league.includedInScore' : 'league.notIncludedInScore') | transloco }}</span>
+                                <span class="standing-breakdown__members">
+                                  @for (member of item.members; track member.playerId) {
+                                    <span>{{ member.playerName }} - {{ member.horse }} ({{ formatScore(member.tournamentScore) }})</span>
+                                  }
+                                </span>
+                              </div>
+                            }
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </ng-template>
+                </p-table>
+              } @else {
+                <div class="empty-state">{{ 'league.noTeamStandings' | transloco }}</div>
+              }
+            }
+          </section>
+        }
       } @else {
         <div class="league-empty">
           <i class="pi pi-sitemap"></i>
@@ -121,3 +418,113 @@
   (comunicationWithoutSaving)="closedDialogWithoutSaving($event)"
   (comunication)="returnFromChild($event)"
 ></app-league-dialog>
+
+<p-dialog
+  [(visible)]="finalTournamentDialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="true"
+  styleClass="league-final-dialog"
+>
+  <ng-template pTemplate="header">
+    <div class="dialog-title">
+      <span class="dialog-title__icon">
+        <i class="pi pi-star"></i>
+      </span>
+      <span class="dialog-title__text">{{ 'league.createFinalTournament' | transloco }}</span>
+    </div>
+  </ng-template>
+
+  <div class="final-dialog">
+    <p class="final-dialog__hint">{{ 'league.finalTournamentHint' | transloco }}</p>
+
+    <div class="form-grid form-grid--two">
+      <label class="form-field">
+        <span class="field-label">{{ 'league.finalistsCount' | transloco }}</span>
+        <input
+          pInputText
+          type="number"
+          inputmode="numeric"
+          min="1"
+          [max]="leagueStandings.length || 1"
+          [(ngModel)]="finalTournamentForm.finalistsCount"
+          (change)="updateFinalTournamentCount($any($event.target).value)"
+        />
+        <small class="field-hint">{{ 'league.finalistsCountHelp' | transloco: { max: leagueStandings.length } }}</small>
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">{{ 'league.finalTournamentCity' | transloco }}</span>
+        <input
+          pInputText
+          type="text"
+          [(ngModel)]="finalTournamentForm.city"
+          [placeholder]="'league.finalDefaultCity' | transloco"
+        />
+        <small class="field-hint"></small>
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">{{ 'league.date' | transloco }}</span>
+        <p-datepicker
+          [(ngModel)]="finalTournamentForm.date"
+          dateFormat="dd.mm.yy"
+          appendTo="body"
+        ></p-datepicker>
+        <small class="field-hint"></small>
+      </label>
+
+      <label class="form-field">
+        <span class="field-label">{{ 'league.copyBattlesFromTournament' | transloco }}</span>
+        <select class="p-inputtext p-component" [(ngModel)]="finalTournamentForm.copyBattlesFromTournamentId">
+          @for (option of finalTournamentCopyOptions; track option.value || 'none') {
+            <option [ngValue]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        <small class="field-hint">{{ 'league.copyBattlesHelp' | transloco }}</small>
+      </label>
+    </div>
+
+    <section class="final-preview">
+      <div class="final-preview__head">
+        <h3>{{ 'league.finalPreviewTitle' | transloco }}</h3>
+        <span>{{ 'league.finalPreviewCount' | transloco: { count: finalTournamentPreview.length } }}</span>
+      </div>
+
+      <div class="final-preview__list">
+        @for (standing of finalTournamentPreview; track trackStanding($index, standing)) {
+          <div class="final-preview__row">
+            <span>{{ standing.rank }}</span>
+            <strong>{{ standing.playerName }}</strong>
+            <span>{{ standing.horse }}</span>
+            <span>{{ standing.totalLeaguePoints }} {{ 'league.pointsShort' | transloco }}</span>
+          </div>
+        } @empty {
+          <div class="empty-state">{{ 'league.noStandings' | transloco }}</div>
+        }
+      </div>
+    </section>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-actions">
+      <button
+        type="button"
+        pButton
+        [label]="'common.cancel' | transloco"
+        icon="pi pi-times"
+        severity="secondary"
+        (click)="finalTournamentDialogVisible = false"
+      ></button>
+      <button
+        type="button"
+        pButton
+        [label]="'league.createFinalTournament' | transloco"
+        icon="pi pi-star"
+        [disabled]="creatingFinalTournament || !leagueStandings.length"
+        (click)="createFinalTournament()"
+      ></button>
+    </div>
+  </ng-template>
+</p-dialog>
