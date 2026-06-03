@@ -30,6 +30,7 @@ Nie commituj `.env`.
 Lokalny PostgreSQL przez Dockera:
 
 ```powershell
+# z katalogu glownego repo
 docker compose -f docker-compose.postgres.yml up -d
 ```
 
@@ -59,15 +60,33 @@ Backend:
 ```powershell
 cd back-end
 npm.cmd ci
+npm.cmd run prisma:generate
 npm.cmd run prisma:migrate
 npm.cmd run user:create-admin -- --email admin@example.com --password TymczasoweHaslo123 --name "Administrator"
 npm.cmd run dev
 ```
 
+Po kazdej zmianie `back-end/prisma/schema.prisma` albo po pobraniu nowej wersji
+kodu uruchom `npm.cmd run prisma:migrate` przed startem backendu. Jesli baza ma
+starszy schemat niz kod, API moze zwracac puste widoki albo bledy, mimo ze dane
+nadal istnieja.
+
 Logowanie nie ma publicznej rejestracji. Pierwsze konto administratora utworz
 skryptem `user:create-admin`, a kolejne konta dodawaj juz w aplikacji w widoku
 `Uzytkownicy`. Nowo utworzone konto dostaje haslo tymczasowe i musi je zmienic
 po pierwszym logowaniu.
+
+Skrypt `user:create-admin` sam generuje Prisma Client, wiec po swiezym
+`npm.cmd ci` nie powinien juz konczyc sie bledem
+`@prisma/client has no exported member PrismaClient`. Jesli baza PostgreSQL
+zostala zresetowana albo odtworzona bez tabeli `users`, stare konta i sesje nie
+istnieja - utworz pierwszego admina ponownie w aktualnej bazie:
+
+```powershell
+cd back-end
+npm.cmd run prisma:migrate
+npm.cmd run user:create-admin -- --email michalc1101@gmail.com --password TymczasoweHaslo123 --name "Michal"
+```
 
 Po imporcie danych z MongoDB albo po pierwszym przejsciu z legacy kolumn
 `battle_1...battle_5` uruchom jednorazowo:
