@@ -78,17 +78,29 @@ const AUTH_COOKIE_NAME = (process.env.AUTH_COOKIE_NAME || 'husaria_session').tri
 const AUTH_SESSION_DAYS = parsePort(process.env.AUTH_SESSION_DAYS, 14);
 const AUTH_COOKIE_SECURE = (process.env.AUTH_COOKIE_SECURE || 'false').trim().toLowerCase() === 'true';
 const AUTH_COOKIE_DOMAIN = process.env.AUTH_COOKIE_DOMAIN?.trim() || undefined;
+const DEFAULT_AUTH_SESSION_SECRET = 'dev-session-secret-change-me';
+const DEFAULT_JUDGE_TOKEN_SECRET = 'dev-judge-token-secret-change-me';
 const AUTH_SESSION_SECRET =
   process.env.AUTH_SESSION_SECRET?.trim() ||
   process.env.SERVER_TOKEN_SECRET?.trim() ||
-  'dev-session-secret-change-me';
+  DEFAULT_AUTH_SESSION_SECRET;
 const JUDGE_TOKEN_SECRET =
   process.env.JUDGE_TOKEN_SECRET?.trim() ||
   process.env.SERVER_TOKEN_SECRET?.trim() ||
-  'dev-judge-token-secret-change-me';
+  DEFAULT_JUDGE_TOKEN_SECRET;
 
 if (!POSTGRES_URL) {
   throw new Error('POSTGRES_URL or DATABASE_URL is required');
+}
+
+if (process.env.NODE_ENV === 'production') {
+  if (AUTH_SESSION_SECRET === DEFAULT_AUTH_SESSION_SECRET) {
+    throw new Error('AUTH_SESSION_SECRET is required in production');
+  }
+
+  if (JUDGE_TOKEN_SECRET === DEFAULT_JUDGE_TOKEN_SECRET) {
+    throw new Error('JUDGE_TOKEN_SECRET is required in production');
+  }
 }
 
 export const requireMongoConfig = () => buildMongoConfig();

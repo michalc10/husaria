@@ -34,7 +34,10 @@ export const mapTournament = (tournament: any) => ({
   leagueId: tournament.leagueId,
   city: tournament.city,
   date: tournament.date,
-  status: tournament.status || 'PLANNING'
+  status: tournament.status || 'PLANNING',
+  countsInLeagueStandings: tournament.countsInLeagueStandings ?? true,
+  revision: tournament.revision || 0,
+  updatedAt: tournament.updatedAt
 });
 
 export const mapCompetitionTemplate = (template: any) => ({
@@ -51,6 +54,8 @@ export const mapBattle = (battle: any) => ({
   tournamentId: battle.tournamentId,
   name: battle.name,
   order: battle.order,
+  revision: battle.revision || 0,
+  updatedAt: battle.updatedAt,
   categories: [...(battle.categories || [])]
     .sort((a, b) => a.order - b.order)
     .map((category) => ({
@@ -89,6 +94,8 @@ export const mapBattleResult = (battleResult: any) => ({
   extraPoints: toNumber(battleResult.extraPoints),
   time: toNumber(battleResult.time),
   score: toNumber(battleResult.score),
+  revision: battleResult.revision || 0,
+  updatedAt: battleResult.updatedAt,
   obstacleResults: [...(battleResult.obstacleResults || [])].map((result) => ({
     _id: result.id,
     obstacleId: result.obstacleId,
@@ -118,11 +125,59 @@ export const mapBattleLiveState = (state: any) => ({
     : null
 });
 
+export const mapTournamentLiveState = (state: any) => ({
+  tournamentId: state.tournamentId,
+  activeTournamentPlayerId: state.activeTournamentPlayerId ?? null,
+  activeBattleId: state.activeBattleId ?? null,
+  version: state.version || 0,
+  updatedAt: state.updatedAt,
+  activeParticipant: state.activeTournamentPlayer
+    ? {
+        _id: state.activeTournamentPlayer.id,
+        playerName: state.activeTournamentPlayer.playerName,
+        horse: state.activeTournamentPlayer.horse,
+        order: state.activeTournamentPlayer.order
+      }
+    : null,
+  activeBattle: state.activeBattle
+    ? {
+        _id: state.activeBattle.id,
+        name: state.activeBattle.name,
+        order: state.activeBattle.order
+      }
+    : null
+});
+
 export const mapJudgeStation = (station: any, guestUrl?: string) => ({
   _id: station.id,
   tournamentId: station.tournamentId,
   battleId: station.battleId,
   categoryId: station.categoryId,
+  assignments: [...(station.assignments || [])]
+    .filter((assignment) => assignment.battleId && assignment.categoryId)
+    .sort((a, b) => (a.battle?.order || 0) - (b.battle?.order || 0) || (a.category?.order || 0) - (b.category?.order || 0))
+    .map((assignment) => ({
+      battleId: assignment.battleId,
+      categoryId: assignment.categoryId,
+      battleName: assignment.battle?.name || '',
+      battleOrder: assignment.battle?.order || 0,
+      categoryName: assignment.category?.name || '',
+      categoryOrder: assignment.category?.order || 0
+    })),
+  battleIds: [...new Set([...(station.assignments || [])].map((assignment) => assignment.battleId).filter(Boolean))],
+  battles: [...new Map(
+    [...(station.assignments || [])]
+      .map((assignment) => assignment.battle)
+      .filter(Boolean)
+      .map((battle) => [battle.id, battle])
+  ).values()]
+    .sort((a, b) => a.order - b.order)
+    .map((battle) => ({
+      _id: battle.id,
+      tournamentId: battle.tournamentId,
+      name: battle.name,
+      order: battle.order
+    })),
   label: station.label,
   revokedAt: station.revokedAt ?? null,
   createdAt: station.createdAt,
@@ -146,6 +201,8 @@ export const mapTournamentPlayer = (participant: any) => {
     bannerCity: participant.banner?.city || '',
     flag: participant.banner?.name || participant.flag || '',
     order: participant.order,
+    revision: participant.revision || 0,
+    updatedAt: participant.updatedAt,
     totalScore: battleResults.reduce((total, result) => total + result.score, 0),
     battleResults
   };

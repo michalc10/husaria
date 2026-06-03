@@ -3,13 +3,25 @@ import { prisma } from '../database/prisma';
 import { config } from '../config/config';
 import { ConflictError } from './errors';
 import { createObjectId } from './ids';
-import { mapBattleLiveState, mapBattleResult, mapJudgeStation } from './prismaMappers';
+import { mapBattle, mapBattleLiveState, mapBattleResult, mapJudgeStation, mapTournamentLiveState } from './prismaMappers';
 import { playerPointsRepository } from './playerPointsRepository';
 import { scoreChangeLogRepository } from './scoreChangeLogRepository';
 
+type JudgeStationInput = {
+  label?: string;
+  assignments?: Array<{ battleId: string; categoryId: string }>;
+  battleIds?: string[];
+};
+
 type JudgeSessionResultInput = {
+  battleId: string;
   liveStateVersion: number;
   obstacleResults: Array<{ obstacleId: string; value: string }>;
+};
+
+type TournamentLiveStateInput = {
+  activeTournamentPlayerId?: string | null;
+  activeBattleId?: string | null;
 };
 
 const categoryInclude = {
@@ -20,8 +32,46 @@ const categoryInclude = {
   }
 };
 
+const battleDefinitionInclude = {
+  categories: {
+    include: categoryInclude,
+    orderBy: {
+      order: 'asc' as const
+    }
+  },
+  penalties: {
+    orderBy: {
+      order: 'asc' as const
+    }
+  }
+};
+
 const liveStateInclude = {
-  activeTournamentPlayer: true
+  activeTournamentPlayer: true,
+  activeBattle: true
+};
+
+const stationInclude = {
+  assignments: {
+    include: {
+      battle: {
+        include: battleDefinitionInclude
+      },
+      category: {
+        include: categoryInclude
+      }
+    },
+    orderBy: {
+      createdAt: 'asc' as const
+    }
+  },
+  tournament: {
+    include: {
+      liveState: {
+        include: liveStateInclude
+      }
+    }
+  }
 };
 
 const createGuestToken = () => crypto.randomBytes(32).toString('base64url');
@@ -36,22 +86,100 @@ const readBearerToken = (authorization = '') => {
   return type?.toLowerCase() === 'bearer' && token ? token.trim() : '';
 };
 
-const mapCategory = (category: any) => ({
-  _id: category.id,
-  battleId: category.battleId,
-  name: category.name,
-  order: category.order,
-  obstacles: [...(category.obstacles || [])].map((obstacle) => ({
-    _id: obstacle.id,
-    categoryId: obstacle.categoryId,
-    name: obstacle.name,
-    order: obstacle.order,
-    inputType: obstacle.inputType,
-    score: Number(obstacle.score || 0),
-    scoreRaw: obstacle.scoreRaw,
-    scoreOptions: obstacle.scoreOptions || undefined
-  }))
+const defaultTournamentLiveState = (tournamentId: string) => ({
+  tournamentId,
+  activeTournamentPlayerId: null,
+  activeBattleId: null,
+  activeParticipant: null,
+  activeBattle: null,
+  version: 0,
+  updatedAt: null
 });
+
+const firstTournamentParticipant = (tournamentId: string) =>
+  prisma.tournamentPlayer.findFirst({
+    where: { tournamentId },
+    orderBy: [{ order: 'asc' }, { playerName: 'asc' }]
+  });
+
+const firstTournamentBattle = (tournamentId: string) =>
+  prisma.battle.findFirst({
+    where: { tournamentId },
+    orderBy: [{ order: 'asc' }, { name: 'asc' }]
+  });
+
+const ensureTournamentLiveState = async (tournamentId: string) => {
+  const state = await prisma.tournamentLiveState.findUnique({
+    where: { tournamentId },
+    include: liveStateInclude
+  });
+
+  if (state?.activeTournamentPlayerId && state?.activeBattleId) {
+    return state;
+  }
+
+  const [firstParticipant, firstBattle] = await Promise.all([
+    firstTournamentParticipant(tournamentId),
+    firstTournamentBattle(tournamentId)
+  ]);
+  const activeTournamentPlayerId = state?.activeTournamentPlayerId || firstParticipant?.id || null;
+  const activeBattleId = state?.activeBattleId || firstBattle?.id || null;
+
+  if (!activeTournamentPlayerId && !activeBattleId) {
+    return state;
+  }
+
+  return prisma.tournamentLiveState.upsert({
+    where: { tournamentId },
+    create: {
+      tournamentId,
+      activeTournamentPlayerId,
+      activeBattleId,
+      version: 1
+    },
+    update: {
+      activeTournamentPlayerId,
+      activeBattleId,
+      version: {
+        increment: 1
+      }
+    },
+    include: liveStateInclude
+  });
+};
+
+const mapStation = (station: any, token?: string) => mapJudgeStation(station, token ? guestUrl(token) : undefined);
+
+const sortedAssignments = (station: any) =>
+  [...(station.assignments || [])].sort((left, right) => {
+    const battleOrder = (left.battle?.order || 0) - (right.battle?.order || 0);
+    return battleOrder || (left.category?.order || 0) - (right.category?.order || 0);
+  });
+
+const assignedBattlesForStation = (station: any, activeBattleId?: string | null) => {
+  const battlesById = new Map<string, any>();
+
+  for (const assignment of sortedAssignments(station)) {
+    if (!assignment.battle || !assignment.category) continue;
+    if (activeBattleId && assignment.battleId !== activeBattleId) continue;
+
+    const battle = battlesById.get(assignment.battleId) || {
+      ...assignment.battle,
+      categories: [],
+      penalties: []
+    };
+    battle.categories.push(assignment.category);
+    battlesById.set(assignment.battleId, battle);
+  }
+
+  return [...battlesById.values()].sort((left, right) => (left.order || 0) - (right.order || 0));
+};
+
+const stationWithAssignments = async (stationId: string) =>
+  prisma.judgeStation.findUnique({
+    where: { id: stationId },
+    include: stationInclude
+  });
 
 const stationFromToken = async (token: string) => {
   if (!token) return null;
@@ -61,30 +189,146 @@ const stationFromToken = async (token: string) => {
       tokenHash: hashToken(token),
       revokedAt: null
     },
-    include: {
-      category: {
-        include: categoryInclude
-      },
-      battle: {
-        include: {
-          liveState: {
-            include: liveStateInclude
-          }
-        }
-      }
-    }
+    include: stationInclude
   });
 };
 
-const activeResultForStation = async (station: any) => {
-  const activeParticipantId = station.battle.liveState?.activeTournamentPlayerId;
-  if (!activeParticipantId) return null;
+const validateBattleIds = async (tournamentId: string, battleIds: string[] = []) => {
+  const uniqueBattleIds = [...new Set(battleIds.filter(Boolean))];
+  if (!uniqueBattleIds.length) {
+    throw new ConflictError('Stanowisko musi mieć co najmniej jedną konkurencję');
+  }
 
-  const result = await prisma.battleResult.findUnique({
+  const battles = await prisma.battle.findMany({
     where: {
-      tournamentPlayerId_battleId: {
-        tournamentPlayerId: activeParticipantId,
-        battleId: station.battleId
+      id: {
+        in: uniqueBattleIds
+      },
+      tournamentId
+    },
+    orderBy: {
+      order: 'asc'
+    }
+  });
+
+  if (battles.length !== uniqueBattleIds.length) {
+    throw new ConflictError('Stanowisko może zawierać tylko konkurencje z tego turnieju');
+  }
+
+  return uniqueBattleIds;
+};
+
+const expandBattleIdsToAssignments = async (tournamentId: string, battleIds: string[] = []) => {
+  const categories = await prisma.battleCategory.findMany({
+    where: {
+      battleId: {
+        in: [...new Set(battleIds.filter(Boolean))]
+      },
+      battle: {
+        tournamentId
+      }
+    },
+    orderBy: [{ battle: { order: 'asc' } }, { order: 'asc' }]
+  });
+
+  return categories.map((category) => ({
+    battleId: category.battleId,
+    categoryId: category.id
+  }));
+};
+
+const validateAssignments = async (
+  tournamentId: string,
+  assignments: Array<{ battleId: string; categoryId: string }> = [],
+  stationId?: string
+) => {
+  const uniqueAssignments = [
+    ...new Map(assignments.filter(item => item.battleId && item.categoryId).map(item => [item.categoryId, item])).values()
+  ];
+
+  if (!uniqueAssignments.length) {
+    throw new ConflictError('Stanowisko musi mieć co najmniej jedną kategorię');
+  }
+
+  const categoryIds = uniqueAssignments.map((assignment) => assignment.categoryId);
+  const categories = await prisma.battleCategory.findMany({
+    where: {
+      id: {
+        in: categoryIds
+      },
+      battle: {
+        tournamentId
+      }
+    },
+    include: {
+      battle: true
+    }
+  });
+
+  if (categories.length !== uniqueAssignments.length) {
+    throw new ConflictError('Stanowisko może zawierać tylko kategorie z tego turnieju');
+  }
+
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+  for (const assignment of uniqueAssignments) {
+    const category = categoryById.get(assignment.categoryId);
+    if (!category || category.battleId !== assignment.battleId) {
+      throw new ConflictError('Wybrana kategoria nie należy do tej konkurencji');
+    }
+  }
+
+  const occupiedAssignment = await prisma.judgeStationAssignment.findFirst({
+    where: {
+      categoryId: {
+        in: categoryIds
+      },
+      station: {
+        tournamentId,
+        revokedAt: null,
+        ...(stationId ? { id: { not: stationId } } : {})
+      }
+    },
+    include: {
+      category: true,
+      battle: true,
+      station: true
+    }
+  });
+
+  if (occupiedAssignment) {
+    throw new ConflictError(
+      `Kategoria "${occupiedAssignment.category.name}" w konkurencji "${occupiedAssignment.battle.name}" jest już przypisana do "${occupiedAssignment.station.label}"`
+    );
+  }
+
+  return uniqueAssignments.map((assignment) => {
+    const category = categoryById.get(assignment.categoryId)!;
+    return {
+      battleId: category.battleId,
+      categoryId: category.id
+    };
+  });
+};
+
+const activeResultsForStation = async (station: any) => {
+  const activeParticipantId = station.tournament.liveState?.activeTournamentPlayerId;
+  if (!activeParticipantId) return [];
+
+  const activeBattleId = station.tournament.liveState?.activeBattleId;
+  const battleIds = [
+    ...new Set(
+      sortedAssignments(station)
+        .filter((assignment) => !activeBattleId || assignment.battleId === activeBattleId)
+        .map((assignment) => assignment.battleId)
+    )
+  ];
+  if (!battleIds.length) return [];
+
+  const results = await prisma.battleResult.findMany({
+    where: {
+      tournamentPlayerId: activeParticipantId,
+      battleId: {
+        in: battleIds
       }
     },
     include: {
@@ -93,102 +337,155 @@ const activeResultForStation = async (station: any) => {
     }
   });
 
-  return result ? mapBattleResult(result) : null;
+  return results.map(mapBattleResult);
 };
 
-const mapSession = async (station: any) => {
-  const liveState = station.battle.liveState
-    ? mapBattleLiveState(station.battle.liveState)
-    : {
-        battleId: station.battleId,
-        activeTournamentPlayerId: null,
-        activeParticipant: null,
-        version: 0,
-        updatedAt: null
-      };
-
-  return {
-    station: mapJudgeStation(station),
-    battle: {
-      _id: station.battle.id,
-      tournamentId: station.battle.tournamentId,
-      name: station.battle.name,
-      order: station.battle.order
-    },
-    category: mapCategory(station.category),
-    liveState,
-    result: await activeResultForStation(station)
-  };
-};
+const mapSession = async (station: any) => ({
+  station: mapStation(station),
+  battles: assignedBattlesForStation(station, station.tournament.liveState?.activeBattleId).map(mapBattle),
+  liveState: station.tournament.liveState
+    ? mapTournamentLiveState(station.tournament.liveState)
+    : defaultTournamentLiveState(station.tournamentId),
+  results: await activeResultsForStation(station)
+});
 
 export const judgeStationRepository = {
   readBearerToken,
 
-  async listForBattle(battleId: string) {
-    const battle = await prisma.battle.findUnique({
-      where: { id: battleId },
+  async listForTournament(tournamentId: string) {
+    const tournament = await prisma.tournament.findUnique({
+      where: { id: tournamentId },
       include: {
-        categories: {
-          include: {
-            ...categoryInclude,
-            judgeStations: true
-          },
+        battles: {
+          include: battleDefinitionInclude,
+          orderBy: {
+            order: 'asc'
+          }
+        },
+        judgeStations: {
+          include: stationInclude,
+          orderBy: {
+            createdAt: 'desc'
+          }
+        }
+      }
+    });
+
+    if (!tournament) return null;
+
+    return {
+      tournamentId,
+      battles: tournament.battles.map(mapBattle),
+      stations: tournament.judgeStations.map((station) => mapStation(station))
+    };
+  },
+
+  async create(tournamentId: string, input: JudgeStationInput) {
+    const tournament = await prisma.tournament.findUnique({
+      where: { id: tournamentId },
+      include: {
+        battles: {
           orderBy: {
             order: 'asc'
           }
         }
       }
     });
+    if (!tournament) return null;
 
-    if (!battle) return null;
+    const requestedAssignments = input.assignments ?? await expandBattleIdsToAssignments(tournamentId, input.battleIds || []);
+    const assignments = await validateAssignments(tournamentId, requestedAssignments);
+    const assignedBattleIds = [...new Set(assignments.map((assignment) => assignment.battleId))];
+    const assignedBattles = tournament.battles.filter((battle) => assignedBattleIds.includes(battle.id));
+    const token = createGuestToken();
+    const stationId = createObjectId();
+    const label =
+      input.label?.trim() ||
+      (assignedBattles.length === 1 ? assignedBattles[0].name : `Stanowisko QR (${assignments.length})`);
 
-    return {
-      battleId,
-      categories: battle.categories.map((category) => {
-        const station = category.judgeStations.find((item) => !item.revokedAt) || category.judgeStations[0] || null;
-        return {
-          category: mapCategory(category),
-          station: station ? mapJudgeStation(station) : null
-        };
-      })
-    };
+    await prisma.$transaction(async (tx) => {
+      await tx.judgeStation.create({
+        data: {
+          id: stationId,
+          tournamentId,
+          label,
+          tokenHash: hashToken(token)
+        }
+      });
+
+      await tx.judgeStationAssignment.createMany({
+        data: assignments.map((assignment) => ({
+          stationId,
+          battleId: assignment.battleId,
+          categoryId: assignment.categoryId
+        }))
+      });
+    });
+
+    const station = await stationWithAssignments(stationId);
+    return station ? mapStation(station, token) : null;
   },
 
-  async createOrRegenerate(battleId: string, categoryId: string) {
-    const category = await prisma.battleCategory.findUnique({
-      where: { id: categoryId },
+  async update(stationId: string, input: JudgeStationInput) {
+    const existing = await prisma.judgeStation.findUnique({
+      where: { id: stationId },
       include: {
-        battle: true
+        assignments: true
+      }
+    });
+    if (!existing) return null;
+
+    const requestedAssignments = input.assignments
+      ? input.assignments
+      : input.battleIds
+        ? await expandBattleIdsToAssignments(existing.tournamentId, input.battleIds)
+        : null;
+    const assignments = requestedAssignments
+      ? await validateAssignments(existing.tournamentId, requestedAssignments, stationId)
+      : null;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.judgeStation.update({
+        where: { id: stationId },
+        data: {
+          ...(input.label !== undefined ? { label: input.label.trim() || existing.label } : {})
+        }
+      });
+
+      if (assignments) {
+        await tx.judgeStationAssignment.deleteMany({
+          where: { stationId }
+        });
+        await tx.judgeStationAssignment.createMany({
+          data: assignments.map((assignment) => ({
+            stationId,
+            battleId: assignment.battleId,
+            categoryId: assignment.categoryId
+          }))
+        });
       }
     });
 
-    if (!category || category.battleId !== battleId) return null;
+    const station = await stationWithAssignments(stationId);
+    return station ? mapStation(station) : null;
+  },
+
+  async regenerateToken(stationId: string) {
+    const existing = await prisma.judgeStation.findUnique({ where: { id: stationId } });
+    if (!existing) return null;
 
     const token = createGuestToken();
-    const station = await prisma.judgeStation.upsert({
-      where: {
-        battleId_categoryId: {
-          battleId,
-          categoryId
-        }
-      },
-      create: {
-        id: createObjectId(),
-        tournamentId: category.battle.tournamentId,
-        battleId,
-        categoryId,
-        label: category.name,
-        tokenHash: hashToken(token)
-      },
-      update: {
-        label: category.name,
+    await prisma.judgeStation.update({
+      where: { id: stationId },
+      data: {
         tokenHash: hashToken(token),
         revokedAt: null,
         lastSeenAt: null
       }
     });
 
-    return mapJudgeStation(station, guestUrl(token));
+    const station = await stationWithAssignments(stationId);
+    return station ? mapStation(station, token) : null;
   },
 
   async revoke(stationId: string) {
@@ -199,29 +496,53 @@ export const judgeStationRepository = {
       where: { id: stationId },
       data: {
         revokedAt: new Date()
-      }
+      },
+      include: stationInclude
     });
-    return mapJudgeStation(station);
+    return mapStation(station);
   },
 
-  async setLiveState(battleId: string, activeTournamentPlayerId: string | null) {
-    const battle = await prisma.battle.findUnique({ where: { id: battleId } });
-    if (!battle) return null;
+  async setTournamentLiveState(tournamentId: string, input: TournamentLiveStateInput = {}) {
+    const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
+    if (!tournament) return null;
 
-    if (activeTournamentPlayerId) {
-      const participant = await prisma.tournamentPlayer.findUnique({ where: { id: activeTournamentPlayerId } });
-      if (!participant || participant.tournamentId !== battle.tournamentId) return null;
+    const current = await prisma.tournamentLiveState.findUnique({
+      where: { tournamentId },
+      include: liveStateInclude
+    });
+    const [fallbackParticipant, fallbackBattle] = await Promise.all([
+      input.activeTournamentPlayerId || current?.activeTournamentPlayerId ? null : firstTournamentParticipant(tournamentId),
+      input.activeBattleId || current?.activeBattleId ? null : firstTournamentBattle(tournamentId)
+    ]);
+    const nextActiveTournamentPlayerId =
+      input.activeTournamentPlayerId || current?.activeTournamentPlayerId || fallbackParticipant?.id || null;
+    const nextActiveBattleId = input.activeBattleId || current?.activeBattleId || fallbackBattle?.id || null;
+
+    if (nextActiveTournamentPlayerId) {
+      const participant = await prisma.tournamentPlayer.findUnique({ where: { id: nextActiveTournamentPlayerId } });
+      if (!participant || participant.tournamentId !== tournamentId) {
+        throw new ConflictError('Wybrany zawodnik nie należy do tego turnieju');
+      }
     }
 
-    const state = await prisma.battleLiveState.upsert({
-      where: { battleId },
+    if (nextActiveBattleId) {
+      const battle = await prisma.battle.findUnique({ where: { id: nextActiveBattleId } });
+      if (!battle || battle.tournamentId !== tournamentId) {
+        throw new ConflictError('Wybrana konkurencja nie należy do tego turnieju');
+      }
+    }
+
+    const state = await prisma.tournamentLiveState.upsert({
+      where: { tournamentId },
       create: {
-        battleId,
-        activeTournamentPlayerId,
+        tournamentId,
+        activeTournamentPlayerId: nextActiveTournamentPlayerId,
+        activeBattleId: nextActiveBattleId,
         version: 1
       },
       update: {
-        activeTournamentPlayerId,
+        activeTournamentPlayerId: nextActiveTournamentPlayerId,
+        activeBattleId: nextActiveBattleId,
         version: {
           increment: 1
         }
@@ -229,21 +550,68 @@ export const judgeStationRepository = {
       include: liveStateInclude
     });
 
-    return mapBattleLiveState(state);
+    return mapTournamentLiveState(state);
   },
 
-  async getLiveState(battleId: string) {
-    const state = await prisma.battleLiveState.findUnique({
+  async getTournamentLiveState(tournamentId: string) {
+    const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
+    if (!tournament) return null;
+
+    const state = await ensureTournamentLiveState(tournamentId);
+
+    return state ? mapTournamentLiveState(state) : defaultTournamentLiveState(tournamentId);
+  },
+
+  async setLiveState(battleId: string, activeTournamentPlayerId: string | null) {
+    const battle = await prisma.battle.findUnique({ where: { id: battleId } });
+    if (!battle) return null;
+
+    const tournamentState = await this.setTournamentLiveState(battle.tournamentId, {
+      activeTournamentPlayerId,
+      activeBattleId: battleId
+    });
+    if (!tournamentState) return null;
+
+    const legacyState = await prisma.battleLiveState.upsert({
       where: { battleId },
+      create: {
+        battleId,
+        activeTournamentPlayerId: tournamentState.activeTournamentPlayerId,
+        version: tournamentState.version
+      },
+      update: {
+        activeTournamentPlayerId: tournamentState.activeTournamentPlayerId,
+        version: tournamentState.version
+      },
       include: liveStateInclude
     });
 
-    return state ? mapBattleLiveState(state) : null;
+    return mapBattleLiveState(legacyState);
+  },
+
+  async getLiveState(battleId: string) {
+    const battle = await prisma.battle.findUnique({ where: { id: battleId } });
+    if (!battle) return null;
+
+    const tournamentState = await this.getTournamentLiveState(battle.tournamentId);
+    return tournamentState
+      ? {
+          battleId,
+          activeTournamentPlayerId: tournamentState.activeTournamentPlayerId,
+          activeParticipant: tournamentState.activeParticipant,
+          version: tournamentState.version,
+          updatedAt: tournamentState.updatedAt
+        }
+      : null;
   },
 
   async getSession(token: string) {
     const station = await stationFromToken(token);
-    return station ? mapSession(station) : null;
+    if (!station) return null;
+
+    await ensureTournamentLiveState(station.tournamentId);
+    const refreshedStation = await stationWithAssignments(station.id);
+    return refreshedStation ? mapSession(refreshedStation) : null;
   },
 
   async touchStation(token: string) {
@@ -254,28 +622,50 @@ export const judgeStationRepository = {
       where: { id: station.id },
       data: {
         lastSeenAt: new Date()
-      }
+      },
+      include: stationInclude
     });
-    return mapJudgeStation(updated);
+    return mapStation(updated);
   },
 
   async updateSessionResult(token: string, input: JudgeSessionResultInput) {
-    const station = await stationFromToken(token);
+    let station = await stationFromToken(token);
     if (!station) return null;
 
-    const liveState = station.battle.liveState;
+    await ensureTournamentLiveState(station.tournamentId);
+    station = await stationWithAssignments(station.id);
+    if (!station) return null;
+
+    const liveState = station.tournament.liveState;
     if (!liveState?.activeTournamentPlayerId) {
-      throw new ConflictError('Brak aktywnego zawodnika dla tej konkurencji');
+      throw new ConflictError('Brak aktywnego zawodnika dla tego turnieju');
+    }
+
+    if (!liveState.activeBattleId) {
+      throw new ConflictError('Brak aktywnej konkurencji dla tego turnieju');
     }
 
     if (Number(input.liveStateVersion) !== liveState.version) {
       throw new ConflictError('Zawodnik zmienił się w trakcie zapisu. Odśwież stanowisko.');
     }
 
-    const allowedObstacleIds = new Set(station.category.obstacles.map((obstacle) => obstacle.id));
+    if (input.battleId !== liveState.activeBattleId) {
+      throw new ConflictError('Konkurencja zmieniła się w trakcie zapisu. Odśwież stanowisko.');
+    }
+
+    const assignmentsForBattle = sortedAssignments(station).filter((item) => item.battleId === input.battleId);
+    if (!assignmentsForBattle.length) {
+      throw new ConflictError('To stanowisko nie może zapisywać tej konkurencji');
+    }
+
+    const allowedObstacleIds = new Set(
+      assignmentsForBattle.flatMap((assignment) =>
+        (assignment.category?.obstacles || []).map((obstacle: any) => obstacle.id)
+      )
+    );
     const obstacleResults = input.obstacleResults.map((result) => {
       if (!allowedObstacleIds.has(result.obstacleId)) {
-        throw new ConflictError('Stanowisko może zapisywać tylko własną kategorię');
+        throw new ConflictError('Stanowisko może zapisywać tylko przypisane konkurencje');
       }
 
       return {
@@ -284,7 +674,7 @@ export const judgeStationRepository = {
       };
     });
 
-    const updated = await playerPointsRepository.updateBattleResult(liveState.activeTournamentPlayerId, station.battleId, {
+    const updated = await playerPointsRepository.updateBattleResult(liveState.activeTournamentPlayerId, input.battleId, {
       obstacleResults
     });
 
@@ -298,7 +688,7 @@ export const judgeStationRepository = {
         }
       }),
       scoreChangeLogRepository.create({
-        battleId: station.battleId,
+        battleId: input.battleId,
         tournamentPlayerId: liveState.activeTournamentPlayerId,
         judgeStationId: station.id,
         source: 'station',
@@ -309,6 +699,10 @@ export const judgeStationRepository = {
       })
     ]);
 
-    return updated;
+    return {
+      result: updated,
+      station: mapStation(station),
+      savedAt: new Date()
+    };
   }
 };

@@ -177,7 +177,8 @@ export const playerPointsRepository = {
           ? { bannerId: banner?.id ?? null, flag: banner?.name ?? String(body.flag ?? existing.flag) }
           : {}),
         ...(body.flag !== undefined && body.bannerId === undefined ? { flag: String(body.flag) } : {}),
-        ...(body.order !== undefined ? { order: Number(body.order) } : {})
+        ...(body.order !== undefined ? { order: Number(body.order) } : {}),
+        revision: { increment: 1 }
       },
       include: participantInclude
     });
@@ -287,7 +288,10 @@ export const playerPointsRepository = {
 
       const scored = await tx.battleResult.update({
         where: { id: battleResult.id },
-        data: { score },
+        data: {
+          score,
+          revision: { increment: 1 }
+        },
         include: {
           obstacleResults: true,
           penaltyResults: true

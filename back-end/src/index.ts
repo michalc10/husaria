@@ -17,6 +17,7 @@ import judgeStationRouter from './routes/JudgeStationRoutes';
 import battleLiveRouter from './routes/BattleLiveRoutes';
 import authRouter from './routes/AuthRoutes';
 import userRouter from './routes/UserRoutes';
+import syncRouter from './routes/SyncRoutes';
 import { requireAuth } from "./middleware/auth";
 import { initLiveScoreSocket } from "./realtime/liveScoreSocket";
 
@@ -33,6 +34,7 @@ const StartServer = () => {
 
   app.use('/auth', authRouter);
   app.use('/judge-station', judgeStationRouter);
+  app.use('/sync', syncRouter);
   app.use('/user', userRouter);
 
   app.get("/ping", (req, res) =>
@@ -56,7 +58,7 @@ const StartServer = () => {
 
   app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     Logging.error(error);
-    return res.status(500).json({ message: 'WewnÄ™trzny bĹ‚Ä…d serwera' });
+    return res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
   });
 
   const server = http.createServer(app);

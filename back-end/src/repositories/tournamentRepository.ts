@@ -8,6 +8,7 @@ type TournamentInput = {
   city?: string;
   date?: Date;
   status?: TournamentStatus;
+  countsInLeagueStandings?: boolean;
 };
 
 type BattleInput = {
@@ -94,7 +95,8 @@ export const tournamentRepository = {
         leagueId: input.leagueId,
         city: input.city || '',
         date: input.date || new Date(),
-        status: input.status || 'PLANNING'
+        status: input.status || 'PLANNING',
+        countsInLeagueStandings: input.countsInLeagueStandings ?? true
       }
     });
     return mapTournament(tournament);
@@ -125,7 +127,9 @@ export const tournamentRepository = {
         ...(body.leagueId !== undefined ? { leagueId: String(body.leagueId) } : {}),
         ...(body.city !== undefined ? { city: String(body.city) } : {}),
         ...(body.date !== undefined ? { date: new Date(String(body.date)) } : {}),
-        ...(body.status !== undefined ? { status: body.status as TournamentStatus } : {})
+        ...(body.status !== undefined ? { status: body.status as TournamentStatus } : {}),
+        ...(body.countsInLeagueStandings !== undefined ? { countsInLeagueStandings: Boolean(body.countsInLeagueStandings) } : {}),
+        revision: { increment: 1 }
       }
     });
     return mapTournament(tournament);
@@ -137,7 +141,7 @@ export const tournamentRepository = {
 
     const tournament = await prisma.tournament.update({
       where: { id },
-      data: { status }
+      data: { status, revision: { increment: 1 } }
     });
     return mapTournament(tournament);
   },
@@ -178,7 +182,8 @@ export const tournamentRepository = {
             id: battleId,
             tournamentId,
             name: battle.name || `Konkurencja ${battleOrder}`,
-            order: battleOrder
+            order: battleOrder,
+            revision: 1
           }
         });
 
@@ -285,6 +290,10 @@ export const tournamentRepository = {
         where: { tournamentId },
         include: battleInclude,
         orderBy: { order: 'asc' }
+      });
+      await tx.tournament.update({
+        where: { id: tournamentId },
+        data: { revision: { increment: 1 } }
       });
       return updated.map(mapBattle);
     });

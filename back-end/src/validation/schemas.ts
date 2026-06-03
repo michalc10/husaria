@@ -52,7 +52,8 @@ export const createLeagueSchema = z
         z
           .object({
             city: optionalString.default(''),
-            date: z.coerce.date().optional()
+            date: z.coerce.date().optional(),
+            countsInLeagueStandings: z.coerce.boolean().default(true)
           })
           .strict()
       )
@@ -72,7 +73,8 @@ export const createTournamentSchema = z
     leagueId: objectId('leagueId'),
     city: optionalString.default(''),
     date: z.coerce.date().optional(),
-    status: tournamentStatus.default('PLANNING')
+    status: tournamentStatus.default('PLANNING'),
+    countsInLeagueStandings: z.coerce.boolean().default(true)
   })
   .strict();
 
@@ -81,7 +83,18 @@ export const updateTournamentSchema = z
     leagueId: objectId('leagueId').optional(),
     city: optionalString,
     date: z.coerce.date().optional(),
-    status: tournamentStatus.optional()
+    status: tournamentStatus.optional(),
+    countsInLeagueStandings: z.coerce.boolean().optional()
+  })
+  .strict();
+
+export const createFinalTournamentSchema = z
+  .object({
+    finalistsCount: z.coerce.number().int().min(1).optional().default(10),
+    countedTournaments: z.coerce.number().int().min(1).optional(),
+    city: optionalString.default('Finał'),
+    date: z.coerce.date().optional(),
+    copyBattlesFromTournamentId: nullableObjectId('copyBattlesFromTournamentId')
   })
   .strict();
 
@@ -223,8 +236,40 @@ export const updateBattleLiveStateSchema = z
   })
   .strict();
 
+export const updateTournamentLiveStateSchema = z
+  .object({
+    activeTournamentPlayerId: nullableObjectId('activeTournamentPlayerId'),
+    activeBattleId: nullableObjectId('activeBattleId')
+  })
+  .strict();
+
+const judgeStationAssignmentSchema = z
+  .object({
+    battleId: objectId('battleId'),
+    categoryId: objectId('categoryId')
+  })
+  .strict();
+
+export const createJudgeStationSchema = z
+  .object({
+    label: optionalString.default(''),
+    assignments: z.array(judgeStationAssignmentSchema).min(1, 'Stanowisko musi mieć co najmniej jedną kategorię').optional(),
+    battleIds: z.array(objectId('battleId')).optional()
+  })
+  .strict()
+  .refine(data => !!data.assignments?.length || !!data.battleIds?.length, 'Stanowisko musi mieć co najmniej jedną kategorię');
+
+export const updateJudgeStationSchema = z
+  .object({
+    label: optionalString,
+    assignments: z.array(judgeStationAssignmentSchema).min(1, 'Stanowisko musi mieć co najmniej jedną kategorię').optional(),
+    battleIds: z.array(objectId('battleId')).optional()
+  })
+  .strict();
+
 export const updateJudgeSessionResultSchema = z
   .object({
+    battleId: objectId('battleId'),
     liveStateVersion: z.coerce.number().int().min(0),
     obstacleResults: z
       .array(
@@ -236,6 +281,24 @@ export const updateJudgeSessionResultSchema = z
           .strict()
       )
       .default([])
+  })
+  .strict();
+
+const syncMutationSchema = z
+  .object({
+    clientMutationId: requiredString('clientMutationId'),
+    type: requiredString('type'),
+    entityId: optionalString.default(''),
+    baseRevision: z.coerce.number().int().min(0).nullable().optional(),
+    payload: z.unknown(),
+    createdAt: z.union([z.string(), z.date()]).optional(),
+    deviceId: optionalString.default('')
+  })
+  .strict();
+
+export const syncMutationsSchema = z
+  .object({
+    mutations: z.array(syncMutationSchema).default([])
   })
   .strict();
 

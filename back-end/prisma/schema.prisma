@@ -91,6 +91,9 @@ model Tournament {
   city              String             @default("")
   date              DateTime
   status            TournamentStatus   @default(PLANNING)
+  countsInLeagueStandings Boolean      @default(true) @map("counts_in_league_standings")
+  revision          Int                @default(0)
+  updatedAt         DateTime           @updatedAt @map("updated_at")
   legacyBattle1     String             @default("") @map("battle_1")
   legacyBattle2     String             @default("") @map("battle_2")
   legacyBattle3     String             @default("") @map("battle_3")
@@ -100,8 +103,10 @@ model Tournament {
   battles           Battle[]
   tournamentPlayers TournamentPlayer[]
   judgeStations     JudgeStation[]
+  liveState         TournamentLiveState?
 
   @@index([leagueId], map: "idx_tournaments_league_id")
+  @@index([countsInLeagueStandings], map: "idx_tournaments_counts_in_league_standings")
   @@map("tournaments")
 }
 
@@ -147,11 +152,14 @@ model TournamentPlayer {
   penalty           Decimal        @default(0) @db.Decimal
   score             Decimal        @default(0) @db.Decimal
   order             Int            @default(0) @map("start_order")
+  revision          Int            @default(0)
+  updatedAt         DateTime       @updatedAt @map("updated_at")
   tournament        Tournament     @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   player            Player         @relation(fields: [playerId], references: [id], onDelete: Restrict)
   banner            Banner?        @relation(fields: [bannerId], references: [id], onDelete: SetNull)
   battleResults     BattleResult[]
   activeLiveStates  BattleLiveState[]
+  activeTournamentLiveStates TournamentLiveState[]
   scoreChangeLogs   ScoreChangeLog[]
 
   @@unique([tournamentId, playerId])
@@ -167,12 +175,15 @@ model Battle {
   name         String
   order        Int              @map("sort_order")
   legacyKey    String?          @map("legacy_key")
+  revision     Int              @default(0)
+  updatedAt    DateTime         @updatedAt @map("updated_at")
   tournament   Tournament       @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   categories   BattleCategory[]
   penalties    BattlePenalty[]
   results      BattleResult[]
-  judgeStations JudgeStation[]
+  stationAssignments JudgeStationAssignment[]
   liveState    BattleLiveState?
+  activeTournamentLiveStates TournamentLiveState[]
   scoreChangeLogs ScoreChangeLog[]
 
   @@unique([tournamentId, order])
@@ -187,7 +198,7 @@ model BattleCategory {
   order     Int              @map("sort_order")
   battle    Battle           @relation(fields: [battleId], references: [id], onDelete: Cascade)
   obstacles BattleObstacle[]
-  judgeStations JudgeStation[]
+  stationAssignments JudgeStationAssignment[]
 
   @@unique([battleId, order])
   @@index([battleId])
@@ -232,6 +243,8 @@ model BattleResult {
   extraPoints        Float              @default(0) @map("extra_points")
   time               Float              @default(0)
   score              Float              @default(0)
+  revision           Int                @default(0)
+  updatedAt          DateTime           @updatedAt @map("updated_at")
   tournamentPlayer   TournamentPlayer   @relation(fields: [tournamentPlayerId], references: [id], onDelete: Cascade)
   battle             Battle             @relation(fields: [battleId], references: [id], onDelete: Cascade)
   obstacleResults    ObstacleResult[]
@@ -242,26 +255,57 @@ model BattleResult {
   @@map("battle_results")
 }
 
+model ClientMutation {
+  id               String    @id
+  clientMutationId String    @unique @map("client_mutation_id")
+  deviceId         String    @default("") @map("device_id")
+  userId           String?   @map("user_id")
+  judgeStationId   String?   @map("judge_station_id")
+  type             String
+  entityId         String    @default("") @map("entity_id")
+  status           String    @default("APPLIED")
+  payload          Json
+  result           Json?
+  conflict         Json?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  processedAt      DateTime? @map("processed_at")
+
+  @@index([deviceId])
+  @@index([userId])
+  @@index([judgeStationId])
+  @@index([status])
+  @@map("client_mutations")
+}
+
 model JudgeStation {
   id           String         @id
   tournamentId String         @map("tournament_id")
-  battleId     String         @map("battle_id")
-  categoryId   String         @map("category_id")
   label        String
   tokenHash    String         @unique @map("token_hash")
   revokedAt    DateTime?      @map("revoked_at")
   createdAt    DateTime       @default(now()) @map("created_at")
   lastSeenAt   DateTime?      @map("last_seen_at")
   tournament   Tournament     @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  battle       Battle         @relation(fields: [battleId], references: [id], onDelete: Cascade)
-  category     BattleCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  assignments  JudgeStationAssignment[]
   changeLogs   ScoreChangeLog[]
 
-  @@unique([battleId, categoryId])
   @@index([tournamentId])
+  @@map("judge_stations")
+}
+
+model JudgeStationAssignment {
+  stationId String       @map("station_id")
+  battleId  String       @map("battle_id")
+  categoryId String      @map("category_id")
+  createdAt DateTime     @default(now()) @map("created_at")
+  station   JudgeStation @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  battle    Battle       @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  category  BattleCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([stationId, battleId, categoryId])
   @@index([battleId])
   @@index([categoryId])
-  @@map("judge_stations")
+  @@map("judge_station_assignments")
 }
 
 model BattleLiveState {
@@ -274,6 +318,21 @@ model BattleLiveState {
 
   @@index([activeTournamentPlayerId])
   @@map("battle_live_states")
+}
+
+model TournamentLiveState {
+  tournamentId              String            @id @map("tournament_id")
+  activeTournamentPlayerId  String?           @map("active_tournament_player_id")
+  activeBattleId            String?           @map("active_battle_id")
+  version                   Int               @default(0)
+  updatedAt                 DateTime          @updatedAt @map("updated_at")
+  tournament                Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  activeTournamentPlayer    TournamentPlayer? @relation(fields: [activeTournamentPlayerId], references: [id], onDelete: SetNull)
+  activeBattle               Battle?           @relation(fields: [activeBattleId], references: [id], onDelete: SetNull)
+
+  @@index([activeTournamentPlayerId])
+  @@index([activeBattleId])
+  @@map("tournament_live_states")
 }
 
 model ScoreChangeLog {
