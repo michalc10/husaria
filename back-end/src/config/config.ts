@@ -89,17 +89,24 @@ const JUDGE_TOKEN_SECRET =
   process.env.SERVER_TOKEN_SECRET?.trim() ||
   DEFAULT_JUDGE_TOKEN_SECRET;
 
+const isPlaceholderSecret = (value: string): boolean =>
+  !value.trim()
+  || value === DEFAULT_AUTH_SESSION_SECRET
+  || value === DEFAULT_JUDGE_TOKEN_SECRET
+  || /change[-_\s]?me/i.test(value)
+  || value.length < 32;
+
 if (!POSTGRES_URL) {
   throw new Error('POSTGRES_URL or DATABASE_URL is required');
 }
 
 if (process.env.NODE_ENV === 'production') {
-  if (AUTH_SESSION_SECRET === DEFAULT_AUTH_SESSION_SECRET) {
-    throw new Error('AUTH_SESSION_SECRET is required in production');
+  if (isPlaceholderSecret(AUTH_SESSION_SECRET)) {
+    throw new Error('AUTH_SESSION_SECRET must be a long random secret in production');
   }
 
-  if (JUDGE_TOKEN_SECRET === DEFAULT_JUDGE_TOKEN_SECRET) {
-    throw new Error('JUDGE_TOKEN_SECRET is required in production');
+  if (isPlaceholderSecret(JUDGE_TOKEN_SECRET)) {
+    throw new Error('JUDGE_TOKEN_SECRET must be a long random secret in production');
   }
 }
 

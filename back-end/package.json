@@ -18,6 +18,7 @@
     "db:normalize:battles:dry-run": "ts-node src/scripts/normalizeBattles.ts --dry-run",
     "db:normalize:battles": "ts-node src/scripts/normalizeBattles.ts",
     "user:create-admin": "prisma generate && ts-node src/scripts/createAdminUser.ts",
+    "user:create-admin:prod": "node dist/scripts/createAdminUser.js",
     "test": "ts-node src/tests/battleParser.test.ts"
   },
   "keywords": [
@@ -40,6 +41,7 @@
     "mongoose": "^9.6.3",
     "morgan": "^1.10.1",
     "pg": "^8.21.0",
+    "prisma": "^7.8.0",
     "socket.io": "^4.8.3",
     "zod": "^4.4.3"
   },
@@ -50,7 +52,6 @@
     "@types/node": "^24.12.4",
     "@types/pg": "^8.20.0",
     "nodemon": "^3.1.14",
-    "prisma": "^7.8.0",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
   }

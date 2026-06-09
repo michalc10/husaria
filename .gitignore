@@ -1,11 +1,15 @@
 # Environment
 .env
+.env.*
 **/.env
+**/.env.*
 !.env.example
 !**/.env.example
+!.env.server.example
 
 # Local data exports and database volumes
 backups/
+dist/
 
 # Local smoke-test artifacts
 docs/*.log
