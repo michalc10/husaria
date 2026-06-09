@@ -3,7 +3,7 @@ import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest
 import { Router } from '@angular/router';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { API_BASE_URL } from 'src/app/globals';
+import { isApiUrl } from 'src/app/globals';
 import { AuthService } from './auth.service';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class SessionInterceptor implements HttpInterceptor {
   ) {}
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    const isApiRequest = req.url.startsWith(API_BASE_URL);
+    const isApiRequest = isApiUrl(req.url);
     const request = isApiRequest ? req.clone({ withCredentials: true }) : req;
 
     return next.handle(request).pipe(

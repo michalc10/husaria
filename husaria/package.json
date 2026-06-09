@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:ftp": "powershell -ExecutionPolicy Bypass -File scripts/package-ftp.ps1",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
