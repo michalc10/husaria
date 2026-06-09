@@ -53,6 +53,61 @@ Dla managed Postgres ustaw tylko standardowy connection string:
 POSTGRES_URL=postgresql://<user>:<password>@<host>:<port>/<database>?sslmode=require
 ```
 
+## Wdrozenie na serwerze przez Docker
+
+Repo zawiera produkcyjny `docker-compose.yml`:
+
+- `postgres` - PostgreSQL z trwalym wolumenem,
+- `backend` - Express + Prisma,
+- `frontend` - Angular + Nginx + reverse proxy do API i Socket.IO.
+
+Konfiguracja:
+
+```powershell
+Copy-Item .env.server.example .env.server
+# uzupelnij POSTGRES_PASSWORD, AUTH_SESSION_SECRET, JUDGE_TOKEN_SECRET i PUBLIC_FRONTEND_URL
+docker compose --env-file .env.server up -d --build
+```
+
+Pierwszy administrator w kontenerze:
+
+```powershell
+docker compose --env-file .env.server exec backend npm run user:create-admin:prod -- --email admin@example.com --password TymczasoweHaslo123 --name "Administrator"
+```
+
+Szczegoly wdrozenia, backupu i importu sa w `docs/server-deployment.md`.
+
+Jednopoleceniowy start na serwerze z Dockerem:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-server-docker.ps1 -Build
+```
+
+Na Linuxie:
+
+```bash
+./scripts/start-server-docker.sh
+```
+
+Krotka wiadomosc/instrukcja dla administratora hostingu jest w
+`docs/backend-admin-request.md`.
+
+## Frontend przez FTP
+
+Jesli hosting daje tylko FTP, mozna opublikowac tylko frontend Angular:
+
+```powershell
+cd husaria
+npm.cmd run build:ftp -- -ApiBaseUrl "https://api.twojadomena.pl"
+```
+
+Na FTP wrzuc zawartosc katalogu `husaria/dist/husaria`. Instrukcja jest w
+`docs/ftp-frontend-deployment.md`.
+
+Sam backend nie uruchomi sie na zwyklym FTP. Do API, logowania, PostgreSQL,
+Prisma i WebSocketow potrzebny jest hosting Node.js/Docker/SSH albo osobna
+platforma backendowa.
+
 ## Uruchomienie
 
 Backend:
