@@ -208,3 +208,18 @@ Smoke test API:
 - po zalogowaniu: `GET http://localhost:3000/tournament/<id>/battles`
 - po zalogowaniu: `GET http://localhost:3000/playerPoints/tournament/<id>`
 - po zalogowaniu: `PUT http://localhost:3000/playerPoints/<participantId>/battle-results/<battleId>`
+
+
+
+Terminal 1 (Postgres):
+cd /Users/michal/Husaria/husaria
+docker compose -f docker-compose.postgres.yml up -d
+
+Terminal 2 (Backend):
+cd /Users/michal/Husaria/husaria/back-end
+npm.cmd run dev
+
+Terminal 3 (Frontend):
+cd /Users/michal/Husaria/husaria/husaria
+npm.cmd start
+
