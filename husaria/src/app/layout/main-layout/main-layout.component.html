@@ -1,5 +1,7 @@
-<app-navbar></app-navbar>
-<div class="page-shell">
+@if (!isTournamentMode) {
+  <app-navbar></app-navbar>
+}
+<div class="page-shell" [class.page-shell--tournament]="isTournamentMode">
   <router-outlet></router-outlet>
 </div>
 <app-offline-status></app-offline-status>

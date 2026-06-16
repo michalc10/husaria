@@ -1,15 +1,10 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { TranslocoService } from '@jsverse/transloco';
-import { Observable, EMPTY, BehaviorSubject, combineLatest, forkJoin, merge, Subscription } from 'rxjs';
+import { Observable, EMPTY, BehaviorSubject, combineLatest, merge } from 'rxjs';
 import { catchError, distinctUntilChanged, filter, map, shareReplay, startWith, switchMap, take, tap } from 'rxjs/operators';
 import { IBattle } from 'src/app/models/battle';
-import { ITournamentLiveState } from 'src/app/models/judgeStation';
-import { IPlayerPoints } from 'src/app/models/playerPoints';
 import { ITournament } from 'src/app/models/tournament';
-import { JudgeStationService } from '../services/judge-station/judge-station.service';
-import { LiveScoreSocketService } from '../services/live-score-socket/live-score-socket.service';
-import { PlayerPointsService } from '../services/playerPoints/playerPoints.service';
 import { TournamentService } from '../services/tournament/tournament.service';
 import { OfflineSyncService } from '../../offline/offline-sync.service';
 
@@ -27,25 +22,13 @@ type TournamentStage = 'planning' | 'live' | 'results';
     styleUrls: ['./tournament-layout.component.scss'],
     standalone: false
 })
-export class TournamentLayoutComponent implements OnInit, OnDestroy {
+export class TournamentLayoutComponent {
   private readonly tournamentRefresh$ = new BehaviorSubject<void>(undefined);
   private currentTournamentId = '';
   private latestBattles: IBattle[] = [];
-  private activePanelSubscription = new Subscription();
-  private realtimeSubscription = new Subscription();
 
-  participantList: IPlayerPoints[] = [];
-  activePanelLoading = true;
   offlinePrepareMessage = '';
   offlinePreparing = false;
-  liveState: ITournamentLiveState = {
-    tournamentId: '',
-    activeTournamentPlayerId: null,
-    activeBattleId: null,
-    version: 0,
-    activeParticipant: null,
-    activeBattle: null
-  };
 
   readonly tournamentId$: Observable<string> = merge(
     this.route.paramMap,
@@ -124,24 +107,9 @@ export class TournamentLayoutComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private tournamentService: TournamentService,
-    private playerPointsService: PlayerPointsService,
-    private judgeStationService: JudgeStationService,
-    private liveScoreSocket: LiveScoreSocketService,
     private offlineSync: OfflineSyncService,
     private transloco: TranslocoService
   ) {}
-
-  ngOnInit(): void {
-    this.activePanelSubscription.add(
-      this.tournamentId$.subscribe(tournamentId => this.loadActivePanel(tournamentId))
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.activePanelSubscription.unsubscribe();
-    this.realtimeSubscription.unsubscribe();
-    this.liveScoreSocket.disconnect();
-  }
 
   onOptionChange(path: string): void {
     this.router.navigate([path], { relativeTo: this.route });
@@ -161,54 +129,10 @@ export class TournamentLayoutComponent implements OnInit, OnDestroy {
     this.router.navigate(['results'], { relativeTo: this.route });
   }
 
-  isActiveParticipant(player: IPlayerPoints): boolean {
-    return !!player._id && this.liveState.activeTournamentPlayerId === player._id;
-  }
+  confirmExitToMainPanel(): void {
+    if (!window.confirm(this.transloco.translate('tournament.exitToMainPanelConfirm'))) return;
 
-  setActiveParticipant(playerId: string | null): void {
-    if (!this.currentTournamentId) return;
-
-    this.judgeStationService.updateTournamentLiveState(this.currentTournamentId, {
-      activeTournamentPlayerId: playerId
-    }).subscribe({
-      next: state => {
-        this.liveState = state;
-      },
-      error: error => {
-        console.error(this.transloco.translate('judge.liveStateSaveError'), error);
-      }
-    });
-  }
-
-  setActiveBattle(battleId: string | null): void {
-    if (!this.currentTournamentId) return;
-
-    this.judgeStationService.updateTournamentLiveState(this.currentTournamentId, {
-      activeBattleId: battleId
-    }).subscribe({
-      next: state => {
-        this.liveState = state;
-      },
-      error: error => {
-        console.error(this.transloco.translate('judge.liveStateSaveError'), error);
-      }
-    });
-  }
-
-  setPreviousParticipant(): void {
-    const index = this.activeParticipantIndex();
-    if (index > 0) {
-      this.setActiveParticipant(this.participantList[index - 1]._id || null);
-    }
-  }
-
-  setNextParticipant(): void {
-    const index = this.activeParticipantIndex();
-    if (index >= 0 && index < this.participantList.length - 1) {
-      this.setActiveParticipant(this.participantList[index + 1]._id || null);
-    } else if (index === -1 && this.participantList[0]?._id) {
-      this.setActiveParticipant(this.participantList[0]._id);
-    }
+    this.router.navigate(['/league']);
   }
 
   prepareOffline(): void {
@@ -227,60 +151,6 @@ export class TournamentLayoutComponent implements OnInit, OnDestroy {
         console.error(this.offlinePrepareMessage, error);
       }
     });
-  }
-
-  activeParticipantIndex(): number {
-    return this.participantList.findIndex(player => player._id === this.liveState.activeTournamentPlayerId);
-  }
-
-  private loadActivePanel(tournamentId: string): void {
-    this.activePanelLoading = true;
-    forkJoin({
-      battles: this.tournamentService.getBattles(tournamentId),
-      participants: this.playerPointsService.getPlayerPointsForTournament(tournamentId),
-      liveState: this.judgeStationService.getTournamentLiveState(tournamentId)
-    }).subscribe({
-      next: ({ battles, participants, liveState }) => {
-        this.latestBattles = battles.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
-        this.participantList = participants.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
-        this.liveState = liveState;
-        this.activePanelLoading = false;
-        this.connectRealtime(tournamentId);
-        this.ensureInitialLiveState();
-      },
-      error: error => {
-        this.participantList = [];
-        this.activePanelLoading = false;
-        console.error(this.transloco.translate('battleTable.loadError'), error);
-      }
-    });
-  }
-
-  private connectRealtime(tournamentId: string): void {
-    this.realtimeSubscription.unsubscribe();
-    this.realtimeSubscription = new Subscription();
-    this.liveScoreSocket.joinTournament(tournamentId);
-
-    this.realtimeSubscription.add(
-      this.liveScoreSocket.tournamentLiveState$.subscribe(state => {
-        if (state.tournamentId === tournamentId) {
-          this.liveState = state;
-        }
-      })
-    );
-  }
-
-  private ensureInitialLiveState(): void {
-    const firstParticipantId = this.participantList[0]?._id;
-    const firstBattleId = this.latestBattles[0]?._id;
-
-    if (firstParticipantId && !this.liveState.activeTournamentPlayerId) {
-      this.setActiveParticipant(firstParticipantId);
-    }
-
-    if (firstBattleId && !this.liveState.activeBattleId) {
-      this.setActiveBattle(firstBattleId);
-    }
   }
 
   private buildOptions(stage: TournamentStage, battles: IBattle[]): SelectOption[] {
@@ -357,6 +227,7 @@ export class TournamentLayoutComponent implements OnInit, OnDestroy {
   }
 
   private livePath(): string {
-    return this.latestBattles.length ? 'live/stations' : 'planning/competitions';
+    const firstBattle = this.latestBattles[0];
+    return firstBattle?._id ? `live/battle/${firstBattle._id}` : 'planning/competitions';
   }
 }

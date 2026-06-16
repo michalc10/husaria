@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoService } from '@jsverse/transloco';
 import { forkJoin, of } from 'rxjs';
@@ -6,7 +6,7 @@ import { Subscription } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
-import { PageOrientation } from 'pdfmake/interfaces';
+import { PageOrientation, PageSize } from 'pdfmake/interfaces';
 import { IBattle, IBattleObstacle, IBattlePenalty, IBattleResult } from 'src/app/models/battle';
 import { ITournamentLiveState } from 'src/app/models/judgeStation';
 import { IPlayerPoints } from 'src/app/models/playerPoints';
@@ -35,6 +35,10 @@ export class BattleTableComponent implements OnInit, OnDestroy {
   loading = true;
   errorMessage = '';
   syncStatusMessage = '';
+  compactTable = false;
+  fullscreenTable = false;
+  pdfTextSize = 5.4;
+  pdfOrientation: PageOrientation = 'landscape';
   liveState: ITournamentLiveState = {
     tournamentId: '',
     activeTournamentPlayerId: null,
@@ -53,7 +57,8 @@ export class BattleTableComponent implements OnInit, OnDestroy {
     private transloco: TranslocoService,
     private judgeStationService: JudgeStationService,
     private liveScoreSocket: LiveScoreSocketService,
-    private offlineSync: OfflineSyncService
+    private offlineSync: OfflineSyncService,
+    private elementRef: ElementRef<HTMLElement>
   ) {}
 
   ngOnInit() {
@@ -152,19 +157,13 @@ export class BattleTableComponent implements OnInit, OnDestroy {
 
   setActiveParticipant(player: IPlayerPoints, event?: Event): void {
     event?.stopPropagation();
-    if (!player._id || !this.tournamentId || this.isActiveParticipant(player)) return;
+    if (!player._id || !this.tournamentId) return;
+    if (this.isActiveParticipant(player) && this.liveState.activeBattleId === this.battleId) return;
 
     this.chosenRow(player);
-    this.judgeStationService.updateTournamentLiveState(this.tournamentId, {
+    this.updateTournamentLiveState({
       activeTournamentPlayerId: player._id,
       activeBattleId: this.battleId
-    }).subscribe({
-      next: state => {
-        this.liveState = state;
-      },
-      error: error => {
-        console.error(this.transloco.translate('judge.liveStateSaveError'), error);
-      }
     });
   }
 
@@ -196,6 +195,30 @@ export class BattleTableComponent implements OnInit, OnDestroy {
 
   chosenRow(player: IPlayerPoints) {
     this.selectedPlayerId = player._id!;
+  }
+
+  toggleCompactTable(): void {
+    this.compactTable = !this.compactTable;
+  }
+
+  toggleFullscreenTable(): void {
+    this.fullscreenTable = !this.fullscreenTable;
+    const shell = this.elementRef.nativeElement.querySelector('.battle-table-shell') as HTMLElement | null;
+
+    if (this.fullscreenTable && shell?.requestFullscreen && !document.fullscreenElement) {
+      shell.requestFullscreen().catch(() => undefined);
+    }
+
+    if (!this.fullscreenTable && document.fullscreenElement) {
+      document.exitFullscreen().catch(() => undefined);
+    }
+  }
+
+  @HostListener('document:fullscreenchange')
+  onFullscreenChange(): void {
+    if (!document.fullscreenElement) {
+      this.fullscreenTable = false;
+    }
   }
 
   chosenCell(player: IPlayerPoints, columnKey: string): void {
@@ -296,27 +319,52 @@ export class BattleTableComponent implements OnInit, OnDestroy {
   generatePDF() {
     if (!this.battle) return;
 
-    const tableBody = this.buildTableBody();
+    const tableBody = this.buildPdfTableBody();
+    const columnCount = this.pdfColumnCount();
+    const pageSize: PageSize = columnCount > 18 ? 'A3' : 'A4';
+    const tableFontSize = this.safePdfTextSize();
     const documentDefinition = {
-      pageOrientation: 'landscape' as PageOrientation,
+      pageSize,
+      pageOrientation: this.pdfOrientation,
+      pageMargins: [8, 8, 8, 8] as [number, number, number, number],
+      defaultStyle: {
+        fontSize: tableFontSize,
+        lineHeight: 1
+      },
+      styles: {
+        title: {
+          bold: true,
+          fontSize: tableFontSize + 2,
+          margin: [0, 0, 0, 5] as [number, number, number, number]
+        },
+        tableHeader: {
+          bold: true,
+          fontSize: tableFontSize,
+          alignment: 'center' as const
+        }
+      },
       content: [
+        {
+          text: `${this.battle.order}. ${this.battle.name}`,
+          style: 'title'
+        },
         {
           table: {
             headerRows: 1,
+            dontBreakRows: true,
+            widths: this.pdfColumnWidths(),
             body: [
-              [
-                { text: this.transloco.translate('battleTable.startOrder'), bold: true },
-                { text: this.transloco.translate('battleTable.player'), bold: true },
-                ...this.battle.categories.flatMap(category =>
-                  category.obstacles.map(obstacle => ({ text: obstacle.name, bold: true }))
-                ),
-                ...this.battle.penalties.map(penalty => ({ text: penalty.name, bold: true })),
-                { text: this.transloco.translate('battleTable.extraPoints'), bold: true },
-                { text: this.transloco.translate('battleTable.time'), bold: true },
-                { text: this.transloco.translate('battleTable.battleScore'), bold: true }
-              ],
+              this.buildPdfHeader(),
               ...tableBody
             ]
+          },
+          layout: {
+            hLineWidth: () => 0.35,
+            vLineWidth: () => 0.35,
+            paddingLeft: () => 1.2,
+            paddingRight: () => 1.2,
+            paddingTop: () => 1,
+            paddingBottom: () => 1
           }
         }
       ]
@@ -325,7 +373,7 @@ export class BattleTableComponent implements OnInit, OnDestroy {
     pdfMake.createPdf(documentDefinition).open();
   }
 
-  buildTableBody() {
+  buildPdfTableBody() {
     if (!this.battle) return [];
 
     return this.participantList.map((row, index) => {
@@ -337,15 +385,81 @@ export class BattleTableComponent implements OnInit, OnDestroy {
       );
 
       return [
-        index + 1,
-        row.playerName,
-        ...obstaclePoints,
-        ...penalties,
-        this.getExtraPoints(row),
-        this.getTime(row),
-        this.getBattleScore(row).toFixed(3)
+        this.pdfCell(index + 1),
+        this.pdfCell(row.playerName, 'left'),
+        ...obstaclePoints.map(value => this.pdfCell(value)),
+        ...penalties.map(value => this.pdfCell(value)),
+        this.pdfCell(this.getExtraPoints(row)),
+        this.pdfCell(this.getTime(row).toFixed(2)),
+        this.pdfCell(this.getBattleScore(row).toFixed(2))
       ];
     });
+  }
+
+  private buildPdfHeader() {
+    if (!this.battle) return [];
+
+    return [
+      this.pdfHeaderCell(this.transloco.translate('battleTable.startOrder')),
+      this.pdfHeaderCell(this.transloco.translate('battleTable.player'), 'left'),
+      ...this.battle.categories.flatMap(category =>
+        category.obstacles.map(obstacle => this.pdfHeaderCell(obstacle.name))
+      ),
+      ...this.battle.penalties.map(penalty => this.pdfHeaderCell(penalty.name)),
+      this.pdfHeaderCell(this.transloco.translate('battleTable.extraPoints')),
+      this.pdfHeaderCell(this.transloco.translate('battleTable.time')),
+      this.pdfHeaderCell(this.transloco.translate('battleTable.battleScore'))
+    ];
+  }
+
+  private pdfColumnCount(): number {
+    if (!this.battle) return 0;
+
+    return 2 +
+      this.battle.categories.reduce((total, category) => total + category.obstacles.length, 0) +
+      this.battle.penalties.length +
+      3;
+  }
+
+  private pdfColumnWidths(): Array<number | string> {
+    if (!this.battle) return [];
+
+    const dynamicColumnCount = this.pdfColumnCount() - 2;
+    const isVeryWide = this.pdfColumnCount() > 28;
+    const scale = this.pdfColumnScale();
+    const valueWidth = Math.round((isVeryWide ? 18 : 22) * scale);
+
+    return [
+      Math.round((isVeryWide ? 14 : 18) * scale),
+      Math.round((isVeryWide ? 58 : 76) * scale),
+      ...Array.from({ length: dynamicColumnCount }, () => valueWidth)
+    ];
+  }
+
+  private safePdfTextSize(): number {
+    const value = Number(this.pdfTextSize || 5.4);
+    return Math.min(14, Math.max(4, value));
+  }
+
+  private pdfColumnScale(): number {
+    return Math.min(1.35, Math.max(0.72, this.safePdfTextSize() / 6));
+  }
+
+  private pdfHeaderCell(text: string, alignment: 'left' | 'center' = 'center') {
+    return {
+      text: text || '',
+      style: 'tableHeader',
+      alignment,
+      noWrap: false
+    };
+  }
+
+  private pdfCell(value: string | number, alignment: 'left' | 'center' = 'center') {
+    return {
+      text: String(value ?? ''),
+      alignment,
+      noWrap: false
+    };
   }
 
   private setObstacleValue(player: IPlayerPoints, obstacle: IBattleObstacle, value: string): void {
@@ -496,16 +610,96 @@ export class BattleTableComponent implements OnInit, OnDestroy {
   private ensureCurrentTabIsActiveBattle(): void {
     if (!this.tournamentId || !this.battleId || this.liveState.activeBattleId === this.battleId) return;
 
-    this.judgeStationService.updateTournamentLiveState(this.tournamentId, {
+    this.updateTournamentLiveState({
       activeBattleId: this.battleId
-    }).subscribe({
-      next: state => {
-        this.liveState = state;
+    });
+  }
+
+  private updateTournamentLiveState(payload: {
+    activeTournamentPlayerId?: string | null;
+    activeBattleId?: string | null;
+  }): void {
+    if (!this.tournamentId) return;
+
+    const baseRevision = this.liveState.version || 0;
+    const optimisticState = this.optimisticLiveState(payload);
+    this.liveState = optimisticState;
+    this.cacheLiveState(optimisticState);
+
+    this.offlineSync.mutate<ITournamentLiveState>({
+      type: 'tournamentLiveState.update',
+      entityId: this.tournamentId,
+      tournamentId: this.tournamentId,
+      baseRevision,
+      payload
+    }, optimisticState).subscribe({
+      next: outcome => {
+        if (outcome.result) {
+          this.liveState = outcome.result;
+          this.cacheLiveState(outcome.result);
+        }
+        this.syncStatusMessage = outcome.status === 'queued'
+          ? this.transloco.translate('offline.queued')
+          : outcome.status === 'conflict'
+            ? this.transloco.translate('offline.syncError')
+            : '';
       },
       error: error => {
+        this.syncStatusMessage = this.transloco.translate('judge.liveStateSaveError');
         console.error(this.transloco.translate('judge.liveStateSaveError'), error);
       }
     });
+  }
+
+  private cacheLiveState(liveState: ITournamentLiveState): void {
+    this.offlineSync.updateCachedTournamentLiveState(this.tournamentId, liveState).subscribe();
+  }
+
+  private optimisticLiveState(payload: {
+    activeTournamentPlayerId?: string | null;
+    activeBattleId?: string | null;
+  }): ITournamentLiveState {
+    const activeTournamentPlayerId =
+      payload.activeTournamentPlayerId !== undefined
+        ? payload.activeTournamentPlayerId
+        : this.liveState.activeTournamentPlayerId;
+    const activeBattleId =
+      payload.activeBattleId !== undefined
+        ? payload.activeBattleId
+        : this.liveState.activeBattleId;
+
+    return {
+      ...this.liveState,
+      tournamentId: this.tournamentId,
+      activeTournamentPlayerId,
+      activeBattleId,
+      activeParticipant: activeTournamentPlayerId ? this.activeParticipantSummary(activeTournamentPlayerId) : null,
+      activeBattle: activeBattleId ? this.activeBattleSummary(activeBattleId) : null,
+      version: (this.liveState.version || 0) + 1
+    };
+  }
+
+  private activeParticipantSummary(activeTournamentPlayerId: string): ITournamentLiveState['activeParticipant'] {
+    const participant = this.participantList.find(item => item._id === activeTournamentPlayerId);
+    if (!participant?._id) return this.liveState.activeParticipant;
+
+    return {
+      _id: participant._id,
+      playerName: participant.playerName || '',
+      horse: participant.horse || '',
+      order: participant.order || 0
+    };
+  }
+
+  private activeBattleSummary(activeBattleId: string): ITournamentLiveState['activeBattle'] {
+    const battle = this.battles.find(item => item._id === activeBattleId);
+    if (!battle?._id) return this.liveState.activeBattle;
+
+    return {
+      _id: battle._id,
+      name: battle.name || '',
+      order: battle.order || 0
+    };
   }
 
   private optimisticBattleResult(player: IPlayerPoints, payload: Partial<IBattleResult>): IBattleResult {

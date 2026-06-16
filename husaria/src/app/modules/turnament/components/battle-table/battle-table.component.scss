@@ -32,6 +32,10 @@
   border-right: 1px solid var(--md-sys-color-outline-variant) !important;
 }
 
+.category-column-divider {
+  border-right: 2px solid color-mix(in srgb, var(--md-sys-color-outline) 62%, var(--md-sys-color-primary) 38%) !important;
+}
+
 .line-bold {
   border-color: var(--md-sys-color-outline-variant) !important;
 }
@@ -170,4 +174,9 @@
 
 .select-score-cell { min-width: 250px; }
 
-.pdf-button { margin-right: .5rem; }
+.pdf-button {
+  width: 1.8rem;
+  height: 1.8rem;
+  margin-right: .3rem;
+  padding: 0;
+}

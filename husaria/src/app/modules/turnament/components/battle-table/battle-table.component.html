@@ -1,16 +1,70 @@
-@if (loading) {
-  <div class="empty-state">{{ 'common.loading' | transloco }}</div>
-} @else if (errorMessage) {
-  <div class="empty-state">{{ errorMessage }}</div>
-} @else if (battle; as currentBattle) {
-  @if (syncStatusMessage) {
-    <p class="battle-sync-message">{{ syncStatusMessage }}</p>
-  }
+<section
+  class="battle-table-shell"
+  [class.battle-table-shell--compact]="compactTable"
+  [class.battle-table-shell--fullscreen]="fullscreenTable"
+>
+  @if (loading) {
+    <div class="empty-state">{{ 'common.loading' | transloco }}</div>
+  } @else if (errorMessage) {
+    <div class="empty-state">{{ errorMessage }}</div>
+  } @else if (battle; as currentBattle) {
+    <div class="battle-table-toolbar">
+      <div class="battle-table-toolbar__title">
+        <strong>{{ currentBattle.order }}. {{ currentBattle.name }}</strong>
+        <span>{{ participantList.length }} {{ 'tournament.participants' | transloco }}</span>
+      </div>
+      <div class="battle-table-toolbar__actions">
+        <div class="battle-pdf-controls">
+          <select
+            class="battle-pdf-select"
+            [(ngModel)]="pdfOrientation"
+            [attr.aria-label]="'results.paperOrientation' | transloco"
+            [pTooltip]="'results.paperOrientation' | transloco"
+            tooltipPosition="bottom"
+          >
+            <option value="landscape">{{ 'results.horizontal' | transloco }}</option>
+            <option value="portrait">{{ 'results.vertical' | transloco }}</option>
+          </select>
+          <input
+            class="battle-pdf-size"
+            type="number"
+            min="4"
+            max="14"
+            step="0.2"
+            [(ngModel)]="pdfTextSize"
+            [attr.aria-label]="'results.fontSize' | transloco"
+            [pTooltip]="'results.fontSize' | transloco"
+            tooltipPosition="bottom"
+          />
+          <button
+            class="battle-tool-button battle-tool-button--pdf"
+            type="button"
+            (click)="generatePDF()"
+            [pTooltip]="'battleTable.pdf' | transloco"
+            tooltipPosition="bottom"
+            [attr.aria-label]="'battleTable.pdf' | transloco"
+          >
+            <i class="pi pi-file-pdf"></i>
+            PDF
+          </button>
+        </div>
+        <button class="battle-tool-button" type="button" (click)="toggleCompactTable()">
+          <i class="pi" [class.pi-search-minus]="!compactTable" [class.pi-search-plus]="compactTable"></i>
+          {{ (compactTable ? 'battleTable.comfortableMode' : 'battleTable.compactMode') | transloco }}
+        </button>
+        <button class="battle-tool-button battle-tool-button--primary" type="button" (click)="toggleFullscreenTable()">
+          <i class="pi" [class.pi-window-maximize]="!fullscreenTable" [class.pi-window-minimize]="fullscreenTable"></i>
+          {{ (fullscreenTable ? 'battleTable.exitFullscreen' : 'battleTable.fullscreen') | transloco }}
+        </button>
+      </div>
+    </div>
+
+    @if (syncStatusMessage) {
+      <p class="battle-sync-message">{{ syncStatusMessage }}</p>
+    }
   <div class="table-container">
     <p-table
       styleClass="battle-score-table p-datatable-gridlines center-text"
-      [scrollable]="true"
-      scrollHeight="75vh"
       [value]="participantList"
     >
       <ng-template pTemplate="header">
@@ -54,17 +108,6 @@
             class="line-left line-right center-text"
             [class.selected-column]="isColumnSelected('score')"
           >
-            <button
-              pButton
-              pRipple
-              icon="pi pi-file-pdf"
-              class="p-button-rounded p-button-warning pdf-button"
-              [pTooltip]="'battleTable.pdf' | transloco"
-              tooltipPosition="bottom"
-              (click)="generatePDF()"
-            >
-              {{ 'battleTable.pdf' | transloco }}
-            </button>
             {{ 'battleTable.battleScore' | transloco }}
           </th>
         </tr>
@@ -75,6 +118,7 @@
                 [ngClass]="{
                   'line-left': first,
                   'line-right': last,
+                  'category-column-divider': last,
                   'center-text': true,
                   'selected-column': isColumnSelected(obstacleColumnKey(obstacle))
                 }"
@@ -103,6 +147,7 @@
                 [ngClass]="{
                   'line-left': first,
                   'line-right': last,
+                  'category-column-divider': last,
                   'center-text': true,
                   'selected-column': isColumnSelected(obstacleColumnKey(obstacle))
                 }"
@@ -166,6 +211,7 @@
                 [ngClass]="{
                   'line-left': first,
                   'line-right': last,
+                  'category-column-divider': last,
                   'center-text': true,
                   'selected-column': isColumnSelected(obstacleColumnKey(obstacle))
                 }"
@@ -265,6 +311,7 @@
       </ng-template>
     </p-table>
   </div>
-} @else {
-  <div class="empty-state">{{ 'battleTable.noBattle' | transloco }}</div>
-}
+  } @else {
+    <div class="empty-state">{{ 'battleTable.noBattle' | transloco }}</div>
+  }
+</section>

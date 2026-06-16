@@ -1,20 +1,27 @@
 <div class="tl">
   <header class="tl-control-bar">
     <div class="tl-top-row">
-      @if (tournament$ | async; as tournament) {
-        <div class="tl-title">
-          <p class="tl-eyebrow">{{ 'tournament.title' | transloco }}</p>
-          <h1>
-            <span>{{ tournament.city }}</span>
-            <time>{{ tournament.date | date: 'dd.MM.yyyy' }}</time>
-          </h1>
-        </div>
-      } @else {
-        <div class="tl-title tl-title--loading">
-          <p-skeleton width="12rem" height="1.35rem"></p-skeleton>
-          <p-skeleton width="7rem" height="1rem"></p-skeleton>
-        </div>
-      }
+      <div class="tl-title-group">
+        <button class="tl-back-button" type="button" (click)="confirmExitToMainPanel()">
+          <i class="pi pi-arrow-left"></i>
+          {{ 'tournament.backToMainPanel' | transloco }}
+        </button>
+
+        @if (tournament$ | async; as tournament) {
+          <div class="tl-title">
+            <p class="tl-eyebrow">{{ 'tournament.title' | transloco }}</p>
+            <h1>
+              <span>{{ tournament.city }}</span>
+              <time>{{ tournament.date | date: 'dd.MM.yyyy' }}</time>
+            </h1>
+          </div>
+        } @else {
+          <div class="tl-title tl-title--loading">
+            <p-skeleton width="12rem" height="1.35rem"></p-skeleton>
+            <p-skeleton width="7rem" height="1rem"></p-skeleton>
+          </div>
+        }
+      </div>
 
       <div class="tl-stage-controls">
         <button class="tl-offline-button" type="button" (click)="prepareOffline()" [disabled]="offlinePreparing">
@@ -31,63 +38,6 @@
       </div>
     </div>
 
-    <section class="tl-active-panel">
-      <div class="tl-active-summary">
-        <span class="tl-eyebrow">{{ 'judge.activePlayer' | transloco }}</span>
-        <h2>
-          @if (liveState.activeParticipant) {
-            {{ liveState.activeParticipant.playerName }}
-            <small>{{ liveState.activeParticipant.horse }}</small>
-          } @else if (activePanelLoading) {
-            {{ 'common.loading' | transloco }}
-          } @else {
-            {{ 'judge.noActivePlayer' | transloco }}
-          }
-        </h2>
-      </div>
-
-      <div class="tl-active-actions">
-        <label class="tl-active-field">
-          <span>{{ 'judge.activeBattle' | transloco }}</span>
-          <select
-            [ngModel]="liveState.activeBattleId"
-            (ngModelChange)="setActiveBattle($event || null)"
-            [disabled]="activePanelLoading || !((battles$ | async)?.length)"
-            [attr.aria-label]="'judge.chooseActiveBattle' | transloco"
-          >
-            @for (battle of (battles$ | async) ?? []; track battle._id) {
-              <option [ngValue]="battle._id">{{ battle.order }}. {{ battle.name }}</option>
-            }
-          </select>
-        </label>
-
-        <button class="btn btn-tonal" type="button" (click)="setPreviousParticipant()" [disabled]="activeParticipantIndex() <= 0">
-          <i class="pi pi-chevron-left"></i>
-          {{ 'judge.previousPlayer' | transloco }}
-        </button>
-
-        <label class="tl-active-field">
-          <span>{{ 'judge.activePlayer' | transloco }}</span>
-          <select
-            [ngModel]="liveState.activeTournamentPlayerId"
-            (ngModelChange)="setActiveParticipant($event || null)"
-            [disabled]="activePanelLoading || !participantList.length"
-            [attr.aria-label]="'judge.chooseActivePlayer' | transloco"
-          >
-            <option [ngValue]="null">{{ 'judge.noActivePlayer' | transloco }}</option>
-            @for (participant of participantList; track participant._id) {
-              <option [ngValue]="participant._id">{{ participant.playerName }} - {{ participant.horse }}</option>
-            }
-          </select>
-        </label>
-
-        <button class="btn btn-primary" type="button" (click)="setNextParticipant()" [disabled]="activeParticipantIndex() >= participantList.length - 1 && activeParticipantIndex() !== -1">
-          {{ 'judge.nextPlayer' | transloco }}
-          <i class="pi pi-chevron-right"></i>
-        </button>
-      </div>
-    </section>
-
     <div class="tl-section-controls">
       <p-selectButton
         [options]="(options$ | async) ?? []"
@@ -103,5 +53,7 @@
     }
   </header>
 
-  <router-outlet></router-outlet>
+  <main class="tl-content">
+    <router-outlet></router-outlet>
+  </main>
 </div>

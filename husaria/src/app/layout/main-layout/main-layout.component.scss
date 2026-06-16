@@ -1,0 +1,13 @@
+.page-shell--tournament {
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  margin: 0;
+  padding: 6px 8px 16px;
+}
+
+@media (max-width: 720px) {
+  .page-shell--tournament {
+    padding: 4px;
+  }
+}

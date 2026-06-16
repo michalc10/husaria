@@ -1244,6 +1244,262 @@ select:focus {
   }
 }
 
+app-battle-table {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  height: 100%;
+}
+
+app-battle-table .battle-table-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
+}
+
+app-battle-table .battle-table-shell--fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  height: 100vh;
+  min-height: 0;
+  padding: 8px;
+  background: var(--md-sys-color-background);
+}
+
+app-battle-table .battle-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .92);
+}
+
+app-battle-table .battle-table-toolbar__title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+app-battle-table .battle-table-toolbar__title strong {
+  color: var(--md-sys-color-on-surface);
+  font-size: 1rem;
+}
+
+app-battle-table .battle-table-toolbar__title span {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: .84rem;
+  font-weight: 700;
+}
+
+app-battle-table .battle-table-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+app-battle-table .battle-pdf-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .72);
+}
+
+app-battle-table .battle-pdf-select,
+app-battle-table .battle-pdf-size {
+  min-height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--md-sys-color-on-surface);
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+app-battle-table .battle-pdf-select {
+  width: 5.9rem;
+  padding: 0 7px;
+}
+
+app-battle-table .battle-pdf-size {
+  width: 3.35rem;
+  padding: 0 4px;
+  text-align: center;
+}
+
+app-battle-table .battle-tool-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  padding: 0 10px;
+  background: #fff;
+  color: var(--md-sys-color-on-surface);
+  font-size: .84rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+app-battle-table .battle-tool-button--primary {
+  border-color: color-mix(in srgb, var(--md-sys-color-primary) 35%, var(--md-sys-color-outline-variant));
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+app-battle-table .battle-tool-button--pdf {
+  min-height: 30px;
+  border-color: color-mix(in srgb, var(--md-sys-color-error) 35%, var(--md-sys-color-outline-variant));
+  padding-inline: 9px;
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-error);
+}
+
+app-battle-table .table-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(100vh - 140px);
+  overflow: auto;
+  border-radius: 12px;
+}
+
+app-battle-table .battle-score-table.p-datatable {
+  width: fit-content;
+  min-width: min(100%, 50rem);
+  max-width: none;
+  margin-inline: auto;
+}
+
+app-battle-table .battle-score-table .p-datatable-table {
+  width: max-content;
+  min-width: 50rem;
+}
+
+app-battle-table .battle-score-table .p-datatable-thead > tr > th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+app-battle-table .battle-table-shell--compact {
+  gap: 4px;
+}
+
+app-battle-table .battle-table-shell--compact .p-datatable .p-datatable-thead > tr > th {
+  max-width: 4.2rem;
+  padding: .24rem .2rem;
+  font-size: .66rem;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+app-battle-table .battle-table-shell--compact .p-datatable .p-datatable-tbody > tr > td {
+  padding: .16rem .18rem;
+  font-size: .72rem;
+  line-height: 1.08;
+}
+
+app-battle-table .battle-table-shell--compact .p-button.p-button-icon-only {
+  width: 1.55rem;
+  height: 1.55rem;
+  padding: 0;
+}
+
+app-battle-table .battle-table-shell--compact .p-inputnumber .p-inputtext {
+  width: 46px;
+  padding: .18rem .2rem;
+  font-size: .7rem;
+  text-align: center;
+}
+
+app-battle-table .battle-table-shell--compact .p-selectbutton .p-button {
+  min-width: 0;
+  min-height: 1.45rem;
+  padding: .08rem .22rem;
+  font-size: .64rem;
+  line-height: 1;
+}
+
+app-battle-table .battle-table-shell--compact .battle-pdf-controls {
+  gap: 2px;
+}
+
+app-battle-table .battle-table-shell--compact .battle-pdf-select {
+  width: 4.9rem;
+}
+
+app-battle-table .battle-table-shell--compact .battle-pdf-size {
+  width: 2.8rem;
+}
+
+app-battle-table .battle-table-shell--compact .battle-pdf-select,
+app-battle-table .battle-table-shell--compact .battle-pdf-size,
+app-battle-table .battle-table-shell--compact .battle-tool-button--pdf {
+  min-height: 26px;
+  font-size: .68rem;
+}
+
+app-battle-table .battle-table-shell--compact .battle-player-cell {
+  min-width: 8.5rem;
+  max-width: 9.5rem;
+}
+
+app-battle-table .battle-table-shell--compact .battle-score-table .p-datatable-table {
+  min-width: 38rem;
+}
+
+app-battle-table .battle-table-shell--compact .select-score-cell {
+  min-width: 96px;
+}
+
+app-battle-table .battle-table-shell--compact .active-player-badge {
+  min-height: 1.4rem;
+  padding: 0 .35rem;
+  font-size: .62rem;
+}
+
+app-battle-table .battle-table-shell--compact .battle-player-cell__content {
+  gap: .35rem;
+}
+
+app-battle-table .battle-table-shell--compact .battle-player-cell__action {
+  min-width: 1.65rem;
+}
+
+@media (max-width: 720px) {
+  app-battle-table .battle-table-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  app-battle-table .table-container {
+    max-height: calc(100vh - 170px);
+  }
+
+  app-battle-table .battle-table-toolbar__actions {
+    justify-content: stretch;
+  }
+
+  app-battle-table .battle-tool-button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
