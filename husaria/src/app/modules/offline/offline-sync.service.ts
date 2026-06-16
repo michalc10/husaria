@@ -64,6 +64,23 @@ export class OfflineSyncService {
     );
   }
 
+  updateCachedTournamentLiveState(tournamentId: string, liveState: unknown): Observable<void> {
+    return from(this.db.getSnapshot<any>(`tournament:${tournamentId}`)).pipe(
+      switchMap(snapshot => {
+        if (!snapshot) return of(undefined);
+
+        return from(this.db.putSnapshot({
+          ...snapshot,
+          data: {
+            ...(snapshot.data || {}),
+            liveState
+          },
+          updatedAt: new Date().toISOString()
+        })).pipe(map(() => undefined));
+      })
+    );
+  }
+
   registerJudgeToken(token: string): Observable<string> {
     return from(this.tokenFingerprint(token)).pipe(
       tap(fingerprint => this.judgeTokens.set(fingerprint, token))

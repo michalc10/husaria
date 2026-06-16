@@ -2,7 +2,7 @@ export type OfflineMutationStatus = 'pending' | 'syncing' | 'applied' | 'conflic
 
 export interface OfflineMutation<TPayload = unknown> {
   clientMutationId: string;
-  type: 'battleResult.update' | 'judgeSessionResult.update' | string;
+  type: 'battleResult.update' | 'judgeSessionResult.update' | 'tournamentLiveState.update' | string;
   entityId: string;
   tournamentId?: string;
   baseRevision?: number | null;

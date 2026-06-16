@@ -191,6 +191,52 @@ const processJudgeSessionMutation = async (input: SyncMutationInput, judgeToken?
   }
 };
 
+const processTournamentLiveStateMutation = async (
+  input: SyncMutationInput,
+  userId?: string | null
+) => {
+  if (!userId) {
+    return recordMutation(input, 'FAILED', { userId }, undefined, {
+      message: 'Wymagane logowanie do synchronizacji aktywnego stanu turnieju'
+    });
+  }
+
+  const payload = input.payload as any;
+  const tournamentId = String(input.entityId || payload?.tournamentId || '');
+  if (!tournamentId) {
+    return recordMutation(input, 'FAILED', { userId }, undefined, {
+      message: 'Brak identyfikatora turnieju'
+    });
+  }
+
+  try {
+    const result = await judgeStationRepository.setTournamentLiveState(tournamentId, {
+      activeTournamentPlayerId: payload?.activeTournamentPlayerId,
+      activeBattleId: payload?.activeBattleId
+    });
+
+    if (!result) {
+      return recordMutation(input, 'FAILED', { userId }, undefined, {
+        message: 'Nie znaleziono turnieju'
+      });
+    }
+
+    return recordMutation(input, 'APPLIED', { userId }, result);
+  } catch (error) {
+    if (error instanceof ConflictError) {
+      const serverState = await judgeStationRepository.getTournamentLiveState(tournamentId);
+
+      return recordMutation(input, 'CONFLICT', { userId }, undefined, conflictDetails(input, 'LIVE_STATE_CONFLICT', error.message, {
+        server: serverState,
+        serverRevision: serverState?.version ?? null,
+        entityLabel: tournamentId
+      }));
+    }
+
+    throw error;
+  }
+};
+
 export const syncRepository = {
   async bootstrap(tournamentId: string) {
     const tournament = await tournamentRepository.findById(tournamentId);
@@ -225,7 +271,7 @@ export const syncRepository = {
       let result;
 
       if (existing) {
-        if (existing.type === 'battleResult.update' && !context.userId) {
+        if ((existing.type === 'battleResult.update' || existing.type === 'tournamentLiveState.update') && !context.userId) {
           result = {
             clientMutationId: mutation.clientMutationId,
             type: mutation.type,
@@ -246,6 +292,8 @@ export const syncRepository = {
         }
       } else if (mutation.type === 'battleResult.update') {
         result = await processBattleResultMutation(mutation, context.userId);
+      } else if (mutation.type === 'tournamentLiveState.update') {
+        result = await processTournamentLiveStateMutation(mutation, context.userId);
       } else if (mutation.type === 'judgeSessionResult.update') {
         result = await processJudgeSessionMutation(mutation, context.judgeToken);
       } else {

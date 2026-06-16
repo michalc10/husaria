@@ -4,7 +4,7 @@ import { readSessionCookie } from '../middleware/auth';
 import { judgeStationRepository } from '../repositories/judgeStationRepository';
 import { syncRepository } from '../repositories/syncRepository';
 import { notFound, serverError } from './helpers';
-import { emitBattleResultUpdated } from '../realtime/liveScoreSocket';
+import { emitBattleResultUpdated, emitTournamentLiveStateUpdated } from '../realtime/liveScoreSocket';
 
 const bootstrap = async (req: Request, res: Response) => {
   try {
@@ -27,6 +27,11 @@ const mutations = async (req: Request, res: Response) => {
       judgeToken: judgeToken || null
     });
     result.applied.forEach((item: any) => {
+      if (item?.type === 'tournamentLiveState.update' && item?.result?.tournamentId) {
+        emitTournamentLiveStateUpdated(item.result.tournamentId, item.result);
+        return;
+      }
+
       if (item?.result?.battleId) {
         emitBattleResultUpdated(item.result.battleId, item.result);
       }
