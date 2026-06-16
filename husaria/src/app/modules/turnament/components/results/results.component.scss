@@ -18,6 +18,23 @@
   justify-content: flex-end;
 }
 
+.pdf-font-size-field {
+  display: inline-grid;
+  gap: 3px;
+  min-width: 8.75rem;
+}
+
+.pdf-font-size-field--icon-only {
+  min-width: auto;
+}
+
+.pdf-font-size-field span {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: .72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .result-table-card {
   overflow-x: auto;
   overflow-y: hidden;
@@ -25,7 +42,7 @@
 
 :host ::ng-deep {
   .p-inputnumber .p-inputtext {
-    width: 64px;
+    width: 88px;
   }
 
   .results-table .p-datatable-table {
@@ -46,5 +63,14 @@ p {
   .print {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .pdf-font-size-field {
+    width: 100%;
+  }
+
+  :host ::ng-deep .pdf-font-size-field .p-inputnumber,
+  :host ::ng-deep .pdf-font-size-field .p-inputtext {
+    width: 100%;
   }
 }

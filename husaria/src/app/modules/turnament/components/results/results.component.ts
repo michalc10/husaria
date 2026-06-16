@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoService } from '@jsverse/transloco';
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { PageOrientation } from 'pdfmake/interfaces';
+import { Subscription } from 'rxjs';
 import { IPlayerPoints } from 'src/app/models/playerPoints';
 import { PlayerPointsService } from '../../services/playerPoints/playerPoints.service';
 
@@ -23,7 +24,7 @@ interface PlayersWithTotalScore {
   styleUrls: ['./results.component.scss'],
   standalone: false
 })
-export class ResultsComponent implements OnInit {
+export class ResultsComponent implements OnInit, OnDestroy {
   pdfTextSize = 15;
   selectedPlayerId = '-1';
   participantList: IPlayerPoints[] = [];
@@ -40,14 +41,16 @@ export class ResultsComponent implements OnInit {
   valueResultOption = 'individualResults';
 
   top3Players: PlayersWithTotalScore[] = [];
+  private readonly translationSubscription = new Subscription();
 
   constructor(
     private playerPointsService: PlayerPointsService,
     private route: ActivatedRoute,
     private transloco: TranslocoService
   ) {
-    this.refreshLabels();
-    this.transloco.langChanges$.subscribe(() => this.refreshLabels());
+    this.translationSubscription.add(
+      this.transloco.selectTranslation().subscribe(() => this.refreshLabels())
+    );
   }
 
   ngOnInit(): void {
@@ -65,6 +68,10 @@ export class ResultsComponent implements OnInit {
         })));
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.translationSubscription.unsubscribe();
   }
 
   calculateTotalScore(player: IPlayerPoints): number {
@@ -204,16 +211,21 @@ export class ResultsComponent implements OnInit {
 
   private refreshLabels(): void {
     this.orientationList = [
-      { label: this.transloco.translate('results.ascending'), value: 'asc' },
-      { label: this.transloco.translate('results.descending'), value: 'desc' }
+      { label: this.label('results.ascending', 'rosnąco'), value: 'asc' },
+      { label: this.label('results.descending', 'malejąco'), value: 'desc' }
     ];
     this.orientationPaper = [
-      { label: this.transloco.translate('results.horizontal'), value: 'landscape' },
-      { label: this.transloco.translate('results.vertical'), value: 'portrait' }
+      { label: this.label('results.horizontal', 'poziomo'), value: 'landscape' },
+      { label: this.label('results.vertical', 'pionowo'), value: 'portrait' }
     ];
     this.resultOptions = [
-      { label: this.transloco.translate('results.individual'), valueResultOption: 'individualResults' },
-      { label: this.transloco.translate('results.team'), valueResultOption: 'teamResults' }
+      { label: this.label('results.individual', 'Indywidualne'), valueResultOption: 'individualResults' },
+      { label: this.label('results.team', 'Drużynowe'), valueResultOption: 'teamResults' }
     ];
+  }
+
+  private label(key: string, fallback: string): string {
+    const value = this.transloco.translate(key);
+    return value === key ? fallback : value;
   }
 }

@@ -5,7 +5,17 @@
     <div class="print">
       <p-select [options]="orientationList" [(ngModel)]="chosenOrientationList" optionLabel="label" optionValue="value" [placeholder]="'results.resultsPlaceholder' | transloco"></p-select>
       <p-select [options]="orientationPaper" [(ngModel)]="chosenOrientationPaper" optionLabel="label" optionValue="value" [placeholder]="'results.paperOrientation' | transloco"></p-select>
-      <p-inputNumber [(ngModel)]="pdfTextSize" mode="decimal" [showButtons]="true" inputId="minmax-buttons" [min]="10" [max]="25" [ariaLabel]="'results.fontSize' | transloco"></p-inputNumber>
+      <label class="pdf-font-size-field pdf-font-size-field--icon-only" for="pdf-text-size" [pTooltip]="'results.fontSize' | transloco" tooltipPosition="bottom">
+        <p-inputNumber
+          [(ngModel)]="pdfTextSize"
+          mode="decimal"
+          [showButtons]="true"
+          inputId="pdf-text-size"
+          [min]="6"
+          [max]="25"
+          [ariaLabel]="'results.fontSize' | transloco"
+        ></p-inputNumber>
+      </label>
       <button type="button" pButton pRipple icon="pi pi-file-pdf" (click)="exportPdf()" class="p-button-rounded p-button-warning" [pTooltip]="'results.pdf' | transloco" tooltipPosition="bottom"></button>
     </div>
   </div>
